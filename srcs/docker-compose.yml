@@ -1,0 +1,72 @@
+services:
+  nginx:
+    build: ./requirements/nginx
+    container_name: ft_nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ft_network
+    restart: unless-stopped
+
+  frontend:
+    build: ./requirements/frontend
+    container_name: ft_frontend
+    volumes:
+      - ./requirements/frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=/api
+    depends_on:
+      - backend
+    networks:
+      - ft_network
+    restart: unless-stopped
+
+  backend:
+    build: ./requirements/backend
+    container_name: ft_backend
+    volumes:
+      - ./requirements/backend:/app
+      - /app/node_modules
+      - ${HOME}/data/uploads:/app/uploads
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=8080
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - ft_network
+    restart: unless-stopped
+
+  database:
+    image: postgres:16-alpine
+    container_name: ft_database
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - ${HOME}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ft_network
+    restart: unless-stopped
+
+networks:
+  ft_network:
+    name: ft_transcendence_network
+    driver: bridge
