@@ -19,8 +19,8 @@ COPY conf/nginx.conf /etc/nginx/nginx.conf
 COPY tools/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Expose HTTPS port only
-EXPOSE 443
+# Expose non-privileged ports
+EXPOSE 8080 8443
 
 # Run NGINX in foreground
 ENTRYPOINT ["/docker-entrypoint.sh"]
