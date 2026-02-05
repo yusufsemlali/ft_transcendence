@@ -1,8 +1,10 @@
-import { createExpressEndpoints } from "@ts-rest/express";
+import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import * as TournamentService from "@/services/tournament.service";
 
-export const tournamentsRouter = createExpressEndpoints(contract.tournaments, {
+const s = initServer();
+
+export const tournamentsController = s.router(contract.tournaments, {
     createTournament: async ({ body }) => {
         try {
             const tournament = await TournamentService.createTournament({
@@ -12,7 +14,10 @@ export const tournamentsRouter = createExpressEndpoints(contract.tournaments, {
 
             return {
                 status: 201,
-                body: tournament,
+                body: {
+                    ...tournament,
+                    description: tournament.description || undefined,
+                },
             };
         } catch (error) {
             return {

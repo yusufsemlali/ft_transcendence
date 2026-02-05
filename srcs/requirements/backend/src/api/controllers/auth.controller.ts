@@ -48,4 +48,4 @@ export const authController = s.router(contract.auth, {
             };
         }
     },
-};
+});

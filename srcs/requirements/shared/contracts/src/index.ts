@@ -13,3 +13,7 @@ export const contract = c.router({
 
 export const COMPATIBILITY_CHECK = 1;
 export const COMPATIBILITY_CHECK_HEADER = "X-Compatibility-Check";
+
+export * from "./schemas/tournaments";
+export * from "./schemas/auth";
+export * from "./schemas/users";

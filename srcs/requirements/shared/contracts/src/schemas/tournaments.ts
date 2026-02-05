@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const TournamentSchema = z.object({
-    id: z.string().uuid(),
+    id: z.number().int(),
     name: z.string().min(3).max(50),
     description: z.string().max(255).optional(),
-    maxPlayers: z.number().int().min(2).max(64),
-    status: z.enum(["upcoming", "ongoing", "completed", "cancelled"]),
+    maxParticipants: z.number().int().min(2).max(64),
+    status: z.enum(["draft", "registration", "upcoming", "ongoing", "completed", "cancelled"]),
     createdAt: z.date(),
 });
 
