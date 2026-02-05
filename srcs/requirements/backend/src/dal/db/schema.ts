@@ -3,3 +3,5 @@ export * from './schemas/users';
 export * from './schemas/social';
 export * from './schemas/tournaments';
 export * from './schemas/matches';
+export * from './schemas/settings';
+

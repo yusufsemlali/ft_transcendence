@@ -21,6 +21,7 @@ export const usersContract = c.router({
         responses: {
             200: UserSchema,
             400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
         },
         summary: "Update current user profile",
     },

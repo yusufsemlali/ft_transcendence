@@ -23,7 +23,7 @@ services:
     volumes:
       - ./requirements/frontend:/app/requirements/frontend
       - ./requirements/shared:/requirements/shared
-      - /app/requirements/frontend/node_modules
+      - frontend_node_modules:/app/requirements/frontend/node_modules
     env_file: .env
     depends_on:
       - backend
@@ -39,7 +39,7 @@ services:
     volumes:
       - ./requirements/backend:/app/requirements/backend
       - ./requirements/shared:/requirements/shared
-      - /app/requirements/backend/node_modules
+      - backend_node_modules:/app/requirements/backend/node_modules
       - ${HOME}/data/uploads:/app/requirements/backend/uploads
     env_file: .env
     environment:
@@ -74,3 +74,7 @@ networks:
   ft_network:
     name: ft_transcendence_network
     driver: bridge
+
+volumes:
+  frontend_node_modules:
+  backend_node_modules:

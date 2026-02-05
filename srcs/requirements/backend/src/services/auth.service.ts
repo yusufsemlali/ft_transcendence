@@ -1,7 +1,6 @@
 import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
-import { hashPassword, comparePassword } from "@/utils/password";
-import { generateToken } from "@/utils/token";
+import { hashPassword, comparePassword, generateToken } from "@/utils/auth";
 import { eq, or } from "drizzle-orm";
 import AppError from "@/utils/error";
 
@@ -23,7 +22,7 @@ export const register = async (email: string, username: string, password: string
         const hashedPassword = await hashPassword(password);
         const [user] = await db.insert(users).values({ email, username, password: hashedPassword }).returning();
 
-        const token = generateToken(user.id, user.email);
+        const token = generateToken(user.id, user.username, user.role);
 
         // Return user without password
         const { password: _, ...userWithoutPassword } = user;
@@ -47,7 +46,7 @@ export const login = async (email: string, password: string) => {
         }
 
         const user = existingUser[0];
-        const token = generateToken(user.id, user.email);
+        const token = generateToken(user.id, user.username, user.role);
 
         // Return user without password
         const { password: _, ...userWithoutPassword } = user;
