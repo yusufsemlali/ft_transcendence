@@ -1,80 +1,91 @@
+name: ft_transcendence
+
 services:
-  nginx:
-    build:
-      context: .
-      dockerfile: ./requirements/nginx/Dockerfile
-    container_name: ft_nginx
-    ports:
-      - "8080:8080"
-    environment:
-      - DOMAIN_NAME=${DOMAIN_NAME}
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - ft_network
+  # -------------------------------------------------------------------------
+  # POSTGRESQL DATABASE
+  # -------------------------------------------------------------------------
+  database:
+    container_name: ft_database
+    build: requirements/database
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: .
-      dockerfile: ./requirements/frontend/Dockerfile
-    container_name: ft_frontend
-    volumes:
-      - ./requirements/frontend:/app/requirements/frontend
-      - ./requirements/shared:/requirements/shared
-      - frontend_node_modules:/app/requirements/frontend/node_modules
     env_file: .env
-    depends_on:
-      - backend
+    expose:
+      - "5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - ft_network
-    restart: unless-stopped
+      - transcendence-net
 
+  # -------------------------------------------------------------------------
+  # BACKEND (Express + TS)
+  # -------------------------------------------------------------------------
   backend:
-    build:
-      context: .
-      dockerfile: ./requirements/backend/Dockerfile
     container_name: ft_backend
-    volumes:
-      - ./requirements/backend:/app/requirements/backend
-      - ./requirements/shared:/requirements/shared
-      - backend_node_modules:/app/requirements/backend/node_modules
-      - ${HOME}/data/uploads:/app/requirements/backend/uploads
+    build: 
+      context: ./requirements
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
     env_file: .env
     environment:
-      - PORT=8080
+      - PORT=3000
+    expose:
+      - "3000"
+    volumes:
+      - ./requirements/backend:/app/backend
+      - ./requirements/shared:/app/shared
+      - /app/backend/node_modules
+      - /app/shared/contracts/node_modules
     depends_on:
       database:
         condition: service_healthy
     networks:
-      - ft_network
-    restart: unless-stopped
+      - transcendence-net
 
-  database:
-    build: ./requirements/database
-    container_name: ft_database
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+  # -------------------------------------------------------------------------
+  # FRONTEND (Next.js)
+  # -------------------------------------------------------------------------
+  frontend:
+    container_name: ft_frontend
+    build:
+      context: ./requirements
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "3000"
     volumes:
-      - ${HOME}/data/postgres:/var/lib/postgresql/data
-      - ./requirements/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - ./requirements/frontend:/app/frontend
+      - ./requirements/shared:/app/shared
+      - /app/frontend/node_modules
+      - /app/shared/contracts/node_modules
+      - /app/frontend/.next
     networks:
-      - ft_network
-    restart: unless-stopped
+      - transcendence-net
 
-networks:
-  ft_network:
-    name: ft_transcendence_network
-    driver: bridge
+  # -------------------------------------------------------------------------
+  # NGINX (Reverse Proxy)
+  # -------------------------------------------------------------------------
+  nginx:
+    container_name: ft_nginx
+    build: requirements/nginx
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - transcendence-net
 
 volumes:
-  frontend_node_modules:
-  backend_node_modules:
+  db-data:
+
+networks:
+  transcendence-net:
+    driver: bridge
