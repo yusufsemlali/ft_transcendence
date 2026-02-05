@@ -1,0 +1,4 @@
+packages:
+  - 'srcs/requirements/backend'
+  - 'srcs/requirements/frontend'
+  - 'srcs/requirements/shared/*'

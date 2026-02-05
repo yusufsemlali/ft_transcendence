@@ -1,9 +1,5 @@
-import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
-
-export const users = pgTable('users', {
-    id: serial('id').primaryKey(),
-    username: text('username').notNull().unique(),
-    email: text('email').notNull().unique(),
-    password: text('password').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+export * from './schemas/enums';
+export * from './schemas/users';
+export * from './schemas/social';
+export * from './schemas/tournaments';
+export * from './schemas/matches';

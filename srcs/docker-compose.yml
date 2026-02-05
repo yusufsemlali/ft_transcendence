@@ -1,6 +1,8 @@
 services:
   nginx:
-    build: ./requirements/nginx
+    build:
+      context: .
+      dockerfile: ./requirements/nginx/Dockerfile
     container_name: ft_nginx
     ports:
       - "8080:8080"
@@ -14,11 +16,14 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./requirements/frontend
+    build:
+      context: .
+      dockerfile: ./requirements/frontend/Dockerfile
     container_name: ft_frontend
     volumes:
-      - ./requirements/frontend:/app
-      - /app/node_modules
+      - ./requirements/frontend:/app/requirements/frontend
+      - ./requirements/shared:/requirements/shared
+      - /app/requirements/frontend/node_modules
     env_file: .env
     depends_on:
       - backend
@@ -27,12 +32,15 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./requirements/backend
+    build:
+      context: .
+      dockerfile: ./requirements/backend/Dockerfile
     container_name: ft_backend
     volumes:
-      - ./requirements/backend:/app
-      - /app/node_modules
-      - ${HOME}/data/uploads:/app/uploads
+      - ./requirements/backend:/app/requirements/backend
+      - ./requirements/shared:/requirements/shared
+      - /app/requirements/backend/node_modules
+      - ${HOME}/data/uploads:/app/requirements/backend/uploads
     env_file: .env
     environment:
       - PORT=8080
