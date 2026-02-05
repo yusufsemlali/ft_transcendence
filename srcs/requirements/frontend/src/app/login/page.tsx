@@ -26,8 +26,9 @@ export default function LoginPage() {
                 localStorage.setItem("token", response.body.token);
                 router.push("/");
             } else {
-                if ('message' in response.body) {
-                    setError(response.body.message);
+                const body = response.body as any;
+                if (body && body.message) {
+                    setError(body.message);
                 } else {
                     setError("Login failed");
                 }

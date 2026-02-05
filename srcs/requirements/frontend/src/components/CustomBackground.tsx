@@ -31,7 +31,7 @@ export function CustomBackground() {
     const fetchSettings = async () => {
         try {
             const response = await api.settings.getSettings({
-                headers: {
+                extraHeaders: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
             });

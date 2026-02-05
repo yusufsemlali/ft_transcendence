@@ -32,7 +32,7 @@ export default function SettingsPage() {
     const fetchSettings = async () => {
         try {
             const response = await api.settings.getSettings({
-                headers: {
+                extraHeaders: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
             });
@@ -65,7 +65,7 @@ export default function SettingsPage() {
             try {
                 await api.settings.updateSettings({
                     body: { [key]: value },
-                    headers: {
+                    extraHeaders: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
