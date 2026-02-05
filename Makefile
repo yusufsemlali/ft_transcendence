@@ -21,6 +21,15 @@ status:
 	$(COMPOSE) ps
 
 db:
-	docker exec -it ft_database psql -U ft_user -d ft_transcendence
+	docker exec -it ft_database psql -U $(shell grep DB_USER srcs/.env | cut -d '=' -f 2) -d $(shell grep DB_NAME srcs/.env | cut -d '=' -f 2)
 
-.PHONY: all down clean fclean re logs status db
+db-generate:
+	docker exec -it ft_backend pnpm drizzle-kit generate
+
+db-push:
+	docker exec -it ft_backend pnpm drizzle-kit push
+
+db-migrate:
+	docker exec -it ft_backend pnpm drizzle-kit migrate
+
+.PHONY: all down clean fclean re logs status db db-generate db-push db-migrate

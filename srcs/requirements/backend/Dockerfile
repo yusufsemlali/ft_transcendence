@@ -1,19 +1,15 @@
-# Backend Dockerfile
-# Node.js API server (runs behind NGINX)
 
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies first (cache layer)
-COPY package*.json ./
-RUN npm install
+RUN npm install -g pnpm
 
-# Copy source code
+COPY package*.json pnpm-lock.yaml* ./
+RUN pnpm install
+
 COPY . .
 
-# Expose internal port (NOT public)
 EXPOSE 8080
 
-# Start development server with hot reload
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "run", "dev"]
