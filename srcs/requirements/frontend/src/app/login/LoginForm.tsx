@@ -27,6 +27,8 @@ function LoginFormContent() {
             if (response.status === 200) {
                 const token = response.body.token;
                 localStorage.setItem("token", token);
+                // Cookie is now handled by the server action or we need a proper server action to set it. 
+                // For now, we keep client side setting to ensure it works, but we should eventually move to server action login.
                 document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
 
                 toast.success("Welcome back!");

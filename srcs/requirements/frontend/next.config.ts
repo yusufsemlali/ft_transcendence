@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // No special config needed - shared folder is now inside the project
+  serverExternalPackages: ["@ts-rest/core"],
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:8080", "127.0.0.1:8080"],
+    },
+  },
 };
 
 export default nextConfig;

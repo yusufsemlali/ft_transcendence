@@ -8,16 +8,14 @@ interface ComingSoonProps {
 export function ComingSoon({ title, description }: ComingSoonProps) {
     return (
         <main className="animate-fade-in" style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             padding: "2rem",
-            textAlign: "center"
+            textAlign: "center",
+            overflow: "hidden"
         }}>
-            <div style={{ color: "var(--accent-primary)", marginBottom: "1rem" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "4rem" }}>
+            <div style={{ color: "var(--accent-primary)", marginBottom: "0.75rem" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "3.5rem" }}>
                     construction
                 </span>
             </div>
@@ -40,14 +38,7 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
                 coming soon
             </div>
 
-            <p style={{
-                maxWidth: "500px",
-                color: "var(--text-secondary)",
-                marginBottom: "2.5rem",
-                fontSize: "0.95rem"
-            }}>
-                {description || "we're working hard to bring this feature to life. stay tuned for updates!"}
-            </p>
+
 
             <Link href="/" className="btn btn-secondary">
                 go back

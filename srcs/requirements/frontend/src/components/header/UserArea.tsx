@@ -13,8 +13,6 @@ interface UserAreaProps {
 export function UserArea({ initialUser }: UserAreaProps) {
     const router = useRouter();
 
-    // Re-sync: If server-side says Guest but we have a token in localStorage,
-    // it probably means the cookie is missing. Let's set it and refresh.
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!initialUser && token) {
@@ -24,8 +22,12 @@ export function UserArea({ initialUser }: UserAreaProps) {
     }, [initialUser, router]);
 
     const handleLogout = async () => {
+        try {
+            await logoutAction(); // Clear server cookie
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
         localStorage.removeItem("token");
-        await logoutAction(); // Clear server cookie
         router.push("/login");
         router.refresh();
     };

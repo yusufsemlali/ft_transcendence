@@ -71,6 +71,8 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   font-size: 14px;
+  overflow-y: scroll;
+  /* Force static scrollbar */
 }
 
 /* Custom scrollbar */
