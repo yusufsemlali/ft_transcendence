@@ -1,14 +1,10 @@
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/backend
 
 RUN npm install -g pnpm
 
-# Copy shared contracts
-COPY shared/contracts ./shared/contracts
-
-# Setup backend
-WORKDIR /app/backend
+# Copy package files first for caching
 COPY backend/package.json backend/pnpm-lock.yaml ./
 
 RUN pnpm install --frozen-lockfile

@@ -1,14 +1,10 @@
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/frontend
 
 RUN npm install -g pnpm
 
-# Copy shared contracts
-COPY shared/contracts ./shared/contracts
-
-# Setup frontend
-WORKDIR /app/frontend
+# Copy package files first for caching
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 
 RUN pnpm install --frozen-lockfile

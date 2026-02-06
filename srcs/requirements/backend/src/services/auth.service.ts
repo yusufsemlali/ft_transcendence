@@ -16,6 +16,13 @@ export const register = async (email: string, username: string, password: string
 
 
         if (existingUser.length > 0) {
+            const user = existingUser[0];
+            if (user.email === email) {
+                throw new AppError(409, "Email already in use");
+            }
+            if (user.username === username) {
+                throw new AppError(409, "Username already taken");
+            }
             throw new AppError(409, "User already exists");
         }
 

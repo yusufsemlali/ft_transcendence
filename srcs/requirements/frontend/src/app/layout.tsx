@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Roboto_Mono, Lexend_Deca } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Providers from "./providers";
 import { CustomBackground } from "@/components/CustomBackground";
+import { Header } from "@/components/header/Header";
+import { getServerUser } from "@/lib/auth";
 
 const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
@@ -22,11 +23,13 @@ export const metadata: Metadata = {
   description: "Tournament management platform",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getServerUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -41,7 +44,12 @@ export default function RootLayout({
       >
         <Providers>
           <CustomBackground />
-          {children}
+          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+            <Header initialUser={user} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              {children}
+            </div>
+          </div>
         </Providers>
       </body>
     </html>

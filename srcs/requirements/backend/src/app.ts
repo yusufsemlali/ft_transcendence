@@ -9,6 +9,7 @@ import { rootRateLimiter } from "./middlewares/rate-limit";
 import { COMPATIBILITY_CHECK_HEADER } from "@ft-transcendence/contracts";
 
 function buildApp(): express.Application {
+    console.log("init server");
     const app = express();
 
     // Standard Middlewares

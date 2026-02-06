@@ -5,8 +5,6 @@ import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import { getLocalSettings, setLocalSettings, applyAllSettings } from "@/lib/settings";
 import { handleImageUpload, setLocalBackground, removeLocalBackground, hasLocalBackground } from "@/lib/file-storage";
 import { api } from "@/lib/api";
-import { Navigation } from "@/components/Navigation";
-
 export default function SettingsPage() {
     const [settings, setSettings] = useState<UserSettings>(defaultSettings);
     const [saving, setSaving] = useState(false);
@@ -99,9 +97,7 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="min-h-screen">
-            <Navigation />
-
+        <>
             {/* Notification */}
             {notification && (
                 <div
@@ -373,6 +369,6 @@ export default function SettingsPage() {
                     </div>
                 </section>
             </div>
-        </div>
+        </>
     );
 }

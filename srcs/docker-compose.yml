@@ -63,7 +63,7 @@ services:
       - "3000"
     volumes:
       - ./requirements/frontend:/app/frontend
-      - ./requirements/shared:/app/frontend/shared
+      - ./requirements/shared:/app/frontend/src/shared
       - /app/frontend/node_modules
       - /app/frontend/.next
     networks:

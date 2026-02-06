@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Navigation } from "@/components/Navigation";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,10 +14,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <Navigation />
-
-      {/* Hero */}
+    <>
       <main className="hero animate-fade-in">
         <h1 className="hero-title">tournament management</h1>
         <p className="hero-subtitle">
@@ -57,7 +53,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="footer">
         <Link href="/contact" className="footer-link">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,6 +85,6 @@ export default function Home() {
           privacy
         </Link>
       </footer>
-    </div>
+    </>
   );
 }

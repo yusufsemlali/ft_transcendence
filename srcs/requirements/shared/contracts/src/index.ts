@@ -20,4 +20,5 @@ export * from "./schemas/tournaments";
 export * from "./schemas/auth";
 export * from "./schemas/users";
 export * from "./schemas/settings";
+export { defaultSettings } from "./schemas/settings";
 
