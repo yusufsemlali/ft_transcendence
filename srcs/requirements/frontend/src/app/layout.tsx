@@ -44,9 +44,9 @@ export default async function RootLayout({
       >
         <Providers>
           <CustomBackground />
-          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }} suppressHydrationWarning>
             <Header initialUser={user} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }} suppressHydrationWarning>
               {children}
             </div>
           </div>

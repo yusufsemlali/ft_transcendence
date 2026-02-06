@@ -31,16 +31,13 @@ export default function RegisterForm() {
             if (response.status === 201) {
                 const token = (response.body as any).token;
                 localStorage.setItem("token", token);
-                
-                // Set cookie for server-side auth
                 document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-                
+
                 toast.success("Account created successfully!");
                 router.push("/");
                 router.refresh();
             } else {
                 const body = response.body as any;
-                // Handle Zod validation errors
                 if (body?.errors && Array.isArray(body.errors)) {
                     const messages = body.errors.map((e: any) => `${e.path?.join(".")}: ${e.message}`);
                     toast.error(messages.join(", "), { description: "Failed to create account" });
@@ -50,7 +47,6 @@ export default function RegisterForm() {
             }
         } catch (err) {
             toast.error("An unexpected error occurred", { description: "Failed to create account" });
-            console.error(err);
         } finally {
             setLoading(false);
         }

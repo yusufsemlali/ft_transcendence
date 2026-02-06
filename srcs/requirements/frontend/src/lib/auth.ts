@@ -18,7 +18,9 @@ export async function getServerUser(): Promise<UserInfo | null> {
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
 
-        if (!token) return null;
+        if (!token) {
+            return null;
+        }
 
         const response = await api.users.getMe({
             extraHeaders: {
@@ -34,7 +36,6 @@ export async function getServerUser(): Promise<UserInfo | null> {
             };
         }
     } catch (error) {
-        console.error("[AUTH] Failed to fetch server user:", error);
     }
     return null;
 }
