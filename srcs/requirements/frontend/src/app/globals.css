@@ -1,57 +1,50 @@
 @import "tailwindcss";
 
-/* Monkeytype-inspired Design System */
+/* Prism Design System */
 :root {
-  /* Background colors */
-  --bg-primary: #323437;
-  --bg-secondary: #2c2e31;
-  --bg-tertiary: #1e1f21;
+  /* Backgrounds */
+  --bg-primary: #0f1115;
+  /* Deep dark background */
+  --bg-secondary: rgba(255, 255, 255, 0.03);
+  /* Glass card bg */
+  --bg-tertiary: rgba(255, 255, 255, 0.08);
+  /* Hover states */
+  --bg-glass: rgba(20, 20, 25, 0.7);
+  /* Heavily blurred backgrounds */
 
-  /* Text colors */
-  --text-primary: #d1d0c5;
-  --text-secondary: #646669;
-  --text-muted: #494b4d;
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 
-  /* Accent colors */
-  --accent-primary: #e2b714;
-  --accent-secondary: #ca9d0a;
-  --accent-success: #7ec850;
-  --accent-error: #ca4754;
-  --accent-info: #5b8fd4;
+  /* Accents */
+  --accent-primary: #8b5cf6;
+  /* Violet */
+  --accent-secondary: #ec4899;
+  /* Pink */
+  --accent-success: #10b981;
+  --accent-error: #ef4444;
+  --accent-info: #3b82f6;
+
+  /* Gradients */
+  --gradient-prism: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-glow: radial-gradient(circle at center, rgba(139, 92, 246, 0.15), transparent 70%);
 
   /* Borders */
-  --border-color: rgba(100, 102, 105, 0.3);
-  --border-hover: rgba(100, 102, 105, 0.6);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-glass: 1px solid rgba(255, 255, 255, 0.08);
 
   /* Font */
-  --font-mono: 'Roboto Mono', 'Fira Code', 'Consolas', monospace;
+  --font-sans: var(--font-lexend), system-ui, sans-serif;
+  --font-mono: var(--font-roboto-mono), monospace;
 
   /* Transitions */
-  --transition-speed: 0.15s;
-}
+  --transition-speed: 0.2s;
 
-/* Material Symbols */
-.material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 20px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  font-feature-settings: 'liga';
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  /* Shadows */
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
 }
 
 * {
@@ -66,19 +59,48 @@ html {
 
 body {
   background: var(--bg-primary);
+  /* Prism Background Gradient Mesh */
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(236, 72, 153, 0.08), transparent 25%);
   color: var(--text-primary);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  /* Switch to Sans for main UI */
   min-height: 100vh;
   line-height: 1.6;
-  font-size: 14px;
+  font-size: 15px;
   overflow-y: scroll;
   /* Force static scrollbar */
 }
 
+/* Glassmorphism Utilities */
+.glass {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: var(--border-glass);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.text-gradient {
+  background: var(--gradient-prism);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -86,18 +108,18 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Selection */
 ::selection {
   background: var(--accent-primary);
-  color: var(--bg-primary);
+  color: white;
 }
 
 /* Links */

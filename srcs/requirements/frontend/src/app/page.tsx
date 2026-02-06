@@ -15,40 +15,72 @@ export default function Home() {
 
   return (
     <>
-      <main className="hero animate-fade-in">
-        <h1 className="hero-title">tournament management</h1>
-        <p className="hero-subtitle">
-          create brackets, manage competitions, track leaderboards.
-          built for organizers and competitors.
-        </p>
-
-        <div className="hero-actions">
-          {isAuthenticated ? (
-            <Link href="/tournaments/create" className="btn btn-primary">
-              create tournament
-            </Link>
-          ) : (
-            <Link href="/login" className="btn btn-primary">
-              get started
-            </Link>
-          )}
-          <Link href="/tournaments" className="btn btn-secondary">
-            browse tournaments
-          </Link>
-        </div>
-
-        <div className="hero-stats">
-          <div>
-            <div className="stat-value">1,247</div>
-            <div className="stat-label">tournaments</div>
+      <main className="hero animate-fade-in" style={{ padding: "1rem" }}>
+        <div className="glass-card" style={{
+          padding: "4rem 3rem",
+          textAlign: "center",
+          maxWidth: "800px",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "2rem"
+        }}>
+          {/* Gradient Trophy Icon */}
+          <div style={{
+            fontSize: "5rem",
+            marginBottom: "0.5rem",
+            background: "var(--gradient-prism)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent"
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "inherit" }}>trophy</span>
           </div>
+
           <div>
-            <div className="stat-value">42.5k</div>
-            <div className="stat-label">participants</div>
+            <h1 className="hero-title text-gradient" style={{ fontWeight: 700, letterSpacing: "-0.05em", marginBottom: "0.5rem" }}>
+              PRISM TOURNAMENTS
+            </h1>
+            <p className="hero-subtitle" style={{ maxWidth: "600px", margin: "0 auto", fontSize: "1.1rem" }}>
+              Create brackets, manage competitions, and track leaderboards with a modern, fluid experience.
+            </p>
           </div>
-          <div>
-            <div className="stat-value">8.2k</div>
-            <div className="stat-label">organizers</div>
+
+          <div className="hero-actions" style={{ marginTop: "1rem" }}>
+            {isAuthenticated ? (
+              <Link href="/tournaments/create" className="btn btn-primary" style={{ padding: "0.8rem 2rem", fontSize: "1rem", borderRadius: "50px" }}>
+                New Tournament
+              </Link>
+            ) : (
+              <Link href="/login" className="btn btn-primary" style={{ padding: "0.8rem 2rem", fontSize: "1rem", borderRadius: "50px" }}>
+                Get Started
+              </Link>
+            )}
+            <Link href="/tournaments" className="btn btn-secondary" style={{ padding: "0.8rem 2rem", fontSize: "1rem", borderRadius: "50px" }}>
+              Browse Events
+            </Link>
+          </div>
+
+          <div className="hero-stats" style={{
+            marginTop: "2rem",
+            paddingTop: "2rem",
+            borderTop: "1px solid var(--border-color)",
+            width: "100%",
+            justifyContent: "space-around",
+            gap: "1rem"
+          }}>
+            <div>
+              <div className="stat-value" style={{ fontSize: "1.5rem", fontWeight: 700 }}>1,247</div>
+              <div className="stat-label">Events</div>
+            </div>
+            <div>
+              <div className="stat-value" style={{ fontSize: "1.5rem", fontWeight: 700 }}>42.5k</div>
+              <div className="stat-label">Players</div>
+            </div>
+            <div>
+              <div className="stat-value" style={{ fontSize: "1.5rem", fontWeight: 700 }}>8.2k</div>
+              <div className="stat-label">Communities</div>
+            </div>
           </div>
         </div>
       </main>
