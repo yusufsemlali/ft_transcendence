@@ -9,6 +9,10 @@ services:
     build: requirements/database
     restart: unless-stopped
     env_file: .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     expose:
       - "5432"
     volumes:
@@ -37,9 +41,8 @@ services:
       - "3000"
     volumes:
       - ./requirements/backend:/app/backend
-      - ./requirements/shared:/app/shared
+      - ./requirements/shared:/app/backend/shared
       - /app/backend/node_modules
-      - /app/shared/contracts/node_modules
     depends_on:
       database:
         condition: service_healthy
@@ -60,9 +63,8 @@ services:
       - "3000"
     volumes:
       - ./requirements/frontend:/app/frontend
-      - ./requirements/shared:/app/shared
+      - ./requirements/shared:/app/frontend/shared
       - /app/frontend/node_modules
-      - /app/shared/contracts/node_modules
       - /app/frontend/.next
     networks:
       - transcendence-net

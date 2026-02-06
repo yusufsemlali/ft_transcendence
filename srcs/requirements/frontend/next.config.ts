@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@ft-transcendence/contracts"],
+  // No special config needed - shared folder is now inside the project
 };
 
 export default nextConfig;

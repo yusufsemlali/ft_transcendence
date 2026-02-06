@@ -7,6 +7,9 @@
         "paths": {
             "@/*": [
                 "./src/*"
+            ],
+            "@ft-transcendence/contracts": [
+                "./shared/contracts/src/index.ts"
             ]
         },
         "resolveJsonModule": true,
