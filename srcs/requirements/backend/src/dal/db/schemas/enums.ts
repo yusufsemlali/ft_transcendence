@@ -6,3 +6,4 @@ export const bracketTypeEnum = pgEnum('bracket_type', ['single_elimination', 'do
 export const matchStatusEnum = pgEnum('match_status', ['pending', 'ongoing', 'completed', 'disputed', 'cancelled']);
 export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted', 'blocked']);
 export const notificationTypeEnum = pgEnum('notification_type', ['friend_request', 'tournament_invite', 'match_starting', 'achievement_unlocked', 'system_alert']);
+export const supportedGameEnum = pgEnum('supported_game', ['league_of_legends', 'cs2', 'valorant', 'dota2', 'overwatch2']);

@@ -1,5 +1,6 @@
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import { getLocalBackground } from "./file-storage";
+import { applyFont } from "./fonts";
 
 const SETTINGS_KEY = "tournify_settings";
 
@@ -92,19 +93,10 @@ export function applyThemeSettings(settings: UserSettings): void {
 
     const root = document.documentElement;
 
-    // Font family
-    const fontMap: Record<string, string> = {
-        roboto_mono: "'Roboto Mono', monospace",
-        fira_code: "'Fira Code', monospace",
-        jetbrains_mono: "'JetBrains Mono', monospace",
-        source_code_pro: "'Source Code Pro', monospace",
-        inconsolata: "'Inconsolata', monospace",
-        ubuntu_mono: "'Ubuntu Mono', monospace",
-        ibm_plex_mono: "'IBM Plex Mono', monospace",
-        cascadia_code: "'Cascadia Code', monospace",
-    };
-
-    root.style.setProperty("--font-mono", fontMap[settings.fontFamily] || fontMap.roboto_mono);
+    // Font family - use the font controller
+    applyFont(settings.fontFamily);
+    
+    // Font size multiplier
     root.style.setProperty("--font-size-multiplier", String(settings.fontSize));
 
     // Custom theme colors

@@ -1,0 +1,1 @@
+CREATE TYPE "public"."supported_game" AS ENUM('league_of_legends', 'cs2', 'apex_legends', 'valorant', 'dota2', 'overwatch2', 'pong');

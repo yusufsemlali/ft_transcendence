@@ -3,6 +3,7 @@ import { tournamentsContract } from "./endpoints/tournaments";
 import { usersContract } from "./endpoints/users";
 import { authContract } from "./endpoints/auth";
 import { settingsContract } from "./endpoints/settings";
+import { gameProfilesContract } from "./endpoints/game_profiles";
 
 const c = initContract();
 
@@ -11,6 +12,7 @@ export const contract = c.router({
     auth: authContract,
     users: usersContract,
     settings: settingsContract,
+    gameProfiles: gameProfilesContract,
 });
 
 export const COMPATIBILITY_CHECK = 1;
@@ -20,5 +22,6 @@ export * from "./schemas/tournaments";
 export * from "./schemas/auth";
 export * from "./schemas/users";
 export * from "./schemas/settings";
+export * from "./schemas/game_profiles";
 export { defaultSettings } from "./schemas/settings";
 

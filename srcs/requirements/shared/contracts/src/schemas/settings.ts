@@ -55,16 +55,50 @@ export const ThemePresetSchema = z.enum([
 ]);
 export type ThemePreset = z.infer<typeof ThemePresetSchema>;
 
-// Font customization
+// Font customization - All bundled webfonts
 export const FontFamilySchema = z.enum([
-    "roboto_mono",
+    // Monospace
+    "0xproto",
+    "cascadia_mono",
+    "commit_mono",
     "fira_code",
-    "jetbrains_mono",
-    "source_code_pro",
-    "inconsolata",
-    "ubuntu_mono",
+    "geist_mono",
+    "hack",
     "ibm_plex_mono",
-    "cascadia_code",
+    "inconsolata",
+    "iosevka",
+    "jetbrains_mono",
+    "mononoki",
+    "overpass_mono",
+    "roboto_mono",
+    "source_code_pro",
+    "ubuntu_mono",
+    // Sans-serif
+    "atkinson_hyperlegible",
+    "comfortaa",
+    "geist",
+    "ibm_plex_sans",
+    "kanit",
+    "lato",
+    "lexend_deca",
+    "montserrat",
+    "nunito",
+    "open_dyslexic",
+    "oxygen",
+    "parkinsans",
+    "roboto",
+    "sarabun",
+    "titillium_web",
+    "ubuntu",
+    // Display
+    "boon",
+    "gallaudet",
+    "lalezar",
+    "noto_naskh_arabic",
+    "vazirmatn",
+    // Handwriting
+    "coming_soon",
+    "itim",
 ]);
 export type FontFamily = z.infer<typeof FontFamilySchema>;
 
