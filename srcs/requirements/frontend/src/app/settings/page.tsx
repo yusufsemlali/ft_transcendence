@@ -7,7 +7,7 @@ import { handleImageUpload, setLocalBackground, removeLocalBackground, hasLocalB
 import { api } from "@/lib/api";
 export default function SettingsPage() {
     const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-    const [saving, setSaving] = useState(false);
+    const [_saving, setSaving] = useState(false);
     const [hasLocalBg, setHasLocalBg] = useState(false);
     const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -137,7 +137,7 @@ export default function SettingsPage() {
                     <div className="settings-row">
                         <div className="settings-main">
                             <p className="section-note">
-                                Note: The local image is stored in your browser's local storage and will not be uploaded to the server. This means that if you clear your browser's local storage or use a different browser, the local image will be lost.
+                                Note: The local image is stored in your browser&apos;s local storage and will not be uploaded to the server. This means that if you clear your browser&apos;s local storage or use a different browser, the local image will be lost.
                             </p>
                         </div>
                         <div className="settings-side">

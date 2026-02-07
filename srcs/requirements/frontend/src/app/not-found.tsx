@@ -29,7 +29,7 @@ export default function NotFound() {
                 marginBottom: "2.5rem",
                 fontSize: "0.9rem"
             }}>
-                the page you are looking for doesn't exist or has been moved to another dimension.
+                the page you are looking for doesn&apos;t exist or has been moved to another dimension.
             </div>
 
             <Link href="/" className="btn btn-primary">

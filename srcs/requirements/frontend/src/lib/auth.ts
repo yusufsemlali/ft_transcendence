@@ -35,7 +35,7 @@ export async function getServerUser(): Promise<UserInfo | null> {
                 avatar: response.body.avatar
             };
         }
-    } catch (error) {
+    } catch {
     }
     return null;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 

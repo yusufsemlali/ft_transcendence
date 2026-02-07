@@ -35,10 +35,10 @@ function LoginFormContent() {
                 router.push(callbackUrl);
                 router.refresh();
             } else {
-                const body = response.body as any;
+                const body = response.body as { message?: string };
                 toast.error(body?.message || "Login failed", { description: "Auth Error" });
             }
-        } catch (err) {
+        } catch {
             toast.error("An unexpected error occurred", { description: "Auth Error" });
         } finally {
             setLoading(false);

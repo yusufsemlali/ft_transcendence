@@ -29,6 +29,7 @@ export default function RegisterForm() {
             });
 
             if (response.status === 201) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const token = (response.body as any).token;
                 localStorage.setItem("token", token);
                 document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
@@ -37,15 +38,17 @@ export default function RegisterForm() {
                 router.push("/");
                 router.refresh();
             } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const body = response.body as any;
                 if (body?.errors && Array.isArray(body.errors)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const messages = body.errors.map((e: any) => `${e.path?.join(".")}: ${e.message}`);
                     toast.error(messages.join(", "), { description: "Failed to create account" });
                 } else {
                     toast.error(body?.message || "Registration failed", { description: "Failed to create account" });
                 }
             }
-        } catch (err) {
+        } catch {
             toast.error("An unexpected error occurred", { description: "Failed to create account" });
         } finally {
             setLoading(false);

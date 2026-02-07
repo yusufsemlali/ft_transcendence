@@ -32,4 +32,10 @@ db-push:
 db-migrate:
 	docker exec -it ft_backend pnpm drizzle-kit migrate
 
-.PHONY: all down clean fclean re logs status db db-generate db-push db-migrate
+frontend:
+	$(COMPOSE) up -d --build frontend
+
+backend:
+	$(COMPOSE) up -d --build backend
+
+.PHONY: all down clean fclean re logs status db db-generate db-push db-migrate frontend backend

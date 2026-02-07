@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
-import { Roboto_Mono, Lexend_Deca } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { CustomBackground } from "@/components/CustomBackground";
 import { Header } from "@/components/header/Header";
 import { getServerUser } from "@/lib/auth";
+import { JetBrains_Mono, Geist, Roboto } from "next/font/google";
 
-const robotoMono = Roboto_Mono({
-  variable: "--font-roboto-mono",
+const geist = Geist({
   subsets: ["latin"],
-  display: "swap",
 });
 
-const lexendDeca = Lexend_Deca({
-  variable: "--font-lexend",
+const roboto = Roboto({
+  weight: "400",
   subsets: ["latin"],
-  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -31,22 +32,29 @@ export default async function RootLayout({
   const user = await getServerUser();
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={jetbrains.className} suppressHydrationWarning>
       <head>
         <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
         />
       </head>
-      <body
-        className={`${robotoMono.variable} ${lexendDeca.variable}`}
-        suppressHydrationWarning
-      >
+      <body suppressHydrationWarning>
         <Providers>
           <CustomBackground />
-          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }} suppressHydrationWarning>
+          <div
+            style={{
+              minHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            suppressHydrationWarning
+          >
             <Header initialUser={user} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column" }} suppressHydrationWarning>
+            <div
+              style={{ flex: 1, display: "flex", flexDirection: "column" }}
+              suppressHydrationWarning
+            >
               {children}
             </div>
           </div>

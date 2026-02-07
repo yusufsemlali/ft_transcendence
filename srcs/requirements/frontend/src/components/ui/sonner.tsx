@@ -176,6 +176,18 @@ const toastStyles = `
 export const Toaster = () => {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
+    const removeToast = useCallback((id: string) => {
+        const element = document.getElementById(`toast-${id}`);
+        if (element) {
+            element.classList.add("exit");
+            setTimeout(() => {
+                setToasts((prev) => prev.filter((t) => t.id !== id));
+            }, 300);
+        } else {
+            setToasts((prev) => prev.filter((t) => t.id !== id));
+        }
+    }, []);
+
     useEffect(() => {
         const handleToast = (newToast: Toast) => {
             setToasts((prev) => [newToast, ...prev]);
@@ -192,19 +204,7 @@ export const Toaster = () => {
         return () => {
             subscribers.delete(handleToast);
         };
-    }, []);
-
-    const removeToast = useCallback((id: string) => {
-        const element = document.getElementById(`toast-${id}`);
-        if (element) {
-            element.classList.add("exit");
-            setTimeout(() => {
-                setToasts((prev) => prev.filter((t) => t.id !== id));
-            }, 300);
-        } else {
-            setToasts((prev) => prev.filter((t) => t.id !== id));
-        }
-    }, []);
+    }, [removeToast]);
 
     return (
         <>

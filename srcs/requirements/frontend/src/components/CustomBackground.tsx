@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+
+/* eslint-disable @next/next/no-img-element */
+import { useEffect, useState, useCallback } from "react";
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import { getLocalSettings, setLocalSettings, getEffectiveBackground } from "@/lib/settings";
 import { api } from "@/lib/api";
@@ -10,25 +12,12 @@ export function CustomBackground() {
     const [backgroundSrc, setBackgroundSrc] = useState<string | null>(null);
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    useEffect(() => {
-        // Load local settings immediately for fast render
-        const local = getLocalSettings();
-        setSettings(local);
-        loadBackground(local);
-
-        // Then try to fetch from API if authenticated
-        const token = localStorage.getItem("token");
-        if (token) {
-            fetchSettings();
-        }
-    }, []);
-
-    const loadBackground = async (settingsToUse: UserSettings) => {
+    const loadBackground = useCallback(async (settingsToUse: UserSettings) => {
         const bg = await getEffectiveBackground(settingsToUse);
         setBackgroundSrc(bg);
-    };
+    }, []);
 
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         try {
             const response = await api.settings.getSettings({
                 extraHeaders: {
@@ -44,7 +33,20 @@ export function CustomBackground() {
         } catch (error) {
             console.error("Failed to fetch settings:", error);
         }
-    };
+    }, [loadBackground]);
+
+    useEffect(() => {
+        // Load local settings immediately for fast render
+        const local = getLocalSettings();
+        setSettings(local);
+        loadBackground(local);
+
+        // Then try to fetch from API if authenticated
+        const token = localStorage.getItem("token");
+        if (token) {
+            fetchSettings();
+        }
+    }, [fetchSettings, loadBackground]);
 
     if (!backgroundSrc) {
         return null;
