@@ -125,10 +125,8 @@ export default function ProfilePage() {
       if (!token) return;
 
       const [userRes, profilesRes] = await Promise.all([
-        api.users.getMe({ extraHeaders: { Authorization: `Bearer ${token}` } }),
-        api.gameProfiles.getMyProfiles({
-          extraHeaders: { Authorization: `Bearer ${token}` },
-        }),
+        api.users.getMe(),
+        api.gameProfiles.getMyProfiles(),
       ]);
 
       if (userRes.status === 200) setUser(userRes.body);
@@ -149,7 +147,6 @@ export default function ProfilePage() {
       if (!token) return;
       const res = await api.gameProfiles.create({
         body: { game: selectedGame, gameIdentifier: identifier },
-        extraHeaders: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 201) {
@@ -174,7 +171,6 @@ export default function ProfilePage() {
       if (!token) return;
       await api.gameProfiles.delete({
         params: { game },
-        extraHeaders: { Authorization: `Bearer ${token}` },
       });
       setProfiles(profiles.filter((p) => p.game !== game));
       toast.success("Unlinked");

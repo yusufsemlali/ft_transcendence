@@ -3,8 +3,7 @@ import { userSettings } from "@/dal/db/schemas/settings";
 import { eq } from "drizzle-orm";
 import { UserSettings, defaultSettings, PartialUserSettings } from "@ft-transcendence/contracts";
 
-// Get settings for a user, create defaults if not exists
-export const getSettings = async (userId: number): Promise<UserSettings> => {
+export const getSettings = async (userId: string): Promise<UserSettings> => {
     const [existing] = await db
         .select()
         .from(userSettings)
@@ -14,7 +13,6 @@ export const getSettings = async (userId: number): Promise<UserSettings> => {
         return mapDbToSettings(existing);
     }
 
-    // Create default settings for user
     const [created] = await db
         .insert(userSettings)
         .values({ userId })
@@ -23,12 +21,10 @@ export const getSettings = async (userId: number): Promise<UserSettings> => {
     return mapDbToSettings(created);
 };
 
-// Update settings
 export const updateSettings = async (
-    userId: number,
+    userId: string,
     updates: PartialUserSettings
 ): Promise<UserSettings> => {
-    // Ensure settings exist
     await getSettings(userId);
 
     const dbUpdates: Record<string, unknown> = {};
@@ -59,8 +55,7 @@ export const updateSettings = async (
     return mapDbToSettings(updated);
 };
 
-// Reset to defaults
-export const resetSettings = async (userId: number): Promise<UserSettings> => {
+export const resetSettings = async (userId: string): Promise<UserSettings> => {
     const [updated] = await db
         .update(userSettings)
         .set({
@@ -86,7 +81,6 @@ export const resetSettings = async (userId: number): Promise<UserSettings> => {
     return mapDbToSettings(updated);
 };
 
-// Map DB row to UserSettings type
 function mapDbToSettings(row: typeof userSettings.$inferSelect): UserSettings {
     return {
         theme: row.theme as UserSettings["theme"],

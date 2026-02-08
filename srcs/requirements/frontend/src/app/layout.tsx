@@ -5,10 +5,12 @@ import { CustomBackground } from "@/components/CustomBackground";
 import { Header } from "@/components/header/Header";
 import { getServerUser } from "@/lib/auth";
 
-
 export const metadata: Metadata = {
   title: "tournify",
   description: "Tournament management platform",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default async function RootLayout({
@@ -17,6 +19,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getServerUser();
+  console.log(user);
 
   return (
     <html lang="en" suppressHydrationWarning>

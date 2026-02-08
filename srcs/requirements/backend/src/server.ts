@@ -13,8 +13,8 @@ async function bootServer(port: number): Promise<Server> {
 ╔═══════════════════════════════════════════╗
 ║     ft_transcendence Backend Started      ║
 ║                                           ║
-║  Internal Port: ${port}                       ║
-║  Access via NGINX: https://localhost:8080  ║
+║  Internal Port: ${port}                      ║
+║  Access via NGINX: https://localhost:8080 ║
 ╚═══════════════════════════════════════════╝
             `);
         });

@@ -42,11 +42,7 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await api.settings.getSettings({
-        extraHeaders: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await api.settings.getSettings();
       if (response.status === 200) {
         setSettings(response.body);
         setLocalSettings(response.body);
@@ -76,9 +72,6 @@ export default function SettingsPage() {
       try {
         await api.settings.updateSettings({
           body: { [key]: value },
-          extraHeaders: {
-            Authorization: `Bearer ${token}`,
-          },
         });
       } catch (error) {
         console.error("Failed to save setting:", error);

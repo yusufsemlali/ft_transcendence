@@ -123,7 +123,13 @@ export function applyThemeSettings(settings: UserSettings): void {
 }
 
 // Apply all settings
+export const SETTINGS_UPDATED_EVENT = "tournify:settings-updated";
+
 export async function applyAllSettings(settings: UserSettings): Promise<void> {
     await applyBackgroundSettings(settings);
     applyThemeSettings(settings);
+    
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent(SETTINGS_UPDATED_EVENT, { detail: settings }));
+    }
 }

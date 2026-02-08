@@ -16,7 +16,7 @@ const tokenCache = new LRUCache<string, DecodedToken>({
 
 const TOKEN_CACHE_BUFFER = 1000 * 60 * 5; // 5 minutes
 
-export const generateToken = (id: number, username: string, role: string): string => {
+export const generateToken = (id: string, username: string, role: string): string => {
     return jwt.sign({ id, username, role }, JWT_SECRET, {
         expiresIn: "7d",
     });

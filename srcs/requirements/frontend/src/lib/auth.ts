@@ -36,8 +36,23 @@ export async function getServerUser(): Promise<UserInfo | null> {
             };
         }
     } catch {
+      console.log("user get not be obtained");
     }
     return null;
+}
+
+/**
+ * Server Action to login: sets the token cookie.
+ */
+export async function loginAction(token: string) {
+    const cookieStore = await cookies();
+    cookieStore.set("token", token, {
+        httpOnly: true, // Secure: JS cannot access this cookie
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
 }
 
 /**

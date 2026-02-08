@@ -47,7 +47,7 @@ export const login = async (email: string, password: string) => {
             throw new AppError(404, "User not found");
         }
 
-        const isPasswordValid = await comparePassword(password, existingUser[0].password);
+        const isPasswordValid = await comparePassword(password, existingUser[0].password || "");
         if (!isPasswordValid) {
             throw new AppError(401, "Invalid password");
         }

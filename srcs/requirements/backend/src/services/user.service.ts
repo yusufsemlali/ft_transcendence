@@ -2,9 +2,8 @@ import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
 import { eq, sql } from "drizzle-orm";
 import AppError from "@/utils/error";
-import { User } from "@ft-transcendence/contracts";
 
-export const getUserById = async (id: number) => {
+export const getUserById = async (id: string) => {
     const user = await db.query.users.findFirst({
         where: eq(users.id, id),
     });
@@ -33,10 +32,9 @@ export const getUserByEmail = async (email: string) => {
 };
 
 export const updateUser = async (
-    id: number,
+    id: string,
     data: Partial<typeof users.$inferSelect>
 ) => {
-    // Prevent updating immutable fields or security sensitive ones blindly if passed
     const { id: _, password: __, ...updateData } = data;
 
     const [updatedUser] = await db
@@ -56,7 +54,7 @@ export const updateUser = async (
 };
 
 export const updateProfile = async (
-    id: number,
+    id: string,
     profileData: {
         displayName?: string;
         bio?: string;
@@ -67,13 +65,13 @@ export const updateProfile = async (
     return updateUser(id, profileData);
 };
 
-export const isUsernameAvailable = async (username: string, excludeUserId?: number): Promise<boolean> => {
+export const isUsernameAvailable = async (username: string, excludeUserId?: string): Promise<boolean> => {
     const existingUser = await getUserByUsername(username);
     if (!existingUser) return true;
     return existingUser.id === excludeUserId;
 };
 
-export const updateUsername = async (id: number, newUsername: string) => {
+export const updateUsername = async (id: string, newUsername: string) => {
     const available = await isUsernameAvailable(newUsername, id);
     if (!available) {
         throw new AppError(409, "Username already taken");
@@ -82,21 +80,18 @@ export const updateUsername = async (id: number, newUsername: string) => {
     return updateUser(id, { username: newUsername });
 };
 
-// Example of specific game logic adaptation
-export const incrementXp = async (id: number, amount: number) => {
+export const incrementXp = async (id: string, amount: number) => {
     if (amount <= 0) return;
 
     await db
         .update(users)
         .set({
             xp: sql`${users.xp} + ${amount}`,
-            // Simple level up logic: level = 1 + floor(sqrt(xp) / 10) or similar
-            // For now just incrementing XP
         })
         .where(eq(users.id, id));
 };
 
-export const deleteUser = async (id: number) => {
+export const deleteUser = async (id: string) => {
     const result = await db.delete(users).where(eq(users.id, id)).returning();
     if (result.length === 0) {
         throw new AppError(404, "User not found");
