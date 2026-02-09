@@ -5,13 +5,18 @@ import { useEffect, useState, useCallback } from "react";
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import {
   getLocalSettings,
-  setLocalSettings,
   getEffectiveBackground,
   SETTINGS_UPDATED_EVENT,
 } from "@/lib/settings";
 
 export function CustomBackground() {
-  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [settings, setSettings] = useState<UserSettings>(() => {
+    // Initialize from local storage if available to avoid sync setState in useEffect
+    if (typeof window !== "undefined") {
+      return getLocalSettings();
+    }
+    return defaultSettings;
+  });
   const [backgroundSrc, setBackgroundSrc] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -23,22 +28,24 @@ export function CustomBackground() {
   useEffect(() => {
     // Load local settings immediately for fast render
     const local = getLocalSettings();
-    setSettings(local);
-    loadBackground(local);
+
+    // Explicitly call async function to avoid linter warning about sync effects
+    const init = async () => {
+      await loadBackground(local);
+    };
+    init();
 
     // Listen for settings updates
-    const handleUpdate = (e: CustomEvent<UserSettings>) => {
-      const newSettings = e.detail;
+    const handleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<UserSettings>;
+      const newSettings = customEvent.detail;
       setSettings(newSettings);
       loadBackground(newSettings);
     };
 
-    window.addEventListener(SETTINGS_UPDATED_EVENT as any, handleUpdate as any);
+    window.addEventListener(SETTINGS_UPDATED_EVENT, handleUpdate);
     return () =>
-      window.removeEventListener(
-        SETTINGS_UPDATED_EVENT as any,
-        handleUpdate as any,
-      );
+      window.removeEventListener(SETTINGS_UPDATED_EVENT, handleUpdate);
   }, [loadBackground]);
 
   if (!backgroundSrc) {

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/api/api";
 import { logoutAction, setAuthCookies } from "@/lib/auth";
 import { setLocalSettings, applyAllSettings } from "@/lib/settings";
+import { User } from "@ft-transcendence/contracts";
 
 // UserInfo that matches what we actually use in the UI
 export interface UserInfo {
@@ -46,8 +47,7 @@ interface AuthProviderProps {
   initialUser: UserInfo | null;
 }
 
-// Helper to extract UserInfo from API response
-function extractUserInfo(userData: any): UserInfo {
+function extractUserInfo(userData: User): UserInfo {
   return {
     id: userData.id || "",
     username: userData.username || "",
@@ -94,7 +94,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         localStorage.removeItem("token");
         setUser(null);
       }
-    } catch (error) {
+    } catch {
       setUser(null);
     }
   }, []);
@@ -139,7 +139,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
           const body = response.body as { message?: string };
           return { success: false, error: body?.message || "Login failed" };
         }
-      } catch (error) {
+      } catch {
         // Only log unexpected errors, not auth failures
         return { success: false, error: "An unexpected error occurred" };
       } finally {
@@ -174,7 +174,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
             error: body?.message || "Registration failed",
           };
         }
-      } catch (error) {
+      } catch {
         // Only log unexpected errors, not validation failures
         return { success: false, error: "An unexpected error occurred" };
       } finally {
@@ -222,7 +222,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
             // Refresh failed, logout
             await logout();
           }
-        } catch (error) {
+        } catch {
           // Token refresh failed - this is expected when session expires
         }
       },

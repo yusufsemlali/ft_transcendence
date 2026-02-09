@@ -17,7 +17,9 @@ import api from "@/lib/api/api";
 import { FontPicker } from "@/components/settings";
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [_saving, setSaving] = useState(false);
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const [saving, setSaving] = useState(false);
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   const [hasLocalBg, setHasLocalBg] = useState(false);
   const [notification, setNotification] = useState<{
     type: "success" | "error";

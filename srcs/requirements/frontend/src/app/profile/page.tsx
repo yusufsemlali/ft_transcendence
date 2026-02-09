@@ -1,7 +1,8 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
-import api  from "@/lib/api/api";
+import api from "@/lib/api/api";
 import {
   User,
   SupportedGame,
@@ -77,7 +78,16 @@ function StatModule({
   );
 }
 
-function MatchRow({ opponent, result, score, kda, map, date }: any) {
+interface MatchRowProps {
+  opponent: string;
+  result: string;
+  score: string;
+  kda: string;
+  map: string;
+  date: string;
+}
+
+function MatchRow({ opponent, result, score, kda, map, date }: MatchRowProps) {
   const isWin = result === "Win";
   return (
     <div className="grid grid-cols-7 items-center py-3 border-b border-white/5 text-xs hover:bg-white/5 transition px-6 relative group">
@@ -131,8 +141,7 @@ export default function ProfilePage() {
 
       if (userRes.status === 200) setUser(userRes.body);
       if (profilesRes.status === 200) setProfiles(profilesRes.body);
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Failed to load profile");
     } finally {
       setLoading(false);
@@ -155,9 +164,10 @@ export default function ProfilePage() {
         setIdentifier("");
         toast.success(`Linked ${selectedGame}`);
       } else {
-        toast.error(`Error: ${(res as any).body?.message}`);
+        const errorBody = res.body as { message: string };
+        toast.error(`Error: ${errorBody.message}`);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to link");
     } finally {
       setSubmitting(false);
@@ -174,7 +184,7 @@ export default function ProfilePage() {
       });
       setProfiles(profiles.filter((p) => p.game !== game));
       toast.success("Unlinked");
-    } catch (error) {
+    } catch {
       toast.error("Failed");
     }
   };

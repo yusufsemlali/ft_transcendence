@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  GameProfile,
-  SupportedGame,
-  SupportedGameSchema,
-} from "@ft-transcendence/contracts";
+import { GameProfile, SupportedGame } from "@ft-transcendence/contracts";
 
 interface GameProfileCardProps {
   profile: GameProfile;
