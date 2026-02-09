@@ -32,7 +32,7 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
             };
         } catch (error: any) {
             if (error instanceof AppError) {
-                if (error.statusCode === 409) {
+                if (error.status === 409) {
                     return {
                         status: 409,
                         body: { message: error.message },
@@ -116,11 +116,11 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
     },
     getUserProfiles: async ({ params }) => {
         const profiles = await GameProfileService.getUserGameProfiles(params.userId);
-        const visibleProfiles = profiles.filter(p => p.isVisible); // filter hidden profiles
+        const visibleProfiles = profiles.filter(p => p.isVisible);
 
         return {
             status: 200,
-            body: visibleProfiles,
+            body: visibleProfiles as any,
         };
     },
 });

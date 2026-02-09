@@ -29,7 +29,7 @@ export const usersContract = c.router({
         method: "GET",
         path: "/users/:id",
         pathParams: z.object({
-            id: z.coerce.number(),
+            id: z.string().uuid(),
         }),
         responses: {
             200: UserSchema,

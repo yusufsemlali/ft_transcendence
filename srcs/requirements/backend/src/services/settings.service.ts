@@ -97,5 +97,6 @@ function mapDbToSettings(row: typeof userSettings.$inferSelect): UserSettings {
         soundEnabled: row.soundEnabled,
         soundVolume: row.soundVolume,
         desktopNotifications: row.desktopNotifications,
+        autoSwitchTheme: (row as any).autoSwitchTheme ?? false,
     };
 }

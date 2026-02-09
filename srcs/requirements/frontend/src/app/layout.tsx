@@ -4,6 +4,8 @@ import Providers from "./providers";
 import { CustomBackground } from "@/components/CustomBackground";
 import { Header } from "@/components/header/Header";
 import { getServerUser } from "@/lib/auth";
+import 'material-symbols';
+
 
 export const metadata: Metadata = {
   title: "tournify",
@@ -19,18 +21,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getServerUser();
-  console.log(user);
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-          rel="stylesheet"
-        />
       </head>
       <body suppressHydrationWarning>
-        <Providers>
+        <Providers initialUser={user}>
           <CustomBackground />
           <div
             style={{
@@ -40,7 +37,7 @@ export default async function RootLayout({
             }}
             suppressHydrationWarning
           >
-            <Header initialUser={user} />
+            <Header />
             <div
               style={{ flex: 1, display: "flex", flexDirection: "column" }}
               suppressHydrationWarning

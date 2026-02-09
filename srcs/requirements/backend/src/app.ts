@@ -30,7 +30,7 @@ function buildApp(): express.Application {
     app.use(compatibilityCheckMiddleware);
     app.use(contextMiddleware);
     app.use(rootRateLimiter);
-    app.use(authRateLimiter)
+    // app.use(authRateLimiter)
 
     // API Routes via ts-rest contract
     addApiRoutes(app);

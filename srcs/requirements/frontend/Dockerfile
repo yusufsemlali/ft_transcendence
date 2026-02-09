@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 # Copy package files first for caching
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY frontend/ .
 

@@ -2,37 +2,52 @@
 
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
-import { UserInfo, logoutAction } from "@/lib/auth";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface UserAreaProps {
-  initialUser: UserInfo | null;
-}
+export function UserArea() {
+  const { user, logout, isLoading } = useAuth();
 
-export function UserArea({ initialUser }: UserAreaProps) {
   const handleLogout = async () => {
-    try {
-      await logoutAction(); 
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-    localStorage.removeItem("token");
-    router.push("/login");
-    router.refresh();
+    await logout();
   };
+
+  if (isLoading) {
+    return (
+      <div
+        className="user-area-container"
+        style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
+      >
+        <span
+          className="material-symbols-outlined"
+          style={{
+            animation: "spin 1s linear infinite",
+            color: "var(--text-secondary)",
+          }}
+        >
+          progress_activity
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div
       className="user-area-container"
       style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
     >
-      {initialUser ? (
+      {user ? (
         <>
           <button className="nav-icon" title="notifications">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <UserMenu user={initialUser} onLogout={handleLogout} />
+          <UserMenu
+            user={{
+              username: user.username,
+              level: user.level,
+              avatar: user.avatar,
+            }}
+            onLogout={handleLogout}
+          />
         </>
       ) : (
         <Link

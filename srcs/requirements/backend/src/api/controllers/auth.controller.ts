@@ -1,6 +1,7 @@
 import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import * as AuthService from "@/services/auth.service";
+import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 
 const s = initServer();
@@ -38,7 +39,7 @@ export const authController = s.router(contract.auth, {
       return {
         status: 201,
         body: {
-          user: result.user!,
+          user: result.user! as any,
           token: result.accessToken,
         },
       };
@@ -70,7 +71,7 @@ export const authController = s.router(contract.auth, {
       return {
         status: 200,
         body: {
-          user: result.user!,
+          user: result.user! as any,
           token: result.accessToken,
         },
       };
@@ -87,7 +88,7 @@ export const authController = s.router(contract.auth, {
 
   refresh: async ({ req, res }) => {
     try {
-      const refreshToken = req.cookies?.refresh_token;
+      const refreshToken = (req as any).cookies?.refresh_token;
       if (!refreshToken) {
         return { status: 401, body: { message: "No refresh token provided" } };
       }
@@ -112,7 +113,9 @@ export const authController = s.router(contract.auth, {
 
   logout: async ({ req, res }) => {
     try {
-      const sessionId = req.ctx?.decodedToken?.sessionId;
+      const contextReq = req as unknown as RequestWithContext;
+      const sessionId = contextReq.ctx?.decodedToken?.sessionId;
+
       if (!sessionId) {
         clearRefreshTokenCookie(res);
         return { status: 200, body: { success: true } };
@@ -133,7 +136,9 @@ export const authController = s.router(contract.auth, {
 
   logoutAll: async ({ req, res }) => {
     try {
-      const userId = req.ctx?.decodedToken?.id;
+      const contextReq = req as unknown as RequestWithContext;
+      const userId = contextReq.ctx?.decodedToken?.id;
+
       if (!userId) {
         return { status: 401, body: { message: "Not authenticated" } };
       }
@@ -158,7 +163,9 @@ export const authController = s.router(contract.auth, {
 
   sessions: async ({ req }) => {
     try {
-      const userId = req.ctx?.decodedToken?.id;
+      const contextReq = req as unknown as RequestWithContext;
+      const userId = contextReq.ctx?.decodedToken?.id;
+
       if (!userId) {
         return { status: 401, body: { message: "Not authenticated" } };
       }
@@ -167,7 +174,7 @@ export const authController = s.router(contract.auth, {
 
       return {
         status: 200,
-        body: { sessions },
+        body: { sessions: sessions as any },
       };
     } catch (error) {
       if (error instanceof AppError) {

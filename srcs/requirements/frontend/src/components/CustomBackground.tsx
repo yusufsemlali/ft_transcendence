@@ -9,7 +9,6 @@ import {
   getEffectiveBackground,
   SETTINGS_UPDATED_EVENT,
 } from "@/lib/settings";
-import { api } from "@/lib/api";
 
 export function CustomBackground() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
@@ -21,35 +20,11 @@ export function CustomBackground() {
     setBackgroundSrc(bg);
   }, []);
 
-  const fetchSettings = useCallback(async () => {
-    try {
-      const response = await api.settings.getSettings({
-        extraHeaders: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (response.status === 200) {
-        setSettings(response.body);
-        setLocalSettings(response.body);
-        loadBackground(response.body);
-      }
-    } catch (error) {
-      console.error("Failed to fetch settings:", error);
-    }
-  }, [loadBackground]);
-
   useEffect(() => {
     // Load local settings immediately for fast render
     const local = getLocalSettings();
     setSettings(local);
     loadBackground(local);
-
-    // Then try to fetch from API if authenticated
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchSettings();
-    }
 
     // Listen for settings updates
     const handleUpdate = (e: CustomEvent<UserSettings>) => {
@@ -64,7 +39,7 @@ export function CustomBackground() {
         SETTINGS_UPDATED_EVENT as any,
         handleUpdate as any,
       );
-  }, [fetchSettings, loadBackground]);
+  }, [loadBackground]);
 
   if (!backgroundSrc) {
     return null;

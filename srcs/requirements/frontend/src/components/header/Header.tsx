@@ -3,13 +3,8 @@
 import Link from "next/link";
 import { NavLink } from "./NavLink";
 import { UserArea } from "./UserArea";
-import { UserInfo } from "@/lib/auth";
 
-interface HeaderProps {
-  initialUser: UserInfo | null;
-}
-
-export function Header({ initialUser }: HeaderProps) {
+export function Header() {
   return (
     <nav className="nav">
       {/* Left side: Logo + Navigation Links */}
@@ -40,7 +35,7 @@ export function Header({ initialUser }: HeaderProps) {
 
       {/* Right side: User area */}
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <UserArea initialUser={initialUser} />
+        <UserArea />
       </div>
     </nav>
   );

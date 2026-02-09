@@ -6,7 +6,7 @@ export type SupportedGame = z.infer<typeof SupportedGameSchema>;
 
 export const GameProfileSchema = z.object({
     id: z.number(),
-    userId: z.number(),
+    userId: z.string().uuid(),
     game: SupportedGameSchema,
     gameIdentifier: z.string(),
     rank: z.string().nullable(),

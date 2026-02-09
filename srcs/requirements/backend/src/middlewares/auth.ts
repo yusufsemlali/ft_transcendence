@@ -10,7 +10,7 @@ export function authenticateTsRestRequest<
 >(): TsRestRequestHandler<T> {
     return async (
         req: any,
-        _res: Response,
+        res: Response,
         next: NextFunction,
     ): Promise<void> => {
         const authHeader = req.headers.authorization;
@@ -30,14 +30,14 @@ export function authenticateTsRestRequest<
                         }
                     };
                 } catch (err) {
-                    // Explicitly handle token error vs generic error
-                    throw new AppError(401, "Token expired or invalid - please login again");
+                    res.status(401).json({ message: "Token expired or invalid - please login again" });
+                    return;
                 }
             } else {
                 req.ctx = {
                     ...req.ctx,
                     decodedToken: { type: "None", id: "", sessionId: "", username: "guest", role: "guest" }
-                };
+                } as any;
             }
             next();
         } catch (error) {

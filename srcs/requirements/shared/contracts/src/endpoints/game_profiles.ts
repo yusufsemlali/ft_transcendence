@@ -1,10 +1,10 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
-import { 
-    GameProfileSchema, 
-    CreateGameProfileSchema, 
-    UpdateGameProfileSchema, 
-    SupportedGameSchema 
+import {
+    GameProfileSchema,
+    CreateGameProfileSchema,
+    UpdateGameProfileSchema,
+    SupportedGameSchema
 } from "../schemas/game_profiles";
 
 const c = initContract();
@@ -58,7 +58,7 @@ export const gameProfilesContract = c.router({
         method: "GET",
         path: "/users/:userId/game-profiles",
         pathParams: z.object({
-            userId: z.coerce.number(), // Ensure validation works for URL param
+            userId: z.string().uuid(),
         }),
         responses: {
             200: z.array(GameProfileSchema),

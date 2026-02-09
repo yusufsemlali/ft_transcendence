@@ -7,7 +7,7 @@ RUN npm install -g pnpm
 # Copy package files first for caching
 COPY backend/package.json backend/pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY backend/ .
 

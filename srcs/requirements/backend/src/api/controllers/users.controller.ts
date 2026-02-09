@@ -3,7 +3,6 @@ import { contract } from "@ft-transcendence/contracts";
 
 import * as UserService from "@/services/user.service";
 import { RequestWithContext } from "@/api/types";
-import AppError from "@/utils/error";
 
 const s = initServer();
 
@@ -21,9 +20,15 @@ export const usersController = s.router(contract.users, {
 
         try {
             const user = await UserService.getUserById(userId);
+            if (!user) {
+                return {
+                    status: 401,
+                    body: { message: "User not found" },
+                };
+            }
             return {
                 status: 200,
-                body: user,
+                body: user as any,
             };
         } catch (error) {
             return {
@@ -38,16 +43,22 @@ export const usersController = s.router(contract.users, {
 
         if (!userId) {
             return {
-                status: 401, // Schema says 400 for updateMe, but auth failure is 401 ideally. Contract only defined 400.
+                status: 401,
                 body: { message: "Unauthorized" },
             };
         }
 
         try {
             const updatedUser = await UserService.updateUser(userId, body);
+            if (!updatedUser) {
+                return {
+                    status: 400,
+                    body: { message: "Failed to update profile" },
+                };
+            }
             return {
                 status: 200,
-                body: updatedUser,
+                body: updatedUser as any,
             };
         } catch (error) {
             return {
@@ -59,9 +70,15 @@ export const usersController = s.router(contract.users, {
     getUserById: async ({ params }) => {
         try {
             const user = await UserService.getUserById(params.id);
+            if (!user) {
+                return {
+                    status: 404,
+                    body: { message: "User not found" },
+                };
+            }
             return {
                 status: 200,
-                body: user,
+                body: user as any,
             };
         } catch (error) {
             return {

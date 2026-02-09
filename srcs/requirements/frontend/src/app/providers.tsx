@@ -3,10 +3,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
-
 import { ThemeInitializer } from "@/components/ThemeInitializer";
+import { AuthProvider, UserInfo } from "@/contexts/AuthContext";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: React.ReactNode;
+  initialUser: UserInfo | null;
+}
+
+export default function Providers({ children, initialUser }: ProvidersProps) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -20,9 +25,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeInitializer />
-      {children}
-      <Toaster />
+      <AuthProvider initialUser={initialUser}>
+        <ThemeInitializer />
+        {children}
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

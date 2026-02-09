@@ -13,7 +13,7 @@ import {
   removeLocalBackground,
   hasLocalBackground,
 } from "@/lib/file-storage";
-import { api } from "@/lib/api";
+import api from "@/lib/api/api";
 import { FontPicker } from "@/components/settings";
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
