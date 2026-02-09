@@ -13,8 +13,10 @@ export const addApiRoutes = (app: Express) => {
 
     // Debug logging middleware
     apiRouter.use((req: Request, _res: Response, next: NextFunction) => {
+        console.log("-------------------------------------------")
         console.log(`[API] ${req.method} ${req.path}`);
         console.log("[API] Body:", JSON.stringify(req.body, null, 2));
+        console.log("-------------------------------------------")
         next();
     });
 

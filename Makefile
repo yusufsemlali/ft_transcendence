@@ -38,4 +38,7 @@ frontend:
 backend:
 	$(COMPOSE) up -d --build backend
 
+database:
+	$(COMPOSE) up -d --build database
+
 .PHONY: all down clean fclean re logs status db db-generate db-push db-migrate frontend backend

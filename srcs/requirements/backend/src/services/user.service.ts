@@ -2,6 +2,7 @@ import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
 import { eq, sql } from "drizzle-orm";
 import AppError from "@/utils/error";
+import { sanitizeUser } from "@/utils/auth";
 
 export const getUserById = async (id: string) => {
     const user = await db.query.users.findFirst({
@@ -12,7 +13,7 @@ export const getUserById = async (id: string) => {
         throw new AppError(404, "User not found");
     }
 
-    return user;
+    return sanitizeUser(user);
 };
 
 export const getUserByUsername = async (username: string) => {
@@ -20,7 +21,7 @@ export const getUserByUsername = async (username: string) => {
         where: eq(users.username, username),
     });
 
-    return user;
+    return sanitizeUser(user);
 };
 
 export const getUserByEmail = async (email: string) => {
@@ -28,7 +29,7 @@ export const getUserByEmail = async (email: string) => {
         where: eq(users.email, email),
     });
 
-    return user;
+    return sanitizeUser(user);
 };
 
 export const updateUser = async (
@@ -50,7 +51,7 @@ export const updateUser = async (
         throw new AppError(404, "User not found");
     }
 
-    return updatedUser;
+    return sanitizeUser(updatedUser);
 };
 
 export const updateProfile = async (

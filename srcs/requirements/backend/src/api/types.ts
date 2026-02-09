@@ -3,6 +3,7 @@ import { Request } from "express";
 export type DecodedToken = {
     type: "Bearer" | "None";
     id: string;
+    sessionId: string;
     username: string;
     role: string;
 };

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { addApiRoutes } from "./api/router";
 import { compatibilityCheckMiddleware } from "./middlewares/compatibilityCheck";
 import contextMiddleware from "./middlewares/context";
@@ -15,6 +16,7 @@ function buildApp(): express.Application {
     // Standard Middlewares
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
+    app.use(cookieParser());
     app.use(cors({
         origin: process.env.CORS_ORIGIN || '*',
         credentials: true,

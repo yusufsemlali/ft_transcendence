@@ -36,7 +36,7 @@ export async function getServerUser(): Promise<UserInfo | null> {
             };
         }
     } catch {
-      console.log("user get not be obtained");
+      console.log("user was not obtained");
     }
     return null;
 }

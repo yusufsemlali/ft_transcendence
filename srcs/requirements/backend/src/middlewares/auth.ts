@@ -1,7 +1,7 @@
 import { NextFunction, Response } from "express";
 import { TsRestRequestHandler } from "@ts-rest/express";
 import { AppRoute, AppRouter } from "@ts-rest/core";
-import { verifyToken } from "../utils/auth";
+import { verifyAccessToken } from "../utils/auth";
 import AppError from "../utils/error";
 import { DecodedToken } from "../api/types";
 
@@ -20,7 +20,7 @@ export function authenticateTsRestRequest<
                 const token = authHeader.split(" ")[1];
 
                 try {
-                    const decoded = verifyToken(token); // Use cached verifyToken
+                    const decoded = verifyAccessToken(token);
 
                     req.ctx = {
                         ...req.ctx,
@@ -36,7 +36,7 @@ export function authenticateTsRestRequest<
             } else {
                 req.ctx = {
                     ...req.ctx,
-                    decodedToken: { type: "None", id: 0, username: "guest", role: "guest" }
+                    decodedToken: { type: "None", id: "", sessionId: "", username: "guest", role: "guest" }
                 };
             }
             next();

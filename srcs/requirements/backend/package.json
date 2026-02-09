@@ -12,6 +12,7 @@
         "@ts-rest/core": "^3.52.1",
         "@ts-rest/express": "^3.52.1",
         "bcryptjs": "^2.4.3",
+        "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
         "dotenv": "^16.4.1",
         "drizzle-orm": "^0.45.1",
@@ -26,6 +27,7 @@
     },
     "devDependencies": {
         "@types/bcryptjs": "^2.4.6",
+        "@types/cookie-parser": "^1.4.10",
         "@types/cors": "^2.8.17",
         "@types/express": "^4.17.21",
         "@types/jsonwebtoken": "^9.0.6",

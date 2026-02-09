@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770279880990,
-      "tag": "0000_thin_rattler",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770284432240,
-      "tag": "0001_wandering_peter_parker",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1770483902657,
-      "tag": "0002_rapid_dark_beast",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1770486799335,
-      "tag": "0003_windy_hydra",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1770488893046,
-      "tag": "0004_daffy_mac_gargan",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1770490690240,
-      "tag": "0005_bizarre_red_skull",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1770589959559,
-      "tag": "0006_parched_apocalypse",
+      "when": 1770591348466,
+      "tag": "0000_icy_shinko_yamashiro",
       "breakpoints": true
     }
   ]
