@@ -28,8 +28,7 @@
         "./src/*"
       ],
       "@ft-transcendence/contracts": [
-        "./src/shared/contracts/src/index.ts",
-        "../shared/contracts/src/index.ts"
+        "./src/shared/contracts/src/index.ts"
       ]
     }
   },

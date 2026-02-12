@@ -10,7 +10,6 @@
             ],
             "@ft-transcendence/contracts": [
                 "./shared/contracts/src/index.ts",
-                "../shared/contracts/src/index.ts"
             ]
         },
         "resolveJsonModule": true,
@@ -25,7 +24,6 @@
     },
     "include": [
         "src/**/*",
-        "../shared/**/*.ts"
     ],
     "exclude": [
         "node_modules"

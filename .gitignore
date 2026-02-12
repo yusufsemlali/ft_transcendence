@@ -53,3 +53,7 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# mount --bind for shared contracts (created on host for IDE resolution)
+srcs/requirements/frontend/src/shared
+srcs/requirements/backend/shared
