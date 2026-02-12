@@ -7,7 +7,7 @@ import AppError from "@/utils/error";
 const s = initServer();
 
 export const gameProfilesController = s.router(contract.gameProfiles, {
-    create: async ({ body, req }) => {
+    create: async ({ body, req }: { body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -45,7 +45,7 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
             };
         }
     },
-    getMyProfiles: async ({ req }) => {
+    getMyProfiles: async ({ req }: { req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -62,7 +62,7 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
             body: profiles,
         };
     },
-    update: async ({ params, body, req }) => {
+    update: async ({ params, body, req }: { params: any; body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -90,7 +90,7 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
             };
         }
     },
-    delete: async ({ params, req }) => {
+    delete: async ({ params, req }: { params: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -114,7 +114,7 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
             };
         }
     },
-    getUserProfiles: async ({ params }) => {
+    getUserProfiles: async ({ params }: { params: any }) => {
         const profiles = await GameProfileService.getUserGameProfiles(params.userId);
         const visibleProfiles = profiles.filter(p => p.isVisible);
 

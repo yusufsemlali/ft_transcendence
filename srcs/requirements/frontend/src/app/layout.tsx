@@ -3,7 +3,6 @@ import "./globals.css";
 import Providers from "./providers";
 import { CustomBackground } from "@/components/CustomBackground";
 import { Header } from "@/components/header/Header";
-import { getServerUser } from "@/lib/auth";
 import 'material-symbols';
 
 
@@ -20,14 +19,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getServerUser();
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
       </head>
       <body suppressHydrationWarning>
-        <Providers initialUser={user}>
+        <Providers >
           <CustomBackground />
           <div
             style={{

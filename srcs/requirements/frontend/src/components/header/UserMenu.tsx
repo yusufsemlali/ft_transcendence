@@ -25,7 +25,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -48,15 +48,16 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
         >
           {user.username}
         </span>
-        <span
+        {/* <span
           className="nav-level"
+          title="Current User Level"
           style={{
             background: "rgba(255,255,255,0.1)",
             color: "rgba(255,255,255,0.6)",
           }}
         >
           {user.level}
-        </span>
+        </span> */}
       </button>
 
       {isOpen && (
@@ -130,7 +131,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
             </span>
           </Link>
           <Link
-            href="/settings"
+            href="/account-settings"
             className="dropdown-item"
             onClick={() => setIsOpen(false)}
             style={{

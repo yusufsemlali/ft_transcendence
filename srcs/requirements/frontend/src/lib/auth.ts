@@ -11,13 +11,9 @@ export interface UserInfo {
     role: string;
 }
 
-// Backend URL for server-side calls
 const BACKEND_URL = process.env.INTERNAL_BACKEND_API_URL || "http://ft_backend:3000/api";
 
-/**
- * Fetches the currently authenticated user from the backend using the 'token' cookie.
- * If the token is expired, attempts to refresh it automatically.
- */
+
 export async function getServerUser(): Promise<UserInfo | null> {
     try {
         const cookieStore = await cookies();
@@ -129,7 +125,7 @@ export async function setAuthCookies(accessToken: string) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 15, // 15 minutes
+        maxAge: 60 * 60, // 1 hour
     });
 }
 

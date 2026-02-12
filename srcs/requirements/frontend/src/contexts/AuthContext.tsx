@@ -79,18 +79,15 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       if (response.status === 200) {
         setUser(extractUserInfo(response.body));
       } else {
-        // Token invalid, try to refresh
         const refreshResponse = await api.auth.refresh({ body: {} });
         if (refreshResponse.status === 200) {
           localStorage.setItem("token", refreshResponse.body.token);
-          // Retry getMe
           const retryResponse = await api.users.getMe({});
           if (retryResponse.status === 200) {
             setUser(extractUserInfo(retryResponse.body));
             return;
           }
         }
-        // Refresh failed, clear auth
         localStorage.removeItem("token");
         setUser(null);
       }
@@ -210,7 +207,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   useEffect(() => {
     if (!user) return;
 
-    // Refresh token every 10 minutes (before 15 min expiry)
+    // Refresh token every 50 minutes (before 1 hour expiry)
     const refreshInterval = setInterval(
       async () => {
         try {
@@ -226,8 +223,8 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
           // Token refresh failed - this is expected when session expires
         }
       },
-      10 * 60 * 1000,
-    ); // 10 minutes
+      50 * 60 * 1000,
+    ); // 50 minutes
 
     return () => clearInterval(refreshInterval);
   }, [user, logout]);

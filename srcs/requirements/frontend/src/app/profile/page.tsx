@@ -299,7 +299,7 @@ export default function ProfilePage() {
                       />
                       ONLINE
                     </span>
-                    <span>ID: #{user.id.toString().padStart(4, "0")}</span>
+                    {/* <span>ID: #{user.id.toString().padStart(4, "0")}</span> */}
                     <button
                       onClick={() => setIsAddModalOpen(true)}
                       style={{

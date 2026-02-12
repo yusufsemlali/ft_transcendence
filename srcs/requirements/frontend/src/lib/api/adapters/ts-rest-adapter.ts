@@ -10,16 +10,8 @@ import {
 } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";
 
-async function getIdToken(): Promise<string | null> {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
-  }
-  return null;
-}
+import { getIdToken, refreshToken } from "../auth-client";
 
-// Track refresh state to prevent multiple simultaneous refreshes
-let isRefreshing = false;
-let refreshPromise: Promise<boolean> | null = null;
 let toastShownThisSession = false;
 
 export let lastSeenServerCompatibility: number | undefined;
@@ -30,41 +22,6 @@ function timeoutSignal(ms: number): AbortSignal {
   return ctrl.signal;
 }
 
-// Standalone refresh function to handle token rotation
-async function refreshToken(baseUrl: string): Promise<boolean> {
-  if (isRefreshing && refreshPromise) {
-    return refreshPromise;
-  }
-
-  isRefreshing = true;
-  refreshPromise = (async () => {
-    try {
-      // Create a dedicated fetch for refresh implementation
-      const response = await fetch(`${baseUrl}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-        credentials: "include", // Important for sending the refresh cookie
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-          return true;
-        }
-      }
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-    }
-    return false;
-  })();
-
-  const result = await refreshPromise;
-  isRefreshing = false;
-  refreshPromise = null;
-  return result;
-}
 
 function buildApi(
   timeout: number,

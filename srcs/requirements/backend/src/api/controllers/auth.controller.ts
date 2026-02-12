@@ -21,7 +21,7 @@ const clearRefreshTokenCookie = (res: any) => {
 };
 
 export const authController = s.router(contract.auth, {
-  register: async ({ body, req, res }) => {
+  register: async ({ body, req, res }: { body: any; req: any; res: any }) => {
     try {
       const ip = req.ip || "127.0.0.1";
       const userAgent = req.headers["user-agent"] || "Unknown";
@@ -54,7 +54,7 @@ export const authController = s.router(contract.auth, {
     }
   },
 
-  login: async ({ body, req, res }) => {
+  login: async ({ body, req, res }: { body: any; req: any; res: any }) => {
     try {
       const ip = req.ip || "127.0.0.1";
       const userAgent = req.headers["user-agent"] || "Unknown";
@@ -86,7 +86,7 @@ export const authController = s.router(contract.auth, {
     }
   },
 
-  refresh: async ({ req, res }) => {
+  refresh: async ({ req, res }: { req: any; res: any }) => {
     try {
       const refreshToken = (req as any).cookies?.refresh_token;
       if (!refreshToken) {
@@ -111,7 +111,7 @@ export const authController = s.router(contract.auth, {
     }
   },
 
-  logout: async ({ req, res }) => {
+  logout: async ({ req, res }: { req: any; res: any }) => {
     try {
       const contextReq = req as unknown as RequestWithContext;
       const sessionId = contextReq.ctx?.decodedToken?.sessionId;
@@ -134,7 +134,7 @@ export const authController = s.router(contract.auth, {
     }
   },
 
-  logoutAll: async ({ req, res }) => {
+  logoutAll: async ({ req, res }: { req: any; res: any }) => {
     try {
       const contextReq = req as unknown as RequestWithContext;
       const userId = contextReq.ctx?.decodedToken?.id;
@@ -161,7 +161,7 @@ export const authController = s.router(contract.auth, {
     }
   },
 
-  sessions: async ({ req }) => {
+  sessions: async ({ req }: { req: any }) => {
     try {
       const contextReq = req as unknown as RequestWithContext;
       const userId = contextReq.ctx?.decodedToken?.id;

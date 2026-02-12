@@ -6,7 +6,7 @@ import { RequestWithContext } from "@/api/types";
 const s = initServer();
 
 export const settingsController = s.router(contract.settings, {
-    getSettings: async ({ req }) => {
+    getSettings: async ({ req }: { req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -31,7 +31,7 @@ export const settingsController = s.router(contract.settings, {
         }
     },
 
-    updateSettings: async ({ body, req }) => {
+    updateSettings: async ({ body, req }: { body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -56,7 +56,7 @@ export const settingsController = s.router(contract.settings, {
         }
     },
 
-    resetSettings: async ({ req }) => {
+    resetSettings: async ({ req }: { req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 

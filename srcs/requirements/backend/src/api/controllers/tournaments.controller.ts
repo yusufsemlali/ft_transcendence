@@ -6,7 +6,7 @@ import { RequestWithContext } from "@/api/types";
 const s = initServer();
 
 export const tournamentsController = s.router(contract.tournaments, {
-    createTournament: async ({ body, req }) => {
+    createTournament: async ({ body, req }: { body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 

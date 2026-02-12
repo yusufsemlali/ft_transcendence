@@ -28,7 +28,8 @@
         "./src/*"
       ],
       "@ft-transcendence/contracts": [
-        "./src/shared/contracts/src/index.ts"
+        "./src/shared/contracts/src/index.ts",
+        "../shared/contracts/src/index.ts"
       ]
     }
   },
@@ -38,7 +39,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "../shared/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -7,7 +7,7 @@ import { RequestWithContext } from "@/api/types";
 const s = initServer();
 
 export const usersController = s.router(contract.users, {
-    getMe: async ({ req }) => {
+    getMe: async ({ req }: { req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -37,7 +37,7 @@ export const usersController = s.router(contract.users, {
             };
         }
     },
-    updateMe: async ({ body, req }) => {
+    updateMe: async ({ body, req }: { body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
@@ -67,7 +67,7 @@ export const usersController = s.router(contract.users, {
             };
         }
     },
-    getUserById: async ({ params }) => {
+    getUserById: async ({ params }: { params: any }) => {
         try {
             const user = await UserService.getUserById(params.id);
             if (!user) {
