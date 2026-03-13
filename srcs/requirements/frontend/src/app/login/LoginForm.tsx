@@ -4,18 +4,22 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
+import Link from "next/link";
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/profile";
   const { login, isLoading } = useAuth();
+  const handleResetPassword = () =>{
+    router.push("/reset-password");
+  }
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const result = await login(email, password);
@@ -94,6 +98,8 @@ function LoginFormContent() {
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="login-email"
+            name="email"
             type="email"
             required
             className="input"
@@ -101,11 +107,14 @@ function LoginFormContent() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
+            autoComplete="email"
           />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="login-password"
+            name="password"
             type="password"
             required
             className="input"
@@ -113,6 +122,7 @@ function LoginFormContent() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
+            autoComplete="current-password"
           />
         </div>
 
@@ -127,6 +137,7 @@ function LoginFormContent() {
           <input
             type="checkbox"
             id="rememberMe"
+            name="rememberMe"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
             style={{ accentColor: "var(--accent-primary)" }}
@@ -182,7 +193,7 @@ function LoginFormContent() {
 
         <div style={{ textAlign: "center", marginTop: "1rem" }}>
           <button
-            type="button"
+          onClick={handleResetPassword}
             style={{
               fontSize: "0.75rem",
               color: "var(--accent-primary)",

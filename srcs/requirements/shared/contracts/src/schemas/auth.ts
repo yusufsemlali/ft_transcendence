@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UserSchema } from "./users";
+import { DiffieHellmanGroup } from "crypto";
 
 export const RegisterInputSchema = z.object({
     email: z.string().email(),

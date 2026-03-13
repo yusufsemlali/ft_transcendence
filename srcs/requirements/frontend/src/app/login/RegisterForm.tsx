@@ -77,6 +77,8 @@ export default function RegisterForm() {
       <form onSubmit={handleRegister}>
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="register-username"
+            name="username"
             type="text"
             required
             className="input"
@@ -88,11 +90,14 @@ export default function RegisterForm() {
             maxLength={24}
             pattern="^[a-zA-Z0-9_-]+$"
             title="Username can only contain letters, numbers, underscores, and hyphens"
+            autoComplete="username"
           />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="register-email"
+            name="email"
             type="email"
             required
             className="input"
@@ -100,11 +105,14 @@ export default function RegisterForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
+            autoComplete="email"
           />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="register-verify-email"
+            name="verifyEmail"
             type="email"
             required
             className="input"
@@ -118,6 +126,8 @@ export default function RegisterForm() {
 
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="register-password"
+            name="password"
             type="password"
             required
             className="input"
@@ -126,11 +136,14 @@ export default function RegisterForm() {
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
             minLength={8}
+            autoComplete="new-password"
           />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
           <input
+            id="register-verify-password"
+            name="verifyPassword"
             type="password"
             required
             className="input"
@@ -138,6 +151,7 @@ export default function RegisterForm() {
             value={verifyPassword}
             onChange={(e) => setVerifyPassword(e.target.value)}
             disabled={isLoading}
+            autoComplete="new-password"
           />
         </div>
 

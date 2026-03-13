@@ -35,18 +35,7 @@ export async function getServerUser(): Promise<UserInfo | null> {
 
         // If token expired, try to refresh
         if (response.status === 401) {
-            const refreshResult = await refreshTokensServer();
-            if (refreshResult.success && refreshResult.token) {
-                // Retry with new token
-                response = await fetch(`${BACKEND_URL}/users/me`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${refreshResult.token}`,
-                    },
-                    cache: "no-store",
-                });
-            }
+            return null;
         }
 
         if (response.ok) {
@@ -70,48 +59,7 @@ export async function getServerUser(): Promise<UserInfo | null> {
     return null;
 }
 
-/**
- * Server-side token refresh using the refresh_token cookie.
- */
-async function refreshTokensServer(): Promise<{ success: boolean; token?: string }> {
-    try {
-        const cookieStore = await cookies();
-        const refreshToken = cookieStore.get("refresh_token")?.value;
 
-        if (!refreshToken) {
-            return { success: false };
-        }
-
-        const response = await fetch(`${BACKEND_URL}/auth/refresh`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Cookie": `refresh_token=${refreshToken}`,
-            },
-            body: JSON.stringify({}),
-            cache: "no-store",
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const newToken = data.token;
-
-            // Update the access token cookie
-            cookieStore.set("token", newToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: 60 * 15, // 15 minutes
-            });
-
-            return { success: true, token: newToken };
-        }
-    } catch (error) {
-        console.error("Failed to refresh tokens:", error);
-    }
-    return { success: false };
-}
 
 /**
  * Server Action to set auth cookies after login/register.

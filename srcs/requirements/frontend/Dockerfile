@@ -13,4 +13,4 @@ COPY frontend/ .
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "pnpm run build && pnpm run start"]
+CMD ["pnpm", "run", "dev"]

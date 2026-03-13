@@ -30,7 +30,6 @@ function buildApi(
   args: ApiFetcherArgs,
 ) => Promise<{ status: number; body: unknown; headers: Headers }> {
   return async (request: ApiFetcherArgs) => {
-    // Helper to execute the core fetch logic
     const executeFetch = async (
       overrideToken?: string,
     ): Promise<{ status: number; body: unknown; headers: Headers }> => {
