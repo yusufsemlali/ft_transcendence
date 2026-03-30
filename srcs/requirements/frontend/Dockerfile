@@ -4,11 +4,15 @@ WORKDIR /app/frontend
 
 RUN npm install -g pnpm
 
-# Copy package files first for caching
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+# Install shared deps first (cached separately)
+COPY shared/contracts/package.json /app/shared/contracts/
+RUN cd /app/shared/contracts && pnpm install
 
+# Install frontend deps (cached separately)
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install
 
+# Copy source
 COPY frontend/ .
 
 EXPOSE 3000

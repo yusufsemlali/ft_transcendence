@@ -12,6 +12,7 @@ import {
 } from "@/utils/auth";
 import { eq, or, and } from "drizzle-orm";
 import AppError from "@/utils/error";
+import { ApiResponse } from "@/utils/response";
 
 // registration
 export const register = async (
@@ -51,7 +52,7 @@ export const register = async (
         userAgent,
     );
 
-    return { user: sanitizeUser(user), accessToken, refreshToken };
+    return new ApiResponse("Registration successful", { user: sanitizeUser(user), accessToken, refreshToken });
 };
 
 // login
@@ -80,7 +81,7 @@ export const login = async (
         userAgent,
     );
 
-    return { user: sanitizeUser(user), accessToken, refreshToken };
+    return new ApiResponse("Login successful", { user: sanitizeUser(user), accessToken, refreshToken });
 };
 
 // refresh access token
@@ -126,7 +127,7 @@ export const refreshAccessToken = async (refreshToken: string) => {
 
     const accessToken = generateAccessToken(user.id, session.id, user.username, user.role);
 
-    return { accessToken, refreshToken: newRefreshToken };
+    return new ApiResponse("Token refreshed successfully", { accessToken, refreshToken: newRefreshToken });
 };
 
 // logout (current session)
@@ -138,7 +139,7 @@ export const logout = async (sessionId: string) => {
 
     await db.delete(sessions).where(eq(sessions.id, sessionId));
 
-    return { success: true };
+    return new ApiResponse("Logout successful", { success: true });
 };
 
 // logout all (all sessions of user)
@@ -157,7 +158,7 @@ export const logoutAll = async (userId: string) => {
 
     await db.delete(sessions).where(eq(sessions.userId, userId));
 
-    return { success: true, sessionsRevoked: userSessions.length };
+    return new ApiResponse("All sessions logged out", { success: true, sessionsRevoked: userSessions.length });
 };
 
 // get active session
@@ -173,7 +174,7 @@ export const getActiveSessions = async (userId: string) => {
         .from(sessions)
         .where(eq(sessions.userId, userId));
 
-    return userSessions;
+    return new ApiResponse("Active sessions retrieved", userSessions);
 };
 
 // heler: create session and token

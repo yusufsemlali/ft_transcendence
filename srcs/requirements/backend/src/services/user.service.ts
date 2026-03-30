@@ -3,6 +3,7 @@ import { users } from "@/dal/db/schemas/users";
 import { eq, sql } from "drizzle-orm";
 import AppError from "@/utils/error";
 import { sanitizeUser } from "@/utils/auth";
+import { ApiResponse } from "@/utils/response";
 
 export const getUserById = async (id: string) => {
     const user = await db.query.users.findFirst({
@@ -13,7 +14,7 @@ export const getUserById = async (id: string) => {
         throw new AppError(404, "User not found");
     }
 
-    return sanitizeUser(user);
+    return new ApiResponse("User fetched successfully", sanitizeUser(user));
 };
 
 export const getUserByUsername = async (username: string) => {
@@ -21,7 +22,7 @@ export const getUserByUsername = async (username: string) => {
         where: eq(users.username, username),
     });
 
-    return sanitizeUser(user);
+    return new ApiResponse("User fetched successfully", sanitizeUser(user));
 };
 
 export const getUserByEmail = async (email: string) => {
@@ -29,7 +30,7 @@ export const getUserByEmail = async (email: string) => {
         where: eq(users.email, email),
     });
 
-    return sanitizeUser(user);
+    return new ApiResponse("User fetched successfully", sanitizeUser(user));
 };
 
 export const updateUser = async (
@@ -51,7 +52,7 @@ export const updateUser = async (
         throw new AppError(404, "User not found");
     }
 
-    return sanitizeUser(updatedUser);
+    return new ApiResponse("User updated successfully", sanitizeUser(updatedUser));
 };
 
 export const updateProfile = async (
@@ -67,7 +68,8 @@ export const updateProfile = async (
 };
 
 export const isUsernameAvailable = async (username: string, excludeUserId?: string): Promise<boolean> => {
-    const existingUser = await getUserByUsername(username);
+    const response = await getUserByUsername(username);
+    const existingUser = response.data;
     if (!existingUser) return true;
     return existingUser.id === excludeUserId;
 };

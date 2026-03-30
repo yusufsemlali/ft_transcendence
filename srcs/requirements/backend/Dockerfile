@@ -4,11 +4,15 @@ WORKDIR /app/backend
 
 RUN npm install -g pnpm
 
-# Copy package files first for caching
-COPY backend/package.json backend/pnpm-lock.yaml ./
+# Install shared deps first (cached separately)
+COPY shared/contracts/package.json /app/shared/contracts/
+RUN cd /app/shared/contracts && pnpm install
 
+# Install backend deps (cached separately)
+COPY backend/package.json backend/pnpm-lock.yaml ./
 RUN pnpm install
 
+# Copy source
 COPY backend/ .
 
 EXPOSE 3000

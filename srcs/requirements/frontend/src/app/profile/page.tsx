@@ -616,7 +616,7 @@ export default function ProfilePage() {
                     }
                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none capitalize transition-all"
                   >
-                    {SupportedGameSchema.options.map((game) => (
+                    {SupportedGameSchema.options.map((game: SupportedGame) => (
                       <option
                         key={game}
                         value={game}

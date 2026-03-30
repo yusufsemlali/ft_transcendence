@@ -14,8 +14,22 @@ fclean: clean
 
 re: fclean all
 
-logs:
-	$(COMPOSE) logs -f
+nuke: fclean
+	@echo "🔥 Nuking all Docker containers, images, and volumes..."
+	@docker stop $$(docker ps -qa) 2>/dev/null || true
+	@docker run --rm -v ~/goinfre/tmp:/clean alpine rm -rf /clean/db_data
+	@docker rm -f $$(docker ps -qa) 2>/dev/null || true
+	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
+	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
+	@docker network rm $$(docker network ls -q | grep -v "bridge\|host\|none") 2>/dev/null || true
+	@docker system prune -af --volumes
+	@echo "✨ Docker is shiny and clean!"
+
+logs-b:
+	$(COMPOSE) logs -f backend
+
+logs-f:
+	$(COMPOSE) logs -f frontend
 
 status:
 	$(COMPOSE) ps
@@ -32,6 +46,11 @@ db-push:
 db-migrate:
 	docker exec -it ft_backend pnpm drizzle-kit migrate
 
+db-reset:
+	$(COMPOSE) rm -fvs database
+	docker run --rm -v ~/goinfre/tmp:/clean alpine rm -rf /clean/db_data
+	$(COMPOSE) up -d --build database
+
 frontend:
 	$(COMPOSE) up -d --build frontend
 
@@ -41,4 +60,4 @@ backend:
 database:
 	$(COMPOSE) up -d --build database
 
-.PHONY: all down clean fclean re logs status db db-generate db-push db-migrate frontend backend
+.PHONY: all down clean fclean re nuke logs status db db-generate db-push db-migrate db-reset frontend backend logs-b logs-f

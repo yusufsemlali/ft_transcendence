@@ -22,9 +22,8 @@ const clearRefreshTokenCookie = (res: any) => {
 
 export const authController = s.router(contract.auth, {
   register: async ({ body, req, res }: { body: any; req: any; res: any }) => {
-    try {
-      const ip = req.ip || "127.0.0.1";
-      const userAgent = req.headers["user-agent"] || "Unknown";
+    const ip = req.ip || "127.0.0.1";
+    const userAgent = req.headers["user-agent"] || "Unknown";
 
       const result = await AuthService.register(
         body.email,
@@ -34,30 +33,20 @@ export const authController = s.router(contract.auth, {
         userAgent,
       );
 
-      setRefreshTokenCookie(res, result.refreshToken);
+      setRefreshTokenCookie(res, result.data!.refreshToken);
 
-      return {
-        status: 201,
-        body: {
-          user: result.user! as any,
-          token: result.accessToken,
-        },
-      };
-    } catch (error) {
-      if (error instanceof AppError) {
-        return {
-          status: error.status as 400 | 409,
-          body: { message: error.message },
-        };
-      }
-      return { status: 400, body: { message: "Failed to register user" } };
-    }
+    return {
+      status: 201,
+      body: {
+        user: result.data!.user! as any,
+        token: result.data!.accessToken,
+      },
+    };
   },
 
   login: async ({ body, req, res }: { body: any; req: any; res: any }) => {
-    try {
-      const ip = req.ip || "127.0.0.1";
-      const userAgent = req.headers["user-agent"] || "Unknown";
+    const ip = req.ip || "127.0.0.1";
+    const userAgent = req.headers["user-agent"] || "Unknown";
 
       const result = await AuthService.login(
         body.email,
@@ -66,121 +55,94 @@ export const authController = s.router(contract.auth, {
         userAgent,
       );
 
-      setRefreshTokenCookie(res, result.refreshToken);
+      setRefreshTokenCookie(res, result.data!.refreshToken);
 
-      return {
-        status: 200,
-        body: {
-          user: result.user! as any,
-          token: result.accessToken,
-        },
-      };
-    } catch (error) {
-      if (error instanceof AppError) {
-        return {
-          status: error.status as 401,
-          body: { message: error.message },
-        };
-      }
-      return { status: 401, body: { message: "Invalid credentials" } };
-    }
+    return {
+      status: 200,
+      body: {
+        user: result.data!.user! as any,
+        token: result.data!.accessToken,
+      },
+    };
   },
 
   refresh: async ({ req, res }: { req: any; res: any }) => {
-    try {
-      const refreshToken = (req as any).cookies?.refresh_token;
-      if (!refreshToken) {
-        return { status: 401, body: { message: "No refresh token provided" } };
-      }
-
-      const result = await AuthService.refreshAccessToken(refreshToken);
-
-      setRefreshTokenCookie(res, result.refreshToken);
-
-      return {
-        status: 200,
-        body: { token: result.accessToken },
-      };
-    } catch (error) {
-      if (error instanceof AppError) {
-        clearRefreshTokenCookie(res);
-        return { status: 401, body: { message: error.message } };
-      }
-      clearRefreshTokenCookie(res);
-      return { status: 401, body: { message: "Token refresh failed" } };
+    const refreshToken = (req as any).cookies?.refresh_token;
+    if (!refreshToken) {
+      throw new AppError(401, "No refresh token provided");
     }
+
+    const result = await AuthService.refreshAccessToken(refreshToken).catch(err => {
+      clearRefreshTokenCookie(res);
+      if (err instanceof AppError) throw err;
+      throw new AppError(401, "Token refresh failed");
+    });
+
+    setRefreshTokenCookie(res, result.data!.refreshToken);
+
+    return {
+      status: 200,
+      body: { token: result.data!.accessToken },
+    };
   },
 
   logout: async ({ req, res }: { req: any; res: any }) => {
-    try {
-      const contextReq = req as unknown as RequestWithContext;
-      const sessionId = contextReq.ctx?.decodedToken?.sessionId;
+    const contextReq = req as unknown as RequestWithContext;
+    const sessionId = contextReq.ctx?.decodedToken?.sessionId;
 
-      if (!sessionId) {
-        clearRefreshTokenCookie(res);
-        return { status: 200, body: { success: true } };
-      }
-
-      await AuthService.logout(sessionId);
+    if (!sessionId) {
       clearRefreshTokenCookie(res);
-
       return { status: 200, body: { success: true } };
-    } catch (error) {
-      clearRefreshTokenCookie(res);
-      if (error instanceof AppError) {
-        return { status: 401, body: { message: error.message } };
-      }
-      return { status: 401, body: { message: "Logout failed" } };
     }
+
+    await AuthService.logout(sessionId).catch(err => {
+      clearRefreshTokenCookie(res);
+      if (err instanceof AppError) throw err;
+      throw new AppError(401, "Logout failed");
+    });
+    clearRefreshTokenCookie(res);
+
+    return { status: 200, body: { success: true } };
   },
 
   logoutAll: async ({ req, res }: { req: any; res: any }) => {
-    try {
-      const contextReq = req as unknown as RequestWithContext;
-      const userId = contextReq.ctx?.decodedToken?.id;
+    const contextReq = req as unknown as RequestWithContext;
+    const userId = contextReq.ctx?.decodedToken?.id;
 
-      if (!userId) {
-        return { status: 401, body: { message: "Not authenticated" } };
-      }
-
-      const result = await AuthService.logoutAll(userId);
-      clearRefreshTokenCookie(res);
-
-      return {
-        status: 200,
-        body: {
-          success: result.success,
-          sessionsRevoked: result.sessionsRevoked,
-        },
-      };
-    } catch (error) {
-      if (error instanceof AppError) {
-        return { status: 401, body: { message: error.message } };
-      }
-      return { status: 401, body: { message: "Logout all failed" } };
+    if (!userId) {
+      throw new AppError(401, "Not authenticated");
     }
+
+    const result = await AuthService.logoutAll(userId).catch(err => {
+      clearRefreshTokenCookie(res);
+      if (err instanceof AppError) throw err;
+      throw new AppError(401, "Logout all failed");
+    });
+    
+    clearRefreshTokenCookie(res);
+
+    return {
+      status: 200,
+      body: {
+        success: result.data!.success,
+        sessionsRevoked: result.data!.sessionsRevoked,
+      },
+    };
   },
 
   sessions: async ({ req }: { req: any }) => {
-    try {
-      const contextReq = req as unknown as RequestWithContext;
-      const userId = contextReq.ctx?.decodedToken?.id;
+    const contextReq = req as unknown as RequestWithContext;
+    const userId = contextReq.ctx?.decodedToken?.id;
 
-      if (!userId) {
-        return { status: 401, body: { message: "Not authenticated" } };
-      }
-
-      const sessions = await AuthService.getActiveSessions(userId);
-
-      return {
-        status: 200,
-        body: { sessions: sessions as any },
-      };
-    } catch (error) {
-      if (error instanceof AppError) {
-        return { status: 401, body: { message: error.message } };
-      }
-      return { status: 401, body: { message: "Failed to fetch sessions" } };
+    if (!userId) {
+      throw new AppError(401, "Not authenticated");
     }
+
+    const sessions = await AuthService.getActiveSessions(userId);
+
+    return {
+      status: 200,
+      body: { sessions: sessions.data as any },
+    };
   },
 });

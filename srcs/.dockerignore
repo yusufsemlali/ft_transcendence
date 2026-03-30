@@ -4,3 +4,9 @@
 **/.git
 **/.DS_Store
 **/build
+# Ignore local symlinks and modules during build
+backend/shared
+frontend/shared
+backend/node_modules
+frontend/node_modules
+node_modules

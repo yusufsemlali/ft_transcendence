@@ -41,8 +41,9 @@ services:
       - "3000"
     volumes:
       - ./requirements/backend:/app/backend
-      - ./requirements/shared:/app/backend/shared
+      - ./requirements/shared:/app/shared
       - /app/backend/node_modules
+      - /app/shared/contracts/node_modules
     depends_on:
       database:
         condition: service_healthy
@@ -63,9 +64,10 @@ services:
       - "3000"
     volumes:
       - ./requirements/frontend:/app/frontend
-      - ./requirements/shared:/app/frontend/src/shared
+      - ./requirements/shared:/app/shared
       - /app/frontend/node_modules
       - /app/frontend/.next
+      - /app/shared/contracts/node_modules
     networks:
       - transcendence-net
 

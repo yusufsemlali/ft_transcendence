@@ -2,15 +2,16 @@ import { db } from "@/dal/db";
 import { userSettings } from "@/dal/db/schemas/settings";
 import { eq } from "drizzle-orm";
 import { UserSettings, defaultSettings, PartialUserSettings } from "@ft-transcendence/contracts";
+import { ApiResponse } from "@/utils/response";
 
-export const getSettings = async (userId: string): Promise<UserSettings> => {
+export const getSettings = async (userId: string): Promise<ApiResponse<UserSettings>> => {
     const [existing] = await db
         .select()
         .from(userSettings)
         .where(eq(userSettings.userId, userId));
 
     if (existing) {
-        return mapDbToSettings(existing);
+        return new ApiResponse("Settings fetched", mapDbToSettings(existing));
     }
 
     const [created] = await db
@@ -18,13 +19,13 @@ export const getSettings = async (userId: string): Promise<UserSettings> => {
         .values({ userId })
         .returning();
 
-    return mapDbToSettings(created);
+    return new ApiResponse("Settings created", mapDbToSettings(created));
 };
 
 export const updateSettings = async (
     userId: string,
     updates: PartialUserSettings
-): Promise<UserSettings> => {
+): Promise<ApiResponse<UserSettings>> => {
     await getSettings(userId);
 
     const dbUpdates: Record<string, unknown> = {};
@@ -52,10 +53,10 @@ export const updateSettings = async (
         .where(eq(userSettings.userId, userId))
         .returning();
 
-    return mapDbToSettings(updated);
+    return new ApiResponse("Settings updated", mapDbToSettings(updated));
 };
 
-export const resetSettings = async (userId: string): Promise<UserSettings> => {
+export const resetSettings = async (userId: string): Promise<ApiResponse<UserSettings>> => {
     const [updated] = await db
         .update(userSettings)
         .set({
@@ -78,7 +79,7 @@ export const resetSettings = async (userId: string): Promise<UserSettings> => {
         .where(eq(userSettings.userId, userId))
         .returning();
 
-    return mapDbToSettings(updated);
+    return new ApiResponse("Settings reset", mapDbToSettings(updated));
 };
 
 function mapDbToSettings(row: typeof userSettings.$inferSelect): UserSettings {

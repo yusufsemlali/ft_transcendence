@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "tsx watch src/server.ts",
+        "dev": "pnpm drizzle-kit migrate && tsx watch src/server.ts",
         "start": "tsx src/server.ts",
         "lint": "eslint src/",
         "build": "tsc"
@@ -22,6 +22,7 @@
         "jsonwebtoken": "^9.0.2",
         "lru-cache": "^11.2.5",
         "pg": "^8.18.0",
+        "rate-limiter-flexible": "^10.0.1",
         "uuid": "^13.0.0",
         "zod": "^3.23.8"
     },

@@ -6,7 +6,7 @@ import { addApiRoutes } from "./api/router";
 import { compatibilityCheckMiddleware } from "./middlewares/compatibilityCheck";
 import contextMiddleware from "./middlewares/context";
 import errorHandlingMiddleware from "./middlewares/error";
-import { authRateLimiter, rootRateLimiter } from "./middlewares/rate-limit";
+import { rootRateLimiter } from "./middlewares/rate-limit";
 import { COMPATIBILITY_CHECK_HEADER } from "@ft-transcendence/contracts";
 
 function buildApp(): express.Application {
@@ -30,7 +30,6 @@ function buildApp(): express.Application {
     app.use(compatibilityCheckMiddleware);
     app.use(contextMiddleware);
     app.use(rootRateLimiter);
-    // app.use(authRateLimiter)
 
     // API Routes via ts-rest contract
     addApiRoutes(app);

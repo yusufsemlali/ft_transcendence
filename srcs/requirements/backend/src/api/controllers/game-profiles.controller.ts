@@ -12,54 +12,35 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
         const userId = contextReq.ctx.decodedToken?.id;
 
         if (!userId) {
-            return {
-                status: 401, // Not defined in contract but usually handled by middleware
-                body: { message: "Unauthorized" },
-            } as any;
+            throw new AppError(401, "Unauthorized");
         }
+        const profile = await GameProfileService.createGameProfile(
+            userId,
+            body.game,
+            body.gameIdentifier,
+            body.metadata
+        ).catch((err: any) => {
+            if (err instanceof AppError && err.status === 409) throw err;
+            throw new AppError(400, "Failed to create profile");
+        });
 
-        try {
-            const profile = await GameProfileService.createGameProfile(
-                userId,
-                body.game,
-                body.gameIdentifier,
-                body.metadata
-            );
-
-            return {
-                status: 201,
-                body: profile,
-            };
-        } catch (error: any) {
-            if (error instanceof AppError) {
-                if (error.status === 409) {
-                    return {
-                        status: 409,
-                        body: { message: error.message },
-                    };
-                }
-            }
-            return {
-                status: 400,
-                body: { message: "Failed to create profile" },
-            };
-        }
+        return {
+            status: 201,
+            body: profile.data as any,
+        };
     },
     getMyProfiles: async ({ req }: { req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
         if (!userId) {
-            return {
-                status: 401,
-                body: { message: "Unauthorized" },
-            } as any;
+            throw new AppError(401, "Unauthorized");
         }
 
         const profiles = await GameProfileService.getUserGameProfiles(userId);
         return {
             status: 200,
-            body: profiles,
+            body: profiles.data as any,
         };
     },
     update: async ({ params, body, req }: { params: any; body: any; req: any }) => {
@@ -67,56 +48,40 @@ export const gameProfilesController = s.router(contract.gameProfiles, {
         const userId = contextReq.ctx.decodedToken?.id;
 
         if (!userId) {
-            return {
-                status: 401,
-                body: { message: "Unauthorized" },
-            } as any;
+            throw new AppError(401, "Unauthorized");
         }
-
-        try {
-            const updated = await GameProfileService.updateGameProfile(
-                userId,
-                params.game,
-                body
-            );
-            return {
-                status: 200,
-                body: updated,
-            };
-        } catch (error) {
-            return {
-                status: 404,
-                body: { message: "Profile not found" },
-            };
-        }
+        const updated = await GameProfileService.updateGameProfile(
+            userId,
+            params.game,
+            body
+        ).catch(() => {
+            throw new AppError(404, "Profile not found");
+        });
+        
+        return {
+            status: 200,
+            body: updated.data as any,
+        };
     },
     delete: async ({ params, req }: { params: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;
 
         if (!userId) {
-            return {
-                status: 401,
-                body: { message: "Unauthorized" },
-            } as any;
+            throw new AppError(401, "Unauthorized");
         }
-
-        try {
-            await GameProfileService.deleteGameProfile(userId, params.game);
-            return {
-                status: 204,
-                body: null,
-            };
-        } catch (error) {
-            return {
-                status: 404,
-                body: { message: "Profile not found" },
-            };
-        }
+        await GameProfileService.deleteGameProfile(userId, params.game).catch(() => {
+            throw new AppError(404, "Profile not found");
+        });
+        
+        return {
+            status: 204,
+            body: undefined,
+        };
     },
     getUserProfiles: async ({ params }: { params: any }) => {
         const profiles = await GameProfileService.getUserGameProfiles(params.userId);
-        const visibleProfiles = profiles.filter(p => p.isVisible);
+        const visibleProfiles = profiles.data!.filter(p => p.isVisible);
 
         return {
             status: 200,

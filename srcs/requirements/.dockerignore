@@ -1,7 +1,9 @@
+# Ignore local symlinks and modules during build
+backend/shared
+frontend/shared
 **/node_modules
 **/.next
 **/dist
 **/.git
 **/.DS_Store
 **/build
-shared

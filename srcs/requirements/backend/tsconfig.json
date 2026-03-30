@@ -9,7 +9,16 @@
                 "./src/*"
             ],
             "@ft-transcendence/contracts": [
-                "./shared/contracts/src/index.ts",
+                "../shared/contracts/src/index.ts"
+            ],
+            "@ft-transcendence/contracts/*": [
+                "../shared/contracts/src/*"
+            ],
+            "zod": [
+                "./node_modules/zod"
+            ],
+            "@ts-rest/core": [
+                "./node_modules/@ts-rest/core"
             ]
         },
         "resolveJsonModule": true,

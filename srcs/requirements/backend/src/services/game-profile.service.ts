@@ -3,6 +3,7 @@ import { gameProfiles } from "@/dal/db/schemas/game_profiles";
 import { supportedGameEnum } from "@/dal/db/schemas/enums";
 import { eq, and } from "drizzle-orm";
 import AppError from "@/utils/error";
+import { ApiResponse } from "@/utils/response";
 
 type NewGameProfile = typeof gameProfiles.$inferInsert;
 type SupportedGame = (typeof supportedGameEnum.enumValues)[number];
@@ -45,7 +46,7 @@ export const createGameProfile = async (
         })
         .returning();
 
-    return newProfile;
+    return new ApiResponse("Game profile created", newProfile);
 };
 
 export const getGameProfile = async (userId: string, game: SupportedGame) => {
@@ -56,7 +57,7 @@ export const getGameProfile = async (userId: string, game: SupportedGame) => {
         ),
     });
 
-    return profile;
+    return new ApiResponse("Game profile fetched", profile);
 };
 
 export const getUserGameProfiles = async (userId: string) => {
@@ -64,7 +65,7 @@ export const getUserGameProfiles = async (userId: string) => {
         where: eq(gameProfiles.userId, userId),
     });
 
-    return profiles;
+    return new ApiResponse("User game profiles fetched", profiles);
 };
 
 export const updateGameProfile = async (
@@ -88,7 +89,7 @@ export const updateGameProfile = async (
         throw new AppError(404, "Game profile not found");
     }
 
-    return updatedProfile;
+    return new ApiResponse("Game profile updated", updatedProfile);
 };
 
 export const verifyGameProfile = async (

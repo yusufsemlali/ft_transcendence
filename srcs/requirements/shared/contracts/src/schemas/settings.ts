@@ -17,7 +17,6 @@ export const CustomBackgroundSchema = z
     .url("Must be a valid URL")
     .regex(/^https?:\/\/.*/, "Must use http or https protocol")
     .regex(/^[^`'"]*$/, "May not contain quotes")
-    .regex(/\.(png|gif|jpeg|jpg|webp)(\?.*)?$/i, "Must be an image URL (png, gif, jpeg, jpg, webp)")
     .max(2048, "URL is too long")
     .nullable();
 export type CustomBackground = z.infer<typeof CustomBackgroundSchema>;
