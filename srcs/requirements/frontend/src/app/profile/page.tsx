@@ -11,44 +11,62 @@ import {
 } from "@ft-transcendence/contracts";
 
 import { toast } from "@/components/ui/sonner";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Page } from "@/components/layout/Page";
+import { Section } from "@/components/layout/Section";
+import { Stack } from "@/components/layout/Stack";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 function HexAvatar({
   src,
   alt,
   isOnline,
+  loading = false,
 }: {
-  src: string;
-  alt: string;
-  isOnline: boolean;
+  src?: string;
+  alt?: string;
+  isOnline?: boolean;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="relative w-40 h-48 sm:w-48 sm:h-56">
+        <Skeleton
+          className="w-full h-full"
+          style={{ clipPath: "polygon(0% 0%, 100% 0%, 100% 85%, 50% 100%, 0% 85%)" }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="relative w-48 h-56 group">
-      {/* The Glowing Border/Container */}
+    <div className="relative w-40 h-48 sm:w-48 sm:h-56 group transition-transform duration-500 hover:scale-[1.02]">
+      {/* The Glow */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-primary to-purple-600 opacity-50 blur-md rounded-[2rem]"
-        style={{
-          clipPath: "polygon(0% 0%, 100% 0%, 100% 85%, 50% 100%, 0% 85%)",
-        }}
+        className="absolute inset-0 bg-primary opacity-10 blur-2xl rounded-3xl group-hover:opacity-20 transition-opacity"
+        style={{ clipPath: "polygon(0% 0%, 100% 0%, 100% 85%, 50% 100%, 0% 85%)" }}
       />
 
-      {/* The Actual Image Container */}
+      {/* Actual Avatar */}
       <div
-        className="absolute inset-[2px] bg-[#0F0F13] z-10 overflow-hidden"
-        style={{
-          clipPath: "polygon(0% 0%, 100% 0%, 100% 85%, 50% 100%, 0% 85%)",
-        }}
+        className="absolute inset-0 bg-card ring-1 ring-border shadow-2xl overflow-hidden"
+        style={{ clipPath: "polygon(0% 0%, 100% 0%, 100% 85%, 50% 100%, 0% 85%)" }}
       >
         <img
-          src={src}
-          alt={alt}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          src={src || "/default-avatar.png"}
+          alt={alt || "User avatar"}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
 
-        {/* Online Indicator (integrated into the shape) */}
-        <div
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full ${isOnline ? "bg-green-400 shadow-[0_0_10px_#4ade80]" : "bg-gray-500"}`}
-        />
+        {/* Online Indicator */}
+        {isOnline && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_12px_#4ade80]" />
+            <Badge variant="success" className="px-1 py-0 h-3 text-[8px]">ONLINE</Badge>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -58,21 +76,29 @@ function StatModule({
   label,
   value,
   subtext,
+  loading = false,
 }: {
   label: string;
   value: string | number;
   subtext?: string;
+  loading?: boolean;
 }) {
   return (
-    <Card className="p-4 relative">
-      <div className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1">
+    <Card size="sm" className="flex flex-col items-center text-center group hover:border-primary/30">
+      <div className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
         {label}
       </div>
-      <div className="text-3xl font-black text-white font-mono tracking-tighter">
-        {value}
-      </div>
+      {loading ? (
+        <Skeleton className="h-8 w-16 my-1" />
+      ) : (
+        <div className="text-3xl font-black text-foreground font-mono tracking-tighter">
+          {value}
+        </div>
+      )}
       {subtext && (
-        <div className="text-xs text-primary mt-1 font-medium">{subtext}</div>
+        <div className="text-[10px] text-muted-foreground/60 font-mono italic uppercase tracking-tighter mt-1">
+          {subtext}
+        </div>
       )}
     </Card>
   );
@@ -90,27 +116,26 @@ interface MatchRowProps {
 function MatchRow({ opponent, result, score, kda, map, date }: MatchRowProps) {
   const isWin = result === "Win";
   return (
-    <div className="grid grid-cols-7 items-center py-3 border-b border-white/5 text-xs hover:bg-white/5 transition px-6 relative group">
-      {/* Pink Highlight Bar */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-sm opacity-60 group-hover:opacity-100 transition-opacity" />
-
-      <div className="font-bold text-white flex items-center gap-3 col-span-2">
-        <div className="w-8 h-8 rounded-lg bg-gray-800 border border-white/10 overflow-hidden">
-          <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900" />
+    <div className="grid grid-cols-7 items-center py-4 border-b border-border/10 text-sm hover:bg-muted/30 transition-all px-6 group last:border-0 grow">
+      <div className="font-bold text-foreground flex items-center gap-3 col-span-2">
+        <div className="w-8 h-8 rounded-sm bg-muted flex items-center justify-center">
+          <span className="material-symbols-outlined text-sm text-muted-foreground">person</span>
         </div>
         <span className="truncate">{opponent}</span>
       </div>
 
-      <div
-        className={`${isWin ? "text-primary" : "text-destructive"} font-black uppercase tracking-widest text-[10px]`}
-      >
-        {result}
+      <div>
+        <Badge variant={isWin ? "success" : "destructive"}>
+          {result}
+        </Badge>
       </div>
 
-      <div className="font-mono text-gray-400">{score}</div>
-      <div className="font-mono text-gray-400">{kda}</div>
-      <div className="text-gray-500 font-medium">{map}</div>
-      <div className="text-gray-600 text-[10px] text-right">{date}</div>
+      <div className="font-mono text-muted-foreground font-medium">{score}</div>
+      <div className="font-mono text-muted-foreground font-medium">{kda}</div>
+      <div className="text-muted-foreground/80 font-mono text-xs uppercase tracking-wider">{map}</div>
+      <div className="text-muted-foreground/40 text-[10px] text-right font-mono italic">
+        {date}
+      </div>
     </div>
   );
 }
@@ -138,13 +163,13 @@ export default function ProfilePage() {
 
       if (userRes.status === 200) setUser(userRes.body);
       if (profilesRes.status === 200) setProfiles(profilesRes.body);
-      
+
       // If we got a 401, the user isn't authenticated
       if (userRes.status === 401) {
         toast.error("Session expired, please login again");
       }
     } catch (err) {
-      console.error("Load performance error:", err);
+      console.log("Load performance error:", err);
       toast.error("Failed to load profile data");
     } finally {
       setLoading(false);
@@ -188,480 +213,288 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || !user)
-    return (
-      <div className="p-20 text-center animate-pulse text-gray-500 font-mono">
-        INITIALIZING SYSTEM...
-      </div>
-    );
-
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: "40px 20px",
-        color: "var(--text-primary)",
-        fontFamily: "var(--font-sans)",
-        backgroundColor: "transparent",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <Page>
+      <Stack gap="xl">
         {/* --- Section 1: Header Dashboard --- */}
-        <div style={{ position: "relative", marginBottom: "40px" }}>
-          <div
-            style={{
-              display: "flex",
-              gap: "32px",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* 1. Avatar (Left) */}
-            <div style={{ flexShrink: 0 }}>
+        <Section title="player profile" icon="person">
+          <div className="grid grid-cols-12 gap-8 items-start">
+            {/* Avatar Cluster (Span 3) */}
+            <div className="col-span-12 lg:col-span-3 flex justify-center lg:justify-start">
               <HexAvatar
-                src={user.avatar || "/default-avatar.png"}
-                alt={user.username}
+                src={user?.avatar}
+                alt={user?.username}
                 isOnline={true}
+                loading={loading}
               />
             </div>
 
-            {/* 2. Info & Stats (Right) */}
-            <div style={{ flex: 1, minWidth: "300px" }}>
-              {/* Top Row: Info */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-end",
-                  borderBottom: "1px solid var(--border-color)",
-                  paddingBottom: "24px",
-                  marginBottom: "24px",
-                  flexWrap: "wrap",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <h1
-                    style={{
-                      fontSize: "48px",
-                      fontWeight: "800",
-                      margin: "0 0 8px 0",
-                      textTransform: "uppercase",
-                      lineHeight: "1",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "16px",
-                    }}
-                  >
-                    {user.displayName || user.username}
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        background: "rgba(var(--primary-rgb), 0.2)",
-                        color: "var(--primary)",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        border: "1px solid rgba(var(--primary-rgb), 0.3)",
-                        fontWeight: "600",
-                        letterSpacing: "1px",
-                      }}
-                    >
-                      LVL {user.level}
-                    </span>
-                  </h1>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "24px",
-                      alignItems: "center",
-                      fontSize: "14px",
-                      color: "var(--text-muted)",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        color: "var(--accent-success)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          backgroundColor: "currentColor",
-                          boxShadow: "0 0 8px currentColor",
-                        }}
-                      />
-                      ONLINE
-                    </span>
-                    {/* <span>ID: #{user.id.toString().padStart(4, "0")}</span> */}
+            {/* Info & Stats Cluster (Span 9) */}
+            <div className="col-span-12 lg:col-span-9">
+              <Stack gap="lg">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-border/10 pb-8 gap-6">
+                  <div className="space-y-4">
+                    {loading ? (
+                      <Skeleton className="h-12 w-64" />
+                    ) : (
+                      <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-foreground flex items-center gap-4">
+                        {user?.displayName || user?.username}
+                        <Badge variant="outline" className="h-6 px-3">{user?.level ? `LVL ${user.level}` : "..."}</Badge>
+                      </h1>
+                    )}
+
+                    <div className="flex flex-wrap gap-6 items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
+                        <span className="text-[10px] font-mono font-bold text-foreground uppercase tracking-widest leading-none">STATUS: ACTIVE</span>
+                      </div>
+
+                      <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="text-[10px] font-mono font-bold text-muted-foreground hover:text-primary transition-colors border-b border-dashed border-border py-0.5"
+                      >
+                        + CONNECT_PLATFORM
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="hidden sm:flex flex-col items-end gap-1">
+                    <div className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest text-right">Team Identity</div>
+                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center border border-border/50">
+                      <span className="material-symbols-outlined text-muted-foreground/30">shield</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatModule label="Career Matches" value="5" subtext="Global" loading={loading} />
+                  <StatModule label="Tournaments" value="0" subtext="Active" loading={loading} />
+                  <StatModule label="Win Ratio" value="--" subtext="Standardized" loading={loading} />
+                  <StatModule label="Integrity" value="100%" subtext="Trusted" loading={loading} />
+                </div>
+              </Stack>
+            </div>
+          </div>
+        </Section>
+
+        {/* --- Section 2: Core Metrics --- */}
+        <div className="grid grid-cols-12 gap-8">
+          {/* Main Content (Span 8) */}
+          <div className="col-span-12 lg:col-span-8">
+            <Section title="performance index" icon="monitoring">
+              <Card className="min-h-[400px] flex flex-col relative overflow-hidden">
+                <CardHeader className="flex-row justify-between items-center space-y-0">
+                  <CardDescription className="font-mono uppercase tracking-[0.15em]">Elo projection (last 30 intervals)</CardDescription>
+                  <div className="flex gap-2 p-1 bg-muted/30 rounded-sm">
+                    <Badge variant="default" className="cursor-pointer">Index</Badge>
+                    <Badge variant="outline" className="cursor-pointer opacity-50 hover:opacity-100">Live</Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="flex-1 flex items-center justify-center relative">
+                  {loading ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Skeleton className="w-[90%] h-[70%]" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full relative">
+                      {/* Grid overlay */}
+                      <div className="absolute inset-0 bg-[linear-gradient(var(--border)_1px,transparent_1px),linear-gradient(90deg,var(--border)_1px,transparent_1px)] bg-[size:32px_32px] opacity-[0.05]" />
+
+                      {/* SVG matches the container strictly */}
+                      <svg viewBox="0 0 800 300" className="w-full h-full p-4 overflow-visible">
+                        <path
+                          d="M0,250 C100,250 150,150 300,200 C450,250 600,50 800,130"
+                          fill="none"
+                          stroke="var(--primary)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="800" cy="130" r="4" fill="var(--primary)" />
+                      </svg>
+
+                      <div className="absolute bottom-6 right-6 font-mono text-[10px] text-muted-foreground flex gap-4 uppercase tracking-widest">
+                        <span>X: Interval</span>
+                        <span>Y: Performance Coefficient</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </Section>
+          </div>
+
+          {/* Side Content (Span 4) */}
+          <div className="col-span-12 lg:col-span-4">
+            <Section
+              title="identity links"
+              icon="link"
+              actions={
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                </button>
+              }
+            >
+              <Card className="min-h-[400px] flex flex-col">
+                <CardContent className="grid grid-cols-2 gap-4 content-start pt-2">
+                  {loading ? (
+                    Array(3).fill(0).map((_, i) => <Skeleton key={i} className="aspect-square" />)
+                  ) : profiles.length === 0 ? (
+                    <div className="col-span-2 py-12 flex flex-col items-center justify-center gap-4 border border-dashed border-border rounded-lg bg-muted/5">
+                      <span className="material-symbols-outlined text-muted-foreground/20 text-4xl">link_off</span>
+                      <p className="text-[10px] font-mono text-muted-foreground text-center px-4 uppercase tracking-widest">No external nodes connected.</p>
+                      <button onClick={() => setIsAddModalOpen(true)} className="btn btn-secondary text-[8px] py-1">INIT_LINK</button>
+                    </div>
+                  ) : (
+                    profiles.map((p) => (
+                      <div
+                        key={p.game}
+                        className="aspect-square bg-muted/30 border border-border/50 rounded flex flex-col items-center justify-center p-4 hover:border-primary/50 transition-all group relative cursor-pointer"
+                        onClick={() => handleUnlink(p.game)}
+                      >
+                        <div className="text-2xl font-black text-muted-foreground/20 group-hover:text-primary transition-colors">
+                          {p.game.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="text-[8px] font-mono font-bold text-muted-foreground uppercase mt-2 text-center truncate w-full">
+                          {p.game.replace(/_/g, " ")}
+                        </div>
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="material-symbols-outlined text-[10px] text-destructive">close</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {!loading && profiles.length > 0 && (
                     <button
                       onClick={() => setIsAddModalOpen(true)}
-                      style={{
-                        color: "var(--text-primary)",
-                        textDecoration: "underline",
-                        textDecorationStyle: "dashed",
-                        textUnderlineOffset: "4px",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 0,
-                      }}
+                      className="aspect-square border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group"
                     >
-                      + Link Account
+                      <span className="material-symbols-outlined text-muted-foreground/30 group-hover:text-primary transition-colors">add</span>
                     </button>
-                  </div>
-                </div>
-
-                <div
-                  className="glass"
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: "700",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    TEAM
-                  </span>
-                </div>
-              </div>
-
-              {/* Bottom Row: Stat Modules */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                  gap: "16px",
-                }}
-              >
-                <StatModule
-                  label="Matches Played"
-                  value="5"
-                  subtext="Career matches"
-                />
-                <StatModule
-                  label="Tournaments"
-                  value="0"
-                  subtext="Participated"
-                />
-                <StatModule label="Win Rate" value="-" subtext="Global Avg" />
-                <StatModule
-                  label="Reputation"
-                  value="100%"
-                  subtext="Good Standing"
-                />
-              </div>
-            </div>
+                  )}
+                </CardContent>
+              </Card>
+            </Section>
           </div>
         </div>
 
-        {/* --- Section 2: Main Grid Layout --- */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(12, 1fr)",
-            gap: "24px",
-            marginBottom: "32px",
-          }}
-        >
-          {/* Left Column: Performance Graph (Span 8) */}
-          <Card className="col-span-8 p-6 flex flex-col min-h-[350px]">
-            <CardHeader className="p-0 mb-8 border-none !px-0">
-              <div className="flex justify-between items-center w-full">
-                <CardTitle className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                  <span className="w-1 h-4 bg-primary rounded-full transition-colors" />
-                  Performance History
-                </CardTitle>
-                <div className="flex gap-2 text-xs bg-black/20 p-1 rounded-lg">
-                  <span className="px-3 py-1 bg-white/10 rounded text-white cursor-pointer hover:bg-white/20 transition">
-                    30 Days
-                  </span>
-                  <span className="px-3 py-1 text-gray-500 cursor-pointer hover:text-white transition">
-                    All Time
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-0 flex-1 w-full relative h-[200px] z-10 !px-0">
-              {/* Graph */}
-              <div className="w-full h-full relative">
-                <svg
-                  className="w-full h-full overflow-visible"
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d="M0,150 C100,150 150,50 300,100 C450,150 600,0 800,80 L800,200 L0,200 Z"
-                    fill="url(#gradient-fill)"
-                    opacity="0.1"
-                  />
-                  <path
-                    d="M0,150 C100,150 150,50 300,100 C450,150 600,0 800,80"
-                    fill="none"
-                    stroke="var(--primary)"
-                    strokeWidth="3"
-                    filter="drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.5))"
-                    strokeLinecap="round"
-                  />
-                  <defs>
-                    <linearGradient
-                      id="gradient-fill"
-                      x1="0%"
-                      y1="0%"
-                      x2="0%"
-                      y2="100%"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="var(--primary)"
-                        stopOpacity="0.5"
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="var(--primary)"
-                        stopOpacity="0"
-                      />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-            </CardContent>
-
-            {/* Graph Grid Background */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(236,72,153,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.05)_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
-          </Card>
-
-          {/* Right Column: Linked Games (Span 4) */}
-          <Card className="col-span-4 p-6 flex flex-col min-h-[350px]">
-            <CardHeader className="p-0 mb-6 border-none !px-0">
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                <span className="w-1 h-4 bg-primary rounded-full transition-colors" />
-                Linked Games
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className="p-0 flex-1 grid grid-cols-2 gap-3 content-start !px-0">
-              {profiles.map((p) => (
-                <div
-                  key={p.game}
-                  className="aspect-square bg-white/5 rounded-2xl flex flex-col items-center justify-center p-4 hover:bg-white/10 hover:scale-[1.02] transition cursor-pointer group relative overflow-hidden border border-white/5"
-                  onClick={() => handleUnlink(p.game)}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
-
-                  <div className="font-black text-4xl mb-2 text-white/20 group-hover:text-white transition-colors">
-                    {p.game.charAt(0).toUpperCase()}
+        {/* --- Section 3: History --- */}
+        <Section title="archived operations" icon="history">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <div className="min-w-[800px] flex flex-col">
+                  <div className="grid grid-cols-7 px-6 py-4 bg-muted/30 border-b border-border text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="col-span-2">NODE_ID</div>
+                    <div>OUTCOME</div>
+                    <div>SCORE_VECTOR</div>
+                    <div>UNIT_KPI</div>
+                    <div>THEATER</div>
+                    <div className="text-right">TIMESTAMP</div>
                   </div>
-                  <div className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-primary transition-colors text-center leading-tight">
-                    {p.game.replace(/_/g, " ")}
+
+                  <div className="flex flex-col min-h-[300px]">
+                    {loading ? (
+                      Array(5).fill(0).map((_, i) => (
+                        <div key={i} className="grid grid-cols-7 px-6 py-5 border-b border-border/50">
+                          <Skeleton className="h-4 col-span-2 w-32" />
+                          <Skeleton className="h-4 w-16" />
+                          <Skeleton className="h-4 w-12" />
+                          <Skeleton className="h-4 w-12" />
+                          <Skeleton className="h-4 w-16" />
+                          <Skeleton className="h-4 w-20 ml-auto" />
+                        </div>
+                      ))
+                    ) : profiles.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20 opacity-30 grayscale">
+                        <span className="material-symbols-outlined text-6xl">database_off</span>
+                        <span className="text-xs font-mono uppercase tracking-[0.4em]">Historical data synchronization failed: No source links.</span>
+                      </div>
+                    ) : (
+                      <>
+                        <MatchRow opponent="xSlayer99" result="Win" score="13 - 9" kda="18 / 4 / 2" map="Ascent" date="2h ago" />
+                        <MatchRow opponent="NoobMaster" result="Loss" score="11 - 13" kda="12 / 15 / 4" map="Dust II" date="5h ago" />
+                        <MatchRow opponent="Team Liquid" result="Win" score="2 - 0" kda="—" map="Bo3" date="1d ago" />
+                        <MatchRow opponent="Faker" result="Loss" score="0 - 3" kda="2 / 10 / 1" map="Summoners Rift" date="2d ago" />
+                        <MatchRow opponent="Cloud9" result="Win" score="16 - 4" kda="24 / 5 / 2" map="Inferno" date="3d ago" />
+                      </>
+                    )}
                   </div>
                 </div>
-              ))}
-
-              {/* Add Button */}
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="aspect-square border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center text-gray-600 hover:text-white hover:border-white/30 hover:bg-white/5 transition group"
-              >
-                <span className="text-4xl font-light group-hover:scale-110 transition">
-                  +
-                </span>
-              </button>
+              </div>
             </CardContent>
           </Card>
-        </div>
+        </Section>
+      </Stack>
 
-        {/* --- Section 3: Match History Table --- */}
-        <Card className="overflow-hidden border-none bg-transparent">
-          <CardHeader className="flex flex-col items-center gap-6 p-8 border-none bg-transparent">
-            <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-white flex items-center gap-4">
-              <span className="w-1.5 h-4 bg-primary rounded-full shadow-[0_0_12px_rgba(236,72,153,0.5)]" />
-              Match History
-            </CardTitle>
-
-            <div className="flex bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
-              <button className="px-8 py-2.5 bg-white text-black text-[11px] font-black uppercase tracking-wider rounded-lg shadow-xl hover:scale-105 transition-transform active:scale-95">
-                Challenge
-              </button>
-              <button className="px-8 py-2.5 bg-transparent text-gray-400 text-[11px] font-black uppercase tracking-wider rounded-lg hover:text-white transition-colors">
-                Add Friend
-              </button>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0 overflow-x-auto !px-0 bg-black/20 backdrop-blur-sm rounded-3xl border border-white/5">
-            <div className="min-w-[800px]">
-              <div className="grid grid-cols-7 px-6 py-5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] bg-black/60 border-b border-white/5">
-                <div className="col-span-2">Opponent</div>
-                <div>Result</div>
-                <div>Score</div>
-                <div>KDA</div>
-                <div>Map</div>
-                <div className="text-right">Date</div>
-              </div>
-
-              <div className="divide-y divide-white/5">
-                <MatchRow
-                  opponent="xSlayer99"
-                  result="Win"
-                  score="13 - 9"
-                  kda="18 / 4 / 2"
-                  map="Ascent"
-                  date="2h ago"
-                />
-                <MatchRow
-                  opponent="NoobMaster"
-                  result="Loss"
-                  score="11 - 13"
-                  kda="12 / 15 / 4"
-                  map="Dust II"
-                  date="5h ago"
-                />
-                <MatchRow
-                  opponent="Team Liquid"
-                  result="Win"
-                  score="2 - 0"
-                  kda="—"
-                  map="Bo3"
-                  date="1d ago"
-                />
-                <MatchRow
-                  opponent="Faker"
-                  result="Loss"
-                  score="0 - 3"
-                  kda="2 / 10 / 1"
-                  map="Summoners Rift"
-                  date="2d ago"
-                />
-                <MatchRow
-                  opponent="Cloud9"
-                  result="Win"
-                  score="16 - 4"
-                  kda="24 / 5 / 2"
-                  map="Inferno"
-                  date="3d ago"
-                />
-
-                {profiles.length === 0 && (
-                  <div className="p-12 text-center text-gray-600 italic">
-                    Link game profiles to populate match history.
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Add Game Modal (Reused) - Keeping same logic */}
+      {/* --- Link Account Modal --- */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#18181b] border border-white/10 rounded-2xl max-w-md w-full p-8 shadow-2xl relative">
-            <button
-              onClick={() => setIsAddModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
-            >
-              <span className="sr-only">Close</span>
-              <svg
-                width="24"
-                height="24"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Link Account
-              </h3>
-              <p className="text-gray-400 text-sm">
-                Select a game and enter your public identifier to track stats.
-              </p>
-            </div>
-
-            <form onSubmit={handleLinkAccount} className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Platform
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedGame}
-                    onChange={(e) =>
-                      setSelectedGame(e.target.value as SupportedGame)
-                    }
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none capitalize transition-all"
-                  >
-                    {SupportedGameSchema.options.map((game: SupportedGame) => (
-                      <option
-                        key={game}
-                        value={game}
-                        className="bg-gray-900 text-white py-2"
-                      >
-                        {game.replace(/_/g, " ")}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                    ▼
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Identifier
-                </label>
-                <input
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={
-                    selectedGame === "league_of_legends"
-                      ? "Faker#KR1"
-                      : selectedGame === "cs2"
-                        ? "SteamID 64"
-                        : "Player ID"
-                  }
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono placeholder-gray-700 transition-all"
-                  required
-                />
-              </div>
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fade-in">
+          <Card className="max-w-md w-full shadow-2xl relative border-primary/20 p-0 overflow-hidden">
+            <div className="p-8">
               <button
-                type="submit"
-                disabled={submitting || !identifier}
-                className="w-full py-4 bg-primary text-black font-black uppercase tracking-wider rounded-xl hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]"
+                onClick={() => setIsAddModalOpen(false)}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
               >
-                {submitting ? "Verifying..." : "Link Profile"}
+                <span className="material-symbols-outlined text-sm">close</span>
               </button>
-            </form>
-          </div>
+
+              <CardHeader className="p-0">
+                <CardTitle className="text-2xl font-black uppercase tracking-tight">Sync Platform</CardTitle>
+                <CardDescription className="font-mono text-[10px] uppercase tracking-widest mt-2 leading-relaxed">
+                  Connect your identity node to enable cross-platform career tracking and ranking analysis.
+                </CardDescription>
+              </CardHeader>
+
+              <form onSubmit={handleLinkAccount} className="mt-8 space-y-6">
+                <Stack gap="md">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Platform_Node</label>
+                    <div className="relative">
+                      <select
+                        value={selectedGame}
+                        onChange={(e) => setSelectedGame(e.target.value as SupportedGame)}
+                        className="input appearance-none capitalize pr-10 h-10 border border-border/50 focus:border-primary/50"
+                      >
+                        {SupportedGameSchema.options.map((game: SupportedGame) => (
+                          <option key={game} value={game} className="bg-background text-foreground py-2">
+                            {game.replace(/_/g, " ")}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">expand_more</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Node_Identifier</label>
+                    <input
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="e.g. FAKER#KR1"
+                      className="input h-10 border border-border/50 focus:border-primary/50 text-sm"
+                      required
+                    />
+                  </div>
+                </Stack>
+
+                <button
+                  type="submit"
+                  disabled={submitting || !identifier}
+                  className="btn btn-primary w-full justify-center py-6 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl disabled:opacity-50"
+                >
+                  {submitting ? "RUNNING_AUTH..." : "INITIALIZE_CONNECTION"}
+                </button>
+              </form>
+            </div>
+          </Card>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

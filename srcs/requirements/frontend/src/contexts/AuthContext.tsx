@@ -10,8 +10,10 @@ import React, {
 import { useRouter } from "next/navigation";
 import api from "@/lib/api/api";
 import { logoutAction, setAuthCookies } from "@/lib/auth";
+import { refreshToken } from "@/lib/api/auth-client";
 import { setLocalSettings, applyAllSettings } from "@/lib/settings";
 import { User } from "@ft-transcendence/contracts";
+import { toast } from "@/components/ui/sonner";
 
 export interface UserInfo {
   id: string;
@@ -105,7 +107,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
               await applyAllSettings(settings);
             }
           } catch (error) {
-            console.error("Failed to load user settings:", error);
+            console.log("Failed to load user settings:", error);
           }
 
           router.refresh();
@@ -171,7 +173,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
 
       router.refresh();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.log("Logout error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -184,6 +186,8 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       setUser(null);
       
       localStorage.removeItem("isLoggedIn");
+
+      toast.info("Session expired, please login again");
 
       const currentPath = window.location.pathname;
       const isProtectedRoute = PROTECTED_ROUTES.some(route => currentPath.startsWith(route));
@@ -208,6 +212,27 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
       }
     }
   }, []);
+
+  // Proactive Background Refresh Timer
+  useEffect(() => {
+    // Only run if the user is authenticated in this session
+    if (!user) return;
+
+    // 80% rule: refresh at 80% of total lifetime. Fallback to 20s if not set.
+    const intervalFromEnv = process.env.NEXT_PUBLIC_REFRESH_INTERVAL_MS;
+    const REFRESH_INTERVAL_MS = intervalFromEnv ? parseInt(intervalFromEnv) : 20 * 1000; 
+
+    const backgroundRefresh = setInterval(async () => { 
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const success = await refreshToken(baseUrl);
+
+      if (!success) {
+        window.dispatchEvent(new CustomEvent("auth:logout"));
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(backgroundRefresh);
+  }, [user]);
 
   return (
     <AuthContext.Provider

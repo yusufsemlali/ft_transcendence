@@ -13,7 +13,6 @@ export interface UserInfo {
 
 const BACKEND_URL = process.env.INTERNAL_BACKEND_API_URL || "http://ft_backend:3000/api";
 
-
 export async function getServerUser(): Promise<UserInfo | null> {
     try {
         const cookieStore = await cookies();
@@ -23,32 +22,18 @@ export async function getServerUser(): Promise<UserInfo | null> {
             return null;
         }
 
-        // Use native fetch for server-side calls
-        let response = await fetch(`${BACKEND_URL}/users/me`, {
+        const response = await fetch(`${BACKEND_URL}/users/me`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
+                "Authorization": `Bearer ${token}`, 
             },
             cache: "no-store",
         });
 
-        // If token expired, try to refresh
-        if (response.status === 401) {
-            const refreshResult = await refreshTokensServer();
-            if (refreshResult.success && refreshResult.token) {
-                // Retry with new token
-                response = await fetch(`${BACKEND_URL}/users/me`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${refreshResult.token}`,
-                    },
-                    cache: "no-store",
-                });
-            }
-        }
-
+        // We DO NOT attempt to refresh the token here anymore. 
+        // If it's a 401, we just return null. The client-side adapter 
+        // will catch this on hydration and do the refresh securely.
         if (response.ok) {
             const data = await response.json();
             return {
@@ -61,84 +46,32 @@ export async function getServerUser(): Promise<UserInfo | null> {
             };
         }
     } catch (error) {
-        // Silently return null if not authenticated - this is expected behavior
-        // Only log if it's a real network/server error
         if (error instanceof Error && !error.message.includes('fetch failed')) {
-            console.error("Failed to get server user:", error);
+            console.log("Failed to get server user:", error);
         }
     }
     return null;
 }
 
-/**
- * Server-side token refresh using the refresh_token cookie.
- */
-async function refreshTokensServer(): Promise<{ success: boolean; token?: string }> {
-    try {
-        const cookieStore = await cookies();
-        const refreshToken = cookieStore.get("refresh_token")?.value;
-
-        if (!refreshToken) {
-            return { success: false };
-        }
-
-        const response = await fetch(`${BACKEND_URL}/auth/refresh`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Cookie": `refresh_token=${refreshToken}`,
-            },
-            body: JSON.stringify({}),
-            cache: "no-store",
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const newToken = data.token;
-
-            // Update the access token cookie
-            cookieStore.set("access_token", newToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: 60 * 60, // 1 hour
-            });
-
-            return { success: true, token: newToken };
-        }
-    } catch (error) {
-        console.error("Failed to refresh tokens:", error);
-    }
-    return { success: false };
-}
-
-/**
- * Server Action to set auth cookies after login/register.
- */
 export async function setAuthCookies(accessToken: string) {
     const cookieStore = await cookies();
-
-    // Set access token cookie
     cookieStore.set("access_token", accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60, // 1 hour
+        maxAge: process.env.NEXT_PUBLIC_ACCESS_TOKEN_MAX_AGE 
+            ? parseInt(process.env.NEXT_PUBLIC_ACCESS_TOKEN_MAX_AGE) 
+            : 60 * 60, 
     });
 }
 
-/**
- * Server Action to logout: calls backend and clears cookies.
- */
 export async function logoutAction(): Promise<{ success: boolean }> {
     try {
         const cookieStore = await cookies();
         const token = cookieStore.get("access_token")?.value;
 
         if (token) {
-            // Call backend logout to invalidate session
             await fetch(`${BACKEND_URL}/auth/logout`, {
                 method: "POST",
                 headers: {
@@ -150,21 +83,17 @@ export async function logoutAction(): Promise<{ success: boolean }> {
             });
         }
     } catch (error) {
-        console.error("Backend logout failed:", error);
+        console.log("Backend logout failed:", error);
     }
 
-    // Always clear cookies, even if backend call fails
-    const cookieStore = await cookies();
-    cookieStore.delete("access_token");
-    cookieStore.delete("refresh_token");
-    cookieStore.delete("token"); // Clear legacy token just in case
+    const cookieStoreParams = await cookies();
+    cookieStoreParams.delete("access_token");
+    cookieStoreParams.delete("refresh_token");
+    cookieStoreParams.delete("token"); 
 
     return { success: true };
 }
 
-/**
- * Server Action to logout from all devices.
- */
 export async function logoutAllAction(): Promise<{ success: boolean; sessionsRevoked?: number }> {
     try {
         const cookieStore = await cookies();
@@ -183,22 +112,20 @@ export async function logoutAllAction(): Promise<{ success: boolean; sessionsRev
 
             if (response.ok) {
                 const data = await response.json();
-                cookieStore.delete("access_token");
-                cookieStore.delete("refresh_token");
-                cookieStore.delete("token");
+                const cookieStoreParams = await cookies();
+                cookieStoreParams.delete("access_token");
+                cookieStoreParams.delete("refresh_token");
+                cookieStoreParams.delete("token");
                 return { success: true, sessionsRevoked: data.sessionsRevoked };
             }
         }
     } catch (error) {
-        console.error("Backend logout all failed:", error);
+        console.log("Backend logout all failed:", error);
     }
 
     return { success: false };
 }
 
-/**
- * Get active sessions for the current user.
- */
 export async function getActiveSessions() {
     try {
         const cookieStore = await cookies();
@@ -222,10 +149,9 @@ export async function getActiveSessions() {
             return data.sessions;
         }
     } catch (error) {
-        console.error("Failed to get sessions:", error);
+        console.log("Failed to get sessions:", error);
     }
     return [];
 }
 
-// Legacy export for backwards compatibility
 export const loginAction = setAuthCookies;

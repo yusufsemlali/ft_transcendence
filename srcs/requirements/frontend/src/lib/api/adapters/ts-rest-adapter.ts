@@ -64,7 +64,7 @@ function buildApi(
 
     // 2. Log Errors (Except 401 which we attempt to handle)
     if (response.status >= 400 && response.status !== 401 && response.status !== 404) {
-      console.error(`${request.method} ${request.path} failed`, {
+      console.log(`${request.method} ${request.path} failed`, {
         status: response.status,
         ...(response.body as object),
       });
@@ -92,6 +92,7 @@ function buildApi(
     if (response.status === 401 && typeof window !== "undefined" && !isPublicEndpoint) {
       // If a refresh isn't already happening, start one
       if (!refreshPromise) {
+        console.log(`[Auth] 401 Unauthorized detected on ${request.path}. Initiating token refresh...`);
         refreshPromise = refreshToken(baseUrl).finally(() => {
           // Clear the lock when done, whether it succeeded or failed
           refreshPromise = null; 
@@ -102,9 +103,11 @@ function buildApi(
       const refreshed = await refreshPromise;
 
       if (refreshed) {
+        console.log(`[Auth] Token refreshed successfully. Retrying ${request.path}...`);
         // The backend set a new cookie. Simply try the exact same request again.
         response = await executeFetch();
       } else {
+        console.log(`[Auth] Token refresh failed. Logging out.`);
         // Refresh failed (session truly dead). Notify app to kick user out.
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }

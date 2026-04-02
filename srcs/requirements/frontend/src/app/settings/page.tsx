@@ -52,7 +52,7 @@ export default function SettingsPage() {
         setLocalSettings(response.body);
       }
     } catch (error) {
-      console.error("Failed to fetch settings:", error);
+      console.log("Failed to fetch settings:", error);
     }
   };
 
@@ -84,7 +84,7 @@ export default function SettingsPage() {
           body: { [key]: value },
         });
       } catch (error) {
-        console.error("Failed to save setting:", error);
+        console.log("Failed to save setting:", error);
       } finally {
         setSaving(false);
       }

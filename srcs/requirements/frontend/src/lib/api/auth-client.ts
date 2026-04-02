@@ -25,7 +25,7 @@ export async function refreshToken(baseUrl: string): Promise<boolean> {
                 return true;
             }
         } catch (error) {
-            console.error("Token refresh failed:", error);
+            console.log("Token refresh failed:", error);
         }
         return false;
     })();

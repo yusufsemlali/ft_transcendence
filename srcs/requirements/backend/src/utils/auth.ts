@@ -4,12 +4,12 @@ import { DecodedToken } from "@/api/types";
 import { users } from "@/dal/db/schemas/users";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change_me_in_production";
-const ACCESS_TOKEN_EXPIRY = "15m";
+const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "15m";
 const REFRESH_TOKEN_BYTES = 32;
 
 export const generateAccessToken = (id: string, sessionId: string, username: string, role: string): string => {
     return jwt.sign({ id, sessionId, username, role }, JWT_SECRET, {
-        expiresIn: ACCESS_TOKEN_EXPIRY,
+        expiresIn: ACCESS_TOKEN_EXPIRY as any,
     });
 };
 
