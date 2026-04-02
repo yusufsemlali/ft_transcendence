@@ -3,7 +3,6 @@ import { TsRestRequestHandler } from "@ts-rest/express";
 import { AppRoute, AppRouter } from "@ts-rest/core";
 import { verifyAccessToken } from "../utils/auth";
 import AppError from "../utils/error";
-import { DecodedToken } from "../api/types";
 
 export function authenticateTsRestRequest<
     T extends AppRouter | AppRoute,
@@ -45,4 +44,3 @@ export function authenticateTsRestRequest<
         }
     };
 }
-

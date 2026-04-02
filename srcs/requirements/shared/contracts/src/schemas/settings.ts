@@ -123,12 +123,18 @@ export const UserSettingsSchema = z.object({
     smoothAnimations: z.boolean().default(true),
     showKeyboardShortcuts: z.boolean().default(true),
     compactMode: z.boolean().default(false),
-    autoSwitchTheme: z.boolean().default(false),
+    themeMode: z.enum(["light", "dark", "system"]).default("system"),
 
     // Notifications
     soundEnabled: z.boolean().default(true),
     soundVolume: z.number().min(0).max(1).default(0.5),
     desktopNotifications: z.boolean().default(false),
+
+    // Theme tokens
+    themeHue: z.number().min(0).max(360).default(344),
+    borderRadius: z.number().min(0).max(20).default(10),
+    glassBlur: z.number().min(0).max(20).default(12),
+    glassOpacity: z.number().min(0).max(1).default(0.1),
 });
 
 export type UserSettings = z.infer<typeof UserSettingsSchema>;
@@ -150,8 +156,12 @@ export const defaultSettings: UserSettings = {
     smoothAnimations: true,
     showKeyboardShortcuts: true,
     compactMode: false,
-    autoSwitchTheme: false,
+    themeMode: "system",
     soundEnabled: true,
     soundVolume: 0.5,
     desktopNotifications: false,
+    themeHue: 344,
+    borderRadius: 10,
+    glassBlur: 12,
+    glassOpacity: 0.1,
 };

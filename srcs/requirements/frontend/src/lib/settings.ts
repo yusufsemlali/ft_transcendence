@@ -99,6 +99,31 @@ export function applyThemeSettings(settings: UserSettings): void {
     // Font size multiplier
     root.style.setProperty("--font-size-multiplier", String(settings.fontSize));
 
+    // Theme mode
+    if (settings.themeMode === "dark") {
+        root.classList.add("dark");
+        root.style.colorScheme = "dark";
+    } else if (settings.themeMode === "light") {
+        root.classList.remove("dark");
+        root.style.colorScheme = "light";
+    } else {
+        // System preference
+        const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (isDark) {
+            root.classList.add("dark");
+            root.style.colorScheme = "dark";
+        } else {
+            root.classList.remove("dark");
+            root.style.colorScheme = "light";
+        }
+    }
+
+    // Theme tokens
+    root.style.setProperty("--theme-hue", String(settings.themeHue));
+    root.style.setProperty("--radius-base", `${settings.borderRadius}px`);
+    root.style.setProperty("--glass-blur", `${settings.glassBlur}px`);
+    root.style.setProperty("--glass-opacity", String(settings.glassOpacity));
+
     // Custom theme colors
     if (settings.customTheme && settings.customThemeColors) {
         const colors = settings.customThemeColors;

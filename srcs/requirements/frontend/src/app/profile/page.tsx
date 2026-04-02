@@ -131,9 +131,6 @@ export default function ProfilePage() {
 
   const loadData = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       const [userRes, profilesRes] = await Promise.all([
         api.users.getMe(),
         api.gameProfiles.getMyProfiles(),
@@ -141,8 +138,14 @@ export default function ProfilePage() {
 
       if (userRes.status === 200) setUser(userRes.body);
       if (profilesRes.status === 200) setProfiles(profilesRes.body);
-    } catch {
-      toast.error("Failed to load profile");
+      
+      // If we got a 401, the user isn't authenticated
+      if (userRes.status === 401) {
+        toast.error("Session expired, please login again");
+      }
+    } catch (err) {
+      console.error("Load performance error:", err);
+      toast.error("Failed to load profile data");
     } finally {
       setLoading(false);
     }
@@ -152,8 +155,6 @@ export default function ProfilePage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
       const res = await api.gameProfiles.create({
         body: { game: selectedGame, gameIdentifier: identifier },
       });
@@ -177,8 +178,6 @@ export default function ProfilePage() {
   const handleUnlink = async (game: SupportedGame) => {
     if (!confirm(`Unlink ${game}?`)) return;
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
       await api.gameProfiles.delete({
         params: { game },
       });

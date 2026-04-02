@@ -19,9 +19,6 @@ export const customHandler = (
 export const rootRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 1000 * REQUEST_MULTIPLIER,
-  keyGenerator: (req: Request) => {
-    return (req.headers["x-forwarded-for"] as string) || req.ip || "unknown";
-  },
   handler: customHandler,
 });
 

@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "pnpm drizzle-kit migrate && tsx watch src/server.ts",
+        "dev": "tsx watch src/server.ts",
         "start": "tsx src/server.ts",
         "lint": "eslint src/",
         "build": "tsc"

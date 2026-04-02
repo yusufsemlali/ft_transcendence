@@ -1,9 +1,6 @@
 
 export async function getIdToken(): Promise<string | null> {
-    if (typeof window !== "undefined") {
-        return localStorage.getItem("token");
-    }
-    return null;
+    return null; // Browser handles cookies automatically
 }
 
 let isRefreshing = false;
@@ -25,11 +22,7 @@ export async function refreshToken(baseUrl: string): Promise<boolean> {
             });
 
             if (response.ok) {
-                const data = await response.json();
-                if (data.token) {
-                    localStorage.setItem("token", data.token);
-                    return true;
-                }
+                return true;
             }
         } catch (error) {
             console.error("Token refresh failed:", error);

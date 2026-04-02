@@ -21,11 +21,16 @@ export const userSettings = pgTable('user_settings', {
     showKeyboardShortcuts: boolean('show_keyboard_shortcuts').default(true).notNull(),
     compactMode: boolean('compact_mode').default(false).notNull(),
 
-    autoSwitchTheme: boolean('auto_switch_theme').default(false).notNull(),
+    themeMode: varchar('theme_mode', { length: 20 }).default('system').notNull(),
 
     soundEnabled: boolean('sound_enabled').default(true).notNull(),
     soundVolume: real('sound_volume').default(0.5).notNull(),
     desktopNotifications: boolean('desktop_notifications').default(false).notNull(),
+
+    themeHue: real('theme_hue').default(344).notNull(),
+    borderRadius: real('border_radius').default(10).notNull(),
+    glassBlur: real('glass_blur').default(12).notNull(),
+    glassOpacity: real('glass_opacity').default(0.1).notNull(),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

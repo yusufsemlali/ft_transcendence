@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import {
   getLocalSettings,
@@ -36,10 +36,7 @@ export default function SettingsPage() {
     setSettings(local);
     checkLocalBackground();
 
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetchSettings();
-    }
+    fetchSettings();
   }, []);
 
   const checkLocalBackground = async () => {
@@ -64,6 +61,8 @@ export default function SettingsPage() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const debounceRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
   const updateSetting = async <K extends keyof UserSettings>(
     key: K,
     value: UserSettings[K],
@@ -73,8 +72,12 @@ export default function SettingsPage() {
     setLocalSettings(updated);
     await applyAllSettings(updated);
 
-    const token = localStorage.getItem("token");
-    if (token) {
+    // Debounce API calls per key
+    if (debounceRef.current[key]) {
+      clearTimeout(debounceRef.current[key]);
+    }
+
+    debounceRef.current[key] = setTimeout(async () => {
       setSaving(true);
       try {
         await api.settings.updateSettings({
@@ -85,7 +88,7 @@ export default function SettingsPage() {
       } finally {
         setSaving(false);
       }
-    }
+    }, 500);
   };
 
   const handleLocalImageUpload = () => {
@@ -390,7 +393,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Auto Switch Theme Section */}
+        {/* Theme Mode Section */}
         <section className="section">
           <div className="section-header">
             <svg
@@ -403,29 +406,231 @@ export default function SettingsPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"
               />
             </svg>
-            <span className="section-title">auto switch theme</span>
+            <span className="section-title">theme mode</span>
           </div>
           <p className="section-description">
-            Enabling this will automatically switch the theme between light and
-            dark depending on the system theme.
+            Choose between light, dark, or follow your system preference.
           </p>
 
           <div className="toggle-group">
-            <button
-              onClick={() => updateSetting("autoSwitchTheme", false)}
-              className={`toggle-item ${!settings.autoSwitchTheme ? "active" : ""}`}
+            {(["light", "dark", "system"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => updateSetting("themeMode", mode)}
+                className={`toggle-item ${settings.themeMode === mode ? "active" : ""}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Theme Customization Section */}
+        <section className="section">
+          <div className="section-header">
+            <svg
+              className="section-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              off
-            </button>
-            <button
-              onClick={() => updateSetting("autoSwitchTheme", true)}
-              className={`toggle-item ${settings.autoSwitchTheme ? "active" : ""}`}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.828 2.828a2 2 0 010 2.828l-8.486 8.486L5 21l8.486-8.486M7 14.343l8.486-8.486"
+              />
+            </svg>
+            <span className="section-title">theme tokens</span>
+          </div>
+          <p className="section-description">
+            Customize the core design tokens of the application.
+          </p>
+
+          <div className="slider-row">
+            <div className="slider-item">
+              <span className="slider-label">hue</span>
+              <span className="slider-value">
+                {Math.round(settings.themeHue)}°
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={settings.themeHue}
+                onChange={(e) =>
+                  updateSetting("themeHue", parseFloat(e.target.value))
+                }
+                className="slider"
+                style={{
+                  background:
+                    "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                }}
+              />
+            </div>
+            <div className="slider-item">
+              <span className="slider-label">radius</span>
+              <span className="slider-value">{settings.borderRadius}px</span>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={settings.borderRadius}
+                onChange={(e) =>
+                  updateSetting("borderRadius", parseFloat(e.target.value))
+                }
+                className="slider"
+              />
+            </div>
+          </div>
+
+          <div className="slider-row">
+            <div className="slider-item">
+              <span className="slider-label">glass blur</span>
+              <span className="slider-value">{settings.glassBlur}px</span>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={settings.glassBlur}
+                onChange={(e) =>
+                  updateSetting("glassBlur", parseFloat(e.target.value))
+                }
+                className="slider"
+              />
+            </div>
+            <div className="slider-item">
+              <span className="slider-label">glass opacity</span>
+              <span className="slider-value">
+                {Math.round(settings.glassOpacity * 100)}%
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="0.5"
+                step="0.01"
+                value={settings.glassOpacity}
+                onChange={(e) =>
+                  updateSetting("glassOpacity", parseFloat(e.target.value))
+                }
+                className="slider"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Theme Preview Section */}
+        <section className="section">
+          <div className="section-header">
+            <svg
+              className="section-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              on
-            </button>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            <span className="section-title">theme preview</span>
+          </div>
+          <p className="section-description">
+            A live preview of your design tokens applied to core UI components.
+          </p>
+
+          <div
+            className="glass-card"
+            style={{
+              padding: "2rem",
+              marginTop: "1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "2rem",
+              background:
+                "linear-gradient(135deg, oklch(100% 0 0 / var(--glass-opacity)) 0%, oklch(100% 0 0 / calc(var(--glass-opacity) / 2)) 100%)",
+            }}
+          >
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <button className="btn btn-primary">Primary Button</button>
+              <button className="btn btn-secondary">Secondary</button>
+              <div
+                style={{
+                  padding: "0.25rem 0.75rem",
+                  background: "var(--accent)",
+                  borderRadius: "var(--radius)",
+                  fontSize: "0.7rem",
+                  color: "var(--accent-foreground)",
+                  border: "1px solid var(--primary)",
+                }}
+              >
+                Sample Badge
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "1.5rem",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>Sample Label</span>
+                <input
+                  className="input"
+                  placeholder="Interactive input field..."
+                  defaultValue="Focus me to see the ring"
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>Progress Example</span>
+                <div
+                  style={{
+                    height: "8px",
+                    background: "var(--secondary)",
+                    borderRadius: "999px",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: "65%",
+                      background: "var(--primary)",
+                      borderRadius: "999px",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "1rem",
+                borderRadius: "var(--radius)",
+                background: "var(--bg-tertiary)",
+                border: "1px solid var(--border)",
+                fontSize: "0.8rem",
+                lineHeight: "1.4",
+              }}
+            >
+              <p style={{ color: "var(--text-secondary)" }}>
+                This is a sample of how your <strong style={{ color: "var(--primary)" }}>text colors</strong> and <strong style={{ color: "var(--primary)" }}>surface layers</strong> interact. Adjust the Hue and Glass tokens to see this card update in real-time.
+              </p>
+            </div>
           </div>
         </section>
 
