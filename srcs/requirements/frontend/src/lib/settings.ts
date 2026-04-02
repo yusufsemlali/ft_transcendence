@@ -99,24 +99,9 @@ export function applyThemeSettings(settings: UserSettings): void {
     // Font size multiplier
     root.style.setProperty("--font-size-multiplier", String(settings.fontSize));
 
-    // Theme mode
-    if (settings.themeMode === "dark") {
-        root.classList.add("dark");
-        root.style.colorScheme = "dark";
-    } else if (settings.themeMode === "light") {
-        root.classList.remove("dark");
-        root.style.colorScheme = "light";
-    } else {
-        // System preference
-        const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        if (isDark) {
-            root.classList.add("dark");
-            root.style.colorScheme = "dark";
-        } else {
-            root.classList.remove("dark");
-            root.style.colorScheme = "light";
-        }
-    }
+    // Force dark theme mode
+    root.classList.add("dark");
+    root.style.colorScheme = "dark";
 
     // Theme tokens
     root.style.setProperty("--theme-hue", String(settings.themeHue));

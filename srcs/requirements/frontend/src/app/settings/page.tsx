@@ -393,40 +393,6 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Theme Mode Section */}
-        <section className="section">
-          <div className="section-header">
-            <svg
-              className="section-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"
-              />
-            </svg>
-            <span className="section-title">theme mode</span>
-          </div>
-          <p className="section-description">
-            Choose between light, dark, or follow your system preference.
-          </p>
-
-          <div className="toggle-group">
-            {(["light", "dark", "system"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => updateSetting("themeMode", mode)}
-                className={`toggle-item ${settings.themeMode === mode ? "active" : ""}`}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </section>
 
         {/* Theme Customization Section */}
         <section className="section">
@@ -467,7 +433,7 @@ export default function SettingsPage() {
                 className="slider"
                 style={{
                   background:
-                    "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                    "linear-gradient(to right, oklch(62.3% 0.226 0), oklch(62.3% 0.226 60), oklch(62.3% 0.226 120), oklch(62.3% 0.226 180), oklch(62.3% 0.226 240), oklch(62.3% 0.226 300), oklch(62.3% 0.226 360))",
                 }}
               />
             </div>

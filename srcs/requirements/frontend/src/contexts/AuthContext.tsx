@@ -205,6 +205,14 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
 
   useEffect(() => {
     if (!user) {
+      // Check for OAuth success signal (the canary flag might be missing on host redirect)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("oauth_success") === "true") {
+        localStorage.setItem("isLoggedIn", "true");
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
       const thinksIsLoggedIn = localStorage.getItem("isLoggedIn") === "true";
       
       if (thinksIsLoggedIn) {

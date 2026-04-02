@@ -159,4 +159,59 @@ export const authController = s.router(contract.auth, {
       body: { sessions: sessions.data as any },
     };
   },
+
+  login42: async () => {
+    const { url } = AuthService.getFortyTwoAuthUrl();
+    return {
+      status: 200,
+      body: { url },
+    };
+  },
+
+  callback42: async ({ query, req, res }: { query: any; req: any; res: any }) => {
+    const ip = req.ip || "127.0.0.1";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+
+    const result = await AuthService.handleFortyTwoCallback(query.code, ip, userAgent);
+
+    if (result.type === "login") {
+      setRefreshTokenCookie(res, result.data.refreshToken);
+      setAccessTokenCookie(res, result.data.accessToken);
+      
+      // Force the browser redirect via strict HTTP headers
+      res.setHeader("Location", `${process.env.FRONTEND_URL || "https://localhost:8080"}/profile?oauth_success=true`);
+      return { status: 302, body: "" as any };
+    }
+
+    if (result.type === "pending_consent") {
+      // Force the browser redirect via strict HTTP headers
+      res.setHeader("Location", `${process.env.FRONTEND_URL || "https://localhost:8080"}/auth/consent?token=${result.pendingToken}&username=${result.profile.username}`);
+      return { status: 302, body: "" as any };
+    }
+
+    throw new AppError(401, "Authentication failed");
+  },
+
+  confirm42: async ({ body, req, res }: { body: any; req: any; res: any }) => {
+    const ip = req.ip || "127.0.0.1";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+
+    const result = await AuthService.confirmFortyTwoRegistration(
+      body.pendingToken,
+      body.consent,
+      ip,
+      userAgent
+    );
+
+    setRefreshTokenCookie(res, result.data!.refreshToken);
+    setAccessTokenCookie(res, result.data!.accessToken);
+
+    return {
+      status: 201,
+      body: {
+        user: result.data!.user as any,
+        token: result.data!.accessToken,
+      },
+    };
+  },
 });

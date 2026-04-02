@@ -73,4 +73,40 @@ export const authContract = c.router({
         },
         summary: "Get all active sessions for current user",
     },
+
+    login42: {
+        method: "GET",
+        path: "/auth/42/login",
+        responses: {
+            200: z.object({ url: z.string() }),
+        },
+        summary: "Get the 42 Intra authorization URL",
+    },
+    callback42: {
+        method: "GET",
+        path: "/auth/42/callback",
+        query: z.object({
+            code: z.string(),
+        }),
+        responses: {
+            200: AuthResponseSchema,
+            302: z.any(), // Used for internal redirect to frontend
+            401: z.object({ message: z.string() }),
+        },
+        summary: "Handle 42 OAuth callback",
+    },
+    confirm42: {
+        method: "POST",
+        path: "/auth/42/confirm",
+        body: z.object({
+            pendingToken: z.string(),
+            consent: z.literal(true),
+        }),
+        responses: {
+            201: AuthResponseSchema,
+            400: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Confirm and complete 42 registration after consent",
+    },
 });
