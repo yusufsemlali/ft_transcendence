@@ -10,7 +10,7 @@ import {
 } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";
 
-import { getIdToken, refreshToken } from "../auth-client";
+import { refreshToken } from "../auth-client";
 
 let toastShownThisSession = false;
 
@@ -22,6 +22,8 @@ function timeoutSignal(ms: number): AbortSignal {
   return ctrl.signal;
 }
 
+// Shared lock for concurrent refreshes
+let refreshPromise: Promise<boolean> | null = null;
 
 function buildApi(
   timeout: number,
@@ -30,57 +32,37 @@ function buildApi(
   args: ApiFetcherArgs,
 ) => Promise<{ status: number; body: unknown; headers: Headers }> {
   return async (request: ApiFetcherArgs) => {
-    // Helper to execute the core fetch logic
-    const executeFetch = async (
-      overrideToken?: string,
-    ): Promise<{ status: number; body: unknown; headers: Headers }> => {
+    
+    const executeFetch = async (): Promise<{ status: number; body: unknown; headers: Headers }> => {
       try {
-        const token = overrideToken || (await getIdToken());
-        const isPublicEndpoint = request.path.includes("/auth/login") || request.path.includes("/auth/register");
-
-        if (token !== null && !isPublicEndpoint) {
-          request.headers["Authorization"] = `Bearer ${token}`;
-        }
-
         const usePolyfill = AbortSignal?.timeout === undefined;
-
+        
         request.fetchOptions = {
           ...request.fetchOptions,
+          credentials: "include", // Browser automatically handles cookies
           signal: usePolyfill
             ? timeoutSignal(timeout)
             : AbortSignal.timeout(timeout),
         };
 
-        const response = await tsRestFetchApi(request);
-        return response;
+        return await tsRestFetchApi(request);
       } catch (e: Error | unknown) {
         let message = "Unknown error";
-
         if (e instanceof Error) {
           if (e.message.includes("timed out")) {
             message = "request took too long to complete";
-            return {
-              status: 408,
-              body: { message },
-              headers: new Headers(),
-            };
-          } else {
-            message = e.message;
+            return { status: 408, body: { message }, headers: new Headers() };
           }
+          message = e.message;
         }
-
-        return {
-          status: 500,
-          body: { message },
-          headers: new Headers(),
-        };
+        return { status: 500, body: { message }, headers: new Headers() };
       }
     };
 
     // 1. Initial Request
     let response = await executeFetch();
 
-    // 2. Log Errors
+    // 2. Log Errors (Except 401 which we attempt to handle)
     if (response.status >= 400 && response.status !== 401 && response.status !== 404) {
       console.error(`${request.method} ${request.path} failed`, {
         status: response.status,
@@ -89,41 +71,41 @@ function buildApi(
     }
 
     // 3. Handle Compatibility Checks
-    const compatibilityCheckHeader = response.headers.get(
-      COMPATIBILITY_CHECK_HEADER,
-    );
-
+    const compatibilityCheckHeader = response.headers.get(COMPATIBILITY_CHECK_HEADER);
     if (compatibilityCheckHeader !== null) {
       lastSeenServerCompatibility = parseInt(compatibilityCheckHeader);
-
       if (!toastShownThisSession) {
         const backendCheck = parseInt(compatibilityCheckHeader);
         if (backendCheck !== COMPATIBILITY_CHECK) {
-          const message =
-            backendCheck > COMPATIBILITY_CHECK
-              ? `Looks like the client and server versions are mismatched (backend is newer). Please refresh the page.`
-              : `Looks like our devs didn't deploy the new server version correctly. If this message persists contact support.`;
+          const message = backendCheck > COMPATIBILITY_CHECK
+            ? `Looks like the client and server versions are mismatched (backend is newer). Please refresh the page.`
+            : `Looks like our devs didn't deploy the new server version correctly. If this message persists contact support.`;
           toast.error(message);
           toastShownThisSession = true;
         }
       }
     }
 
-    // 4. Handle 401 Unauthorized (Auto-Refresh)
-    // Don't try to refresh if the 401 came from the login endpoint itself (wrong credentials)
-    const isLoginEndpoint = request.path.includes("/auth/login");
+    // 4. Handle 401 Unauthorized (Auto-Refresh with Lock)
+    const isPublicEndpoint = request.path.includes("/auth/login") || request.path.includes("/auth/register") || request.path.includes("/auth/refresh");
 
-    if (response.status === 401 && typeof window !== "undefined" && !isLoginEndpoint) {
-      const refreshed = await refreshToken(baseUrl);
+    if (response.status === 401 && typeof window !== "undefined" && !isPublicEndpoint) {
+      // If a refresh isn't already happening, start one
+      if (!refreshPromise) {
+        refreshPromise = refreshToken(baseUrl).finally(() => {
+          // Clear the lock when done, whether it succeeded or failed
+          refreshPromise = null; 
+        });
+      }
+
+      // Wait for the refresh attempt (either the one we just started, or one already in progress)
+      const refreshed = await refreshPromise;
+
       if (refreshed) {
-        // Retry the request with the new token
-        const newToken = localStorage.getItem("token");
-        if (newToken) {
-          response = await executeFetch(newToken);
-        }
+        // The backend set a new cookie. Simply try the exact same request again.
+        response = await executeFetch();
       } else {
-        // Refresh failed, clear token and notify app
-        localStorage.removeItem("token");
+        // Refresh failed (session truly dead). Notify app to kick user out.
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }
     }

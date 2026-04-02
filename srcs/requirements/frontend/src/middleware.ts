@@ -6,16 +6,20 @@ const protectedRoutes = ["/settings", "/profile", "/tournaments/create"];
 const authRoutes = ["/login", "/register"];
 
 export function middleware(request: NextRequest) {
-    const token = request.cookies.get("token")?.value;
+    // 1. Check for both access and refresh cookies
+    const hasAccessToken = request.cookies.has("access_token");
+    const hasRefreshToken = request.cookies.has("refresh_token");
+    const isAuthenticated = hasAccessToken || hasRefreshToken;
+
     const { pathname } = request.nextUrl;
 
-    if (!token && protectedRoutes.some(route => pathname.startsWith(route))) {
+    if (!isAuthenticated && protectedRoutes.some(route => pathname.startsWith(route))) {
         const url = new URL("/login", request.url);
         url.searchParams.set("callbackUrl", pathname);
         return NextResponse.redirect(url);
     }
 
-    if (token && authRoutes.some(route => pathname.startsWith(route))) {
+    if (isAuthenticated && authRoutes.some(route => pathname.startsWith(route))) {
         return NextResponse.redirect(new URL("/", request.url));
     }
 

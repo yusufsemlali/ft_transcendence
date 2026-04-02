@@ -17,7 +17,7 @@ const BACKEND_URL = process.env.INTERNAL_BACKEND_API_URL || "http://ft_backend:3
 export async function getServerUser(): Promise<UserInfo | null> {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
+        const token = cookieStore.get("access_token")?.value;
 
         if (!token) {
             return null;
@@ -97,12 +97,12 @@ async function refreshTokensServer(): Promise<{ success: boolean; token?: string
             const newToken = data.token;
 
             // Update the access token cookie
-            cookieStore.set("token", newToken, {
+            cookieStore.set("access_token", newToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
                 path: "/",
-                maxAge: 60 * 15, // 15 minutes
+                maxAge: 60 * 60, // 1 hour
             });
 
             return { success: true, token: newToken };
@@ -120,7 +120,7 @@ export async function setAuthCookies(accessToken: string) {
     const cookieStore = await cookies();
 
     // Set access token cookie
-    cookieStore.set("token", accessToken, {
+    cookieStore.set("access_token", accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -135,7 +135,7 @@ export async function setAuthCookies(accessToken: string) {
 export async function logoutAction(): Promise<{ success: boolean }> {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
+        const token = cookieStore.get("access_token")?.value;
 
         if (token) {
             // Call backend logout to invalidate session
@@ -155,8 +155,9 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 
     // Always clear cookies, even if backend call fails
     const cookieStore = await cookies();
-    cookieStore.delete("token");
+    cookieStore.delete("access_token");
     cookieStore.delete("refresh_token");
+    cookieStore.delete("token"); // Clear legacy token just in case
 
     return { success: true };
 }
@@ -167,7 +168,7 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 export async function logoutAllAction(): Promise<{ success: boolean; sessionsRevoked?: number }> {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
+        const token = cookieStore.get("access_token")?.value;
 
         if (token) {
             const response = await fetch(`${BACKEND_URL}/auth/logout-all`, {
@@ -182,8 +183,9 @@ export async function logoutAllAction(): Promise<{ success: boolean; sessionsRev
 
             if (response.ok) {
                 const data = await response.json();
-                cookieStore.delete("token");
+                cookieStore.delete("access_token");
                 cookieStore.delete("refresh_token");
+                cookieStore.delete("token");
                 return { success: true, sessionsRevoked: data.sessionsRevoked };
             }
         }
@@ -200,7 +202,7 @@ export async function logoutAllAction(): Promise<{ success: boolean; sessionsRev
 export async function getActiveSessions() {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
+        const token = cookieStore.get("access_token")?.value;
 
         if (!token) {
             return [];

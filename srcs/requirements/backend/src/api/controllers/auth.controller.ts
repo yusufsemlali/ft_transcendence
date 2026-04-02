@@ -12,12 +12,23 @@ const setRefreshTokenCookie = (res: any, refreshToken: string) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 };
 
-const clearRefreshTokenCookie = (res: any) => {
+const setAccessTokenCookie = (res: any, accessToken: string) => {
+  res.cookie("access_token", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 1 * 60 * 60 * 1000, // 1 hour
+  });
+};
+
+const clearAuthCookies = (res: any) => {
   res.clearCookie("refresh_token", { path: "/" });
+  res.clearCookie("access_token", { path: "/" });
 };
 
 export const authController = s.router(contract.auth, {
@@ -34,6 +45,7 @@ export const authController = s.router(contract.auth, {
       );
 
       setRefreshTokenCookie(res, result.data!.refreshToken);
+      setAccessTokenCookie(res, result.data!.accessToken);
 
     return {
       status: 201,
@@ -56,6 +68,7 @@ export const authController = s.router(contract.auth, {
       );
 
       setRefreshTokenCookie(res, result.data!.refreshToken);
+      setAccessTokenCookie(res, result.data!.accessToken);
 
     return {
       status: 200,
@@ -73,12 +86,13 @@ export const authController = s.router(contract.auth, {
     }
 
     const result = await AuthService.refreshAccessToken(refreshToken).catch(err => {
-      clearRefreshTokenCookie(res);
+      clearAuthCookies(res);
       if (err instanceof AppError) throw err;
       throw new AppError(401, "Token refresh failed");
     });
 
     setRefreshTokenCookie(res, result.data!.refreshToken);
+    setAccessTokenCookie(res, result.data!.accessToken);
 
     return {
       status: 200,
@@ -91,16 +105,16 @@ export const authController = s.router(contract.auth, {
     const sessionId = contextReq.ctx?.decodedToken?.sessionId;
 
     if (!sessionId) {
-      clearRefreshTokenCookie(res);
+      clearAuthCookies(res);
       return { status: 200, body: { success: true } };
     }
 
     await AuthService.logout(sessionId).catch(err => {
-      clearRefreshTokenCookie(res);
+      clearAuthCookies(res);
       if (err instanceof AppError) throw err;
       throw new AppError(401, "Logout failed");
     });
-    clearRefreshTokenCookie(res);
+    clearAuthCookies(res);
 
     return { status: 200, body: { success: true } };
   },
@@ -114,12 +128,12 @@ export const authController = s.router(contract.auth, {
     }
 
     const result = await AuthService.logoutAll(userId).catch(err => {
-      clearRefreshTokenCookie(res);
+      clearAuthCookies(res);
       if (err instanceof AppError) throw err;
       throw new AppError(401, "Logout all failed");
     });
     
-    clearRefreshTokenCookie(res);
+    clearAuthCookies(res);
 
     return {
       status: 200,

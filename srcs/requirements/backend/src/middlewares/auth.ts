@@ -12,12 +12,16 @@ export function authenticateTsRestRequest<
         res: Response,
         next: NextFunction,
     ): Promise<void> => {
-        const authHeader = req.headers.authorization;
+        // 1. Look for the token in the Bearer header first
+        let token = req.headers.authorization?.split(" ")[1];
+
+        // 2. If not in the header, look for it in the cookies
+        if (!token && req.cookies && req.cookies.access_token) {
+            token = req.cookies.access_token;
+        }
 
         try {
-            if (authHeader && authHeader.startsWith("Bearer ")) {
-                const token = authHeader.split(" ")[1];
-
+            if (token) {
                 try {
                     const decoded = verifyAccessToken(token);
 
