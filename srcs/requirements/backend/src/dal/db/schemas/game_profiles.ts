@@ -1,30 +1,23 @@
-import { pgTable, serial, text, timestamp, integer, boolean, jsonb, unique, varchar, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, jsonb, unique } from 'drizzle-orm/pg-core';
 import { users } from './users';
-import { supportedGameEnum } from './enums';
+import { sports } from './sports'; // Import the new sports catalog
 
 export const gameProfiles = pgTable('game_profiles', {
-    id: serial('id').primaryKey(),
-
-    userId: uuid('user_id').references(() => users.id).notNull(),
-
-    game: supportedGameEnum('game').notNull(),
-
-    gameIdentifier: varchar('game_identifier', { length: 255 }).notNull(),
-
-    rank: varchar('rank', { length: 50 }).default('Unranked'),
-    level: integer('level').default(0),
-
-    isVerified: boolean('is_verified').default(false).notNull(),
-    verificationProof: text('verification_proof'),
-
-    isVisible: boolean('is_visible').default(true).notNull(),
-
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    
+    // THE FIX: Replaced the enum with a relation to the universal sports table
+    sportId: uuid('sport_id').references(() => sports.id, { onDelete: 'cascade' }).notNull(),
+    
+    // The user's in-game name, Riot ID, or Steam ID for this specific sport/game
+    gameIdentifier: text('game_identifier').notNull(),
+    
+    // Store flexible data like ranks, ELO, or API sync tokens here
     metadata: jsonb('metadata').default({}).notNull(),
-
+    
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (t) => ({
-    uniqueUserGame: unique().on(t.userId, t.game),
-    uniqueGameIdentity: unique().on(t.game, t.gameIdentifier),
+}, (table) => ({
+    // Ensure a user can only have one profile per sport (e.g., one League of Legends account linked)
+    uniqueProfile: unique().on(table.userId, table.sportId),
 }));
-

@@ -8,4 +8,6 @@ export * from './schemas/social';
 export * from './schemas/tournaments';
 export * from './schemas/matches';
 export * from './schemas/settings';
+export * from './schemas/organizations';
+export * from './schemas/sports';
 export * from './schemas/game_profiles';

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770591348466,
-      "tag": "0000_icy_shinko_yamashiro",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1775136664438,
-      "tag": "0001_slim_puck",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1775137078110,
-      "tag": "0002_smiling_silver_samurai",
+      "when": 1775211964333,
+      "tag": "0000_graceful_tarot",
       "breakpoints": true
     }
   ]

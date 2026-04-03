@@ -1,9 +1,9 @@
-import { uuid, text, timestamp, boolean, bigserial } from "drizzle-orm/pg-core";
+import { uuid, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { authSchema } from "./auth";
 import { sessions } from "./sessions";
 
 export const refreshTokens = authSchema.table("refresh_tokens", {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     sessionId: uuid("session_id").notNull().references(() => sessions.id, { onDelete: "cascade" }),
     token: text("token").notNull().unique(),
     parent: text("parent"),

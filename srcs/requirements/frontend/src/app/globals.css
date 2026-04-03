@@ -111,8 +111,8 @@
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: var(--ring);
 
-  /* Radius Override */
-  --radius: var(--radius-lg);
+  /* Radius Override - Removed to allow dynamic control */
+  /* --radius: var(--radius-lg); */
 
   /* Spacing aliases */
   --space-xs: var(--spacing-1);
@@ -238,6 +238,7 @@ body {
   /* The original class, now mirrored in data-slot="card" but kept for usage */
   background: linear-gradient(145deg, oklch(100% 0 0 / var(--glass-opacity)) 0%, oklch(100% 0 0 / calc(var(--glass-opacity) / 2)) 100%);
   backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
@@ -363,7 +364,7 @@ a {
 .button-group {
   display: inline-flex;
   background: var(--bg-secondary);
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -391,7 +392,7 @@ a {
 .toggle-group {
   display: inline-flex;
   background: var(--bg-secondary);
-  border-radius: 20px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -413,7 +414,7 @@ a {
 .toggle-item.active {
   background: var(--primary);
   color: var(--background);
-  border-radius: 20px;
+  border-radius: var(--radius);
 }
 
 /* Slider styling */
@@ -480,7 +481,7 @@ a {
 .input {
   background: var(--bg-secondary);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 0.5rem 0.75rem;
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -503,7 +504,7 @@ a {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius);
   transition: all 0.2s;
   cursor: pointer;
   display: inline-flex;
@@ -724,7 +725,7 @@ a {
   display: inline-flex;
   align-items: center;
   padding: 0.15rem 0.4rem;
-  border-radius: 3px;
+  border-radius: calc(var(--radius) / 2);
   font-size: 0.7rem;
   font-weight: 500;
 }
@@ -739,7 +740,7 @@ a {
 .dropdown {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.35rem;
   min-width: 180px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -750,7 +751,7 @@ a {
   align-items: center;
   gap: 0.6rem;
   padding: 0.5rem 0.65rem;
-  border-radius: 5px;
+  border-radius: calc(var(--radius) / 1.5);
   color: var(--text-secondary);
   font-size: 0.8rem;
   transition: all 0.2s;

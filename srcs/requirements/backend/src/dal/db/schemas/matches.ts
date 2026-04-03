@@ -1,23 +1,26 @@
-import { pgTable, serial, integer, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, integer, timestamp, jsonb } from 'drizzle-orm/pg-core';
 import { tournaments } from './tournaments';
 import { matchStatusEnum } from './enums';
 
 export const matches = pgTable('matches', {
-    id: serial('id').primaryKey(),
-    tournamentId: integer('tournament_id').references(() => tournaments.id).notNull(),
+    id: uuid('id').primaryKey().defaultRandom(),
+    tournamentId: uuid('tournament_id').references(() => tournaments.id, { onDelete: 'cascade' }).notNull(),
 
-    participant1Id: integer('participant1_id'),
-    participant2Id: integer('participant2_id'),
+    // We keep these as integer for now if they are intended to be simple relative ids (like "Player 1"), 
+    // but usually in this dynamic system, participant IDs should also be UUIDs referencing users or teams.
+    // Given the move to UUIDs for users/orgs, these should definitely be UUIDs as well.
+    participant1Id: uuid('participant1_id'),
+    participant2Id: uuid('participant2_id'),
 
     score1: integer('score1').default(0),
     score2: integer('score2').default(0),
-    winnerId: integer('winner_id'),
+    winnerId: uuid('winner_id'),
 
     status: matchStatusEnum('status').default('pending').notNull(),
     round: integer('round').notNull(),
     position: integer('position').notNull(),
 
-    nextMatchId: integer('next_match_id'),
+    nextMatchId: uuid('next_match_id'),
 
     matchStats: jsonb('match_stats').default({}).notNull(),
 

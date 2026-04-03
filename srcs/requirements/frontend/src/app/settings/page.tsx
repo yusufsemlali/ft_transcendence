@@ -34,6 +34,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const local = getLocalSettings();
     setSettings(local);
+    applyAllSettings(local); // Immediate application
     checkLocalBackground();
 
     fetchSettings();
@@ -50,6 +51,7 @@ export default function SettingsPage() {
       if (response.status === 200) {
         setSettings(response.body);
         setLocalSettings(response.body);
+        applyAllSettings(response.body); // Sync with server state
       }
     } catch (error) {
       console.log("Failed to fetch settings:", error);

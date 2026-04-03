@@ -1,5 +1,5 @@
 {
-  "id": "73100ebb-a874-42a1-a9b4-d3be1b122008",
+  "id": "7477c9ca-7daa-4001-8106-d9cbcfca4ea6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -394,9 +394,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "session_id": {
           "name": "session_id",
@@ -475,9 +476,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "sender_id": {
           "name": "sender_id",
@@ -520,7 +522,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "friendships_receiver_id_users_id_fk": {
@@ -534,7 +536,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -559,8 +561,21 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sport_id": {
+          "name": "sport_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "name": {
@@ -580,12 +595,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "organizer_id": {
-          "name": "organizer_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
         },
         "status": {
           "name": "status",
@@ -682,13 +691,25 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "tournaments_organizer_id_users_id_fk": {
-          "name": "tournaments_organizer_id_users_id_fk",
+        "tournaments_organization_id_organizations_id_fk": {
+          "name": "tournaments_organization_id_organizations_id_fk",
           "tableFrom": "tournaments",
-          "tableTo": "users",
-          "schemaTo": "auth",
+          "tableTo": "organizations",
           "columnsFrom": [
-            "organizer_id"
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tournaments_sport_id_sports_id_fk": {
+          "name": "tournaments_sport_id_sports_id_fk",
+          "tableFrom": "tournaments",
+          "tableTo": "sports",
+          "columnsFrom": [
+            "sport_id"
           ],
           "columnsTo": [
             "id"
@@ -717,25 +738,26 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "tournament_id": {
           "name": "tournament_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "participant1_id": {
           "name": "participant1_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
         "participant2_id": {
           "name": "participant2_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -755,7 +777,7 @@
         },
         "winner_id": {
           "name": "winner_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -781,7 +803,7 @@
         },
         "next_match_id": {
           "name": "next_match_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -817,7 +839,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -833,9 +855,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
@@ -918,12 +941,12 @@
           "notNull": true,
           "default": false
         },
-        "auto_switch_theme": {
-          "name": "auto_switch_theme",
-          "type": "boolean",
+        "theme_mode": {
+          "name": "theme_mode",
+          "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "'system'"
         },
         "sound_enabled": {
           "name": "sound_enabled",
@@ -945,6 +968,34 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "theme_hue": {
+          "name": "theme_hue",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 344
+        },
+        "border_radius": {
+          "name": "border_radius",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "glass_blur": {
+          "name": "glass_blur",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 12
+        },
+        "glass_opacity": {
+          "name": "glass_opacity",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0.1
         },
         "created_at": {
           "name": "created_at",
@@ -974,7 +1025,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -992,14 +1043,14 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.game_profiles": {
-      "name": "game_profiles",
+    "public.organization_members": {
+      "name": "organization_members",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "user_id": {
@@ -1008,52 +1059,214 @@
           "primaryKey": false,
           "notNull": true
         },
-        "game": {
-          "name": "game",
-          "type": "supported_game",
+        "role": {
+          "name": "role",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "organization_members_organization_id_organizations_id_fk": {
+          "name": "organization_members_organization_id_organizations_id_fk",
+          "tableFrom": "organization_members",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "organization_members_user_id_users_id_fk": {
+          "name": "organization_members_user_id_users_id_fk",
+          "tableFrom": "organization_members",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "organization_members_organization_id_user_id_pk": {
+          "name": "organization_members_organization_id_user_id_pk",
+          "columns": [
+            "organization_id",
+            "user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "organizations_slug_unique": {
+          "name": "organizations_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sports": {
+      "name": "sports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scoring_type": {
+          "name": "scoring_type",
+          "type": "scoring_type",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'points_high'"
+        },
+        "is_team_based": {
+          "name": "is_team_based",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sports_name_unique": {
+          "name": "sports_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.game_profiles": {
+      "name": "game_profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sport_id": {
+          "name": "sport_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "game_identifier": {
           "name": "game_identifier",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "rank": {
-          "name": "rank",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Unranked'"
-        },
-        "level": {
-          "name": "level",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "is_verified": {
-          "name": "is_verified",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "verification_proof": {
-          "name": "verification_proof",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
-        },
-        "is_visible": {
-          "name": "is_visible",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
+          "notNull": true
         },
         "metadata": {
           "name": "metadata",
@@ -1090,26 +1303,31 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "game_profiles_sport_id_sports_id_fk": {
+          "name": "game_profiles_sport_id_sports_id_fk",
+          "tableFrom": "game_profiles",
+          "tableTo": "sports",
+          "columnsFrom": [
+            "sport_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "game_profiles_user_id_game_unique": {
-          "name": "game_profiles_user_id_game_unique",
+        "game_profiles_user_id_sport_id_unique": {
+          "name": "game_profiles_user_id_sport_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "user_id",
-            "game"
-          ]
-        },
-        "game_profiles_game_game_identifier_unique": {
-          "name": "game_profiles_game_game_identifier_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "game",
-            "game_identifier"
+            "sport_id"
           ]
         }
       },
@@ -1126,7 +1344,8 @@
         "single_elimination",
         "double_elimination",
         "round_robin",
-        "swiss"
+        "swiss",
+        "free_for_all"
       ]
     },
     "public.friendship_status": {
@@ -1160,15 +1379,14 @@
         "system_alert"
       ]
     },
-    "public.supported_game": {
-      "name": "supported_game",
+    "public.scoring_type": {
+      "name": "scoring_type",
       "schema": "public",
       "values": [
-        "league_of_legends",
-        "cs2",
-        "valorant",
-        "dota2",
-        "overwatch2"
+        "points_high",
+        "time_low",
+        "sets",
+        "binary"
       ]
     },
     "public.tournament_status": {

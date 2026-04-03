@@ -1,9 +1,9 @@
-import { pgTable, serial, varchar, jsonb, boolean, real, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, jsonb, boolean, real, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
 export const userSettings = pgTable('user_settings', {
-    id: serial('id').primaryKey(),
-    userId: uuid('user_id').references(() => users.id).notNull().unique(),
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
 
     theme: varchar('theme', { length: 50 }).default('default').notNull(),
     customTheme: boolean('custom_theme').default(false).notNull(),
@@ -35,4 +35,3 @@ export const userSettings = pgTable('user_settings', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
-
