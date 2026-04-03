@@ -5,6 +5,9 @@ import { authContract } from "./endpoints/auth";
 import { settingsContract } from "./endpoints/settings";
 import { gameProfilesContract } from "./endpoints/game_profiles";
 import { organizationsContract } from "./endpoints/organizations";
+import { adminContract } from "./endpoints/admin";
+import { ORG_ROLES } from "./constants/roles";
+
 
 const c = initContract();
 
@@ -15,6 +18,7 @@ export const contract = c.router({
     settings: settingsContract,
     gameProfiles: gameProfilesContract,
     organizations: organizationsContract,
+    admin: adminContract,
 });
 
 export const COMPATIBILITY_CHECK = 1;
@@ -27,4 +31,4 @@ export * from "./schemas/settings";
 export * from "./schemas/game_profiles";
 export * from "./schemas/organizations";
 export { defaultSettings } from "./schemas/settings";
-
+export { ORG_ROLES, OrgRole } from "./constants/roles";

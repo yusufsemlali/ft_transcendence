@@ -58,4 +58,19 @@ export const usersController = s.router(contract.users, {
             body: user.data as any,
         };
     },
+    changePassword: async ({ body, req }: { body: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx.decodedToken?.id;
+
+        if (!userId) {
+            throw new AppError(401, "Unauthorized");
+        }
+
+        await UserService.changePassword(userId, body.currentPassword, body.newPassword);
+
+        return {
+            status: 200,
+            body: { message: "Password changed successfully" },
+        };
+    },
 });

@@ -1,6 +1,6 @@
 import { text, timestamp, integer, boolean, jsonb, varchar, uuid } from 'drizzle-orm/pg-core';
 import { authSchema } from './auth';
-import { userRoleEnum } from './enums';
+import { userRoleEnum, userStatusEnum } from './enums';
 
 export const users = authSchema.table('users', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -9,6 +9,7 @@ export const users = authSchema.table('users', {
     email: varchar('email', { length: 255 }).notNull().unique(),
     password: text('password'),
     role: userRoleEnum('role').default('user').notNull(),
+    status: userStatusEnum('status').default('active').notNull(),
 
     displayName: varchar('display_name', { length: 50 }),
     bio: text('bio'),

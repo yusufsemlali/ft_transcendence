@@ -4,15 +4,18 @@ CREATE TYPE "public"."bracket_type" AS ENUM('single_elimination', 'double_elimin
 CREATE TYPE "public"."friendship_status" AS ENUM('pending', 'accepted', 'blocked');--> statement-breakpoint
 CREATE TYPE "public"."match_status" AS ENUM('pending', 'ongoing', 'completed', 'disputed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."notification_type" AS ENUM('friend_request', 'tournament_invite', 'match_starting', 'achievement_unlocked', 'system_alert');--> statement-breakpoint
+CREATE TYPE "public"."org_role" AS ENUM('owner', 'admin', 'referee', 'member');--> statement-breakpoint
 CREATE TYPE "public"."scoring_type" AS ENUM('points_high', 'time_low', 'sets', 'binary');--> statement-breakpoint
 CREATE TYPE "public"."tournament_status" AS ENUM('draft', 'registration', 'upcoming', 'ongoing', 'completed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('user', 'admin', 'moderator', 'organizer');--> statement-breakpoint
+CREATE TYPE "public"."user_status" AS ENUM('active', 'suspended', 'banned', 'muted');--> statement-breakpoint
 CREATE TABLE "auth"."users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"username" varchar(24) NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"password" text,
 	"role" "user_role" DEFAULT 'user' NOT NULL,
+	"status" "user_status" DEFAULT 'active' NOT NULL,
 	"display_name" varchar(50),
 	"bio" text,
 	"tagline" varchar(100),
@@ -155,7 +158,7 @@ CREATE TABLE "user_settings" (
 CREATE TABLE "organization_members" (
 	"organization_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
-	"role" varchar(50) DEFAULT 'member' NOT NULL,
+	"role" "org_role" DEFAULT 'member' NOT NULL,
 	"joined_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "organization_members_organization_id_user_id_pk" PRIMARY KEY("organization_id","user_id")
 );
@@ -166,8 +169,10 @@ CREATE TABLE "organizations" (
 	"slug" varchar(120) NOT NULL,
 	"description" text,
 	"logo_url" text,
+	"visibility" varchar DEFAULT 'public' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"deleted_at" timestamp,
 	CONSTRAINT "organizations_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
@@ -196,11 +201,14 @@ ALTER TABLE "auth"."identities" ADD CONSTRAINT "identities_user_id_users_id_fk" 
 ALTER TABLE "auth"."refresh_tokens" ADD CONSTRAINT "refresh_tokens_session_id_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "auth"."sessions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "friendships" ADD CONSTRAINT "friendships_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "friendships" ADD CONSTRAINT "friendships_receiver_id_users_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tournaments" ADD CONSTRAINT "tournaments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tournaments" ADD CONSTRAINT "tournaments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tournaments" ADD CONSTRAINT "tournaments_sport_id_sports_id_fk" FOREIGN KEY ("sport_id") REFERENCES "public"."sports"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matches" ADD CONSTRAINT "matches_tournament_id_tournaments_id_fk" FOREIGN KEY ("tournament_id") REFERENCES "public"."tournaments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "game_profiles" ADD CONSTRAINT "game_profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "game_profiles" ADD CONSTRAINT "game_profiles_sport_id_sports_id_fk" FOREIGN KEY ("sport_id") REFERENCES "public"."sports"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "game_profiles" ADD CONSTRAINT "game_profiles_sport_id_sports_id_fk" FOREIGN KEY ("sport_id") REFERENCES "public"."sports"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "idx_org_members_user" ON "organization_members" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_org_members_org" ON "organization_members" USING btree ("organization_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_owner_per_org" ON "organization_members" USING btree ("organization_id") WHERE role = 'owner';

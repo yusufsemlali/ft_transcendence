@@ -100,3 +100,35 @@ export const deleteUser = async (id: string) => {
         throw new AppError(404, "User not found");
     }
 };
+
+import { hashPassword, comparePassword } from "@/utils/auth";
+
+export const changePassword = async (id: string, current: string, newPass: string) => {
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, id),
+    });
+
+    if (!user) {
+        throw new AppError(404, "User not found");
+    }
+
+    if (!user.password) {
+        throw new AppError(400, "User registered via OAuth and does not have a password. Set one via Reset Password.");
+    }
+
+    const isValid = await comparePassword(current, user.password);
+    if (!isValid) {
+        throw new AppError(401, "Current password is incorrect");
+    }
+
+    const hashed = await hashPassword(newPass);
+    await db
+        .update(users)
+        .set({
+            password: hashed,
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+
+    return new ApiResponse("Password changed successfully", null);
+};

@@ -37,4 +37,18 @@ export const usersContract = c.router({
         },
         summary: "Get a user by ID",
     },
+    changePassword: {
+        method: "POST",
+        path: "/users/me/change-password",
+        body: z.object({
+            currentPassword: z.string().min(1),
+            newPassword: z.string().min(8).max(100),
+        }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+        },
+        summary: "Update current password with security verification",
+    },
 });

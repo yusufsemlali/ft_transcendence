@@ -1,19 +1,21 @@
 import { z } from "zod";
 
 export const UserRoleSchema = z.enum(['user', 'admin', 'moderator', 'organizer']);
+export const UserStatusSchema = z.enum(['active', 'suspended', 'banned', 'muted']);
 
 export const UserSchema = z.object({
     id: z.string().uuid(),
     username: z.string().min(3).max(24),
     email: z.string().email(),
     role: UserRoleSchema,
+    status: UserStatusSchema,
     displayName: z.string().max(50).nullable(),
-    avatar: z.string().url(),
+    avatar: z.string(),
     xp: z.number().nonnegative(),
     level: z.number().positive(),
     eloRating: z.number(),
     isOnline: z.boolean(),
-    createdAt: z.date(),
+    createdAt: z.coerce.date(),
 });
 
 export const CreateUserSchema = z.object({

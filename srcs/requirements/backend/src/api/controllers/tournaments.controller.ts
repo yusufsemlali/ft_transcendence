@@ -3,6 +3,7 @@ import { contract } from "@ft-transcendence/contracts";
 import * as TournamentService from "@/services/tournament.service";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
+import { requireOrgRole } from "@/utils/rbac";
 
 const s = initServer();
 
@@ -14,6 +15,8 @@ export const tournamentsController = s.router(contract.tournaments, {
         if (!userId || contextReq.ctx.decodedToken?.type === "None") {
             throw new AppError(401, "Unauthorized - Please login first");
         }
+
+        await requireOrgRole(userId, body.organizationId, ["owner", "admin"]);
 
         const tournament = await TournamentService.createTournament({
             ...body,

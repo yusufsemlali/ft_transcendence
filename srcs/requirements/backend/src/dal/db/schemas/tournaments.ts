@@ -7,7 +7,7 @@ export const tournaments = pgTable('tournaments', {
     id: uuid('id').primaryKey().defaultRandom(),
 
     // Hierarchical Links
-    organizationId: uuid('organization_id').references(() => organizations.id).notNull(),
+    organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
     sportId: uuid('sport_id').references(() => sports.id).notNull(),
 
     name: varchar('name', { length: 100 }).notNull(),
