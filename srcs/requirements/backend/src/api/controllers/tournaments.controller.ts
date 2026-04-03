@@ -18,20 +18,17 @@ export const tournamentsController = s.router(contract.tournaments, {
         const tournament = await TournamentService.createTournament({
             ...body,
             organizerId: userId
-        }).catch(() => {
+        }).catch((err) => {
+            console.error("Tournament creation error:", err);
             throw new AppError(400, "Failed to create tournament");
         });
 
         return {
-            status: 201, // Contract specifies 201
-            body: {
-                ...tournament.data,
-                description: tournament.data!.description || undefined,
-            } as any, // Cast to any because TS struggles with nullable vs undefined in contracts
+            status: 201,
+            body: tournament.data as any,
         };
     },
     getTournaments: async () => {
-        // We'll implement this properly later with a service call
         return {
             status: 200,
             body: [],

@@ -7,8 +7,13 @@ export const createTournament = async (data: CreateTournament & { organizerId: s
     const slug = data.name.toLowerCase().replace(/ /g, '-');
 
     const [newTournament] = await db.insert(tournaments).values({
-        ...data,
+        organizationId: data.organizationId,
+        sportId: data.sportId,
+        name: data.name,
+        description: data.description,
         slug,
+        bracketType: data.format,
+        maxParticipants: data.maxParticipants,
         status: 'draft',
     }).returning();
 

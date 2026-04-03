@@ -4,6 +4,7 @@ import { usersContract } from "./endpoints/users";
 import { authContract } from "./endpoints/auth";
 import { settingsContract } from "./endpoints/settings";
 import { gameProfilesContract } from "./endpoints/game_profiles";
+import { organizationsContract } from "./endpoints/organizations";
 
 const c = initContract();
 
@@ -13,6 +14,7 @@ export const contract = c.router({
     users: usersContract,
     settings: settingsContract,
     gameProfiles: gameProfilesContract,
+    organizations: organizationsContract,
 });
 
 export const COMPATIBILITY_CHECK = 1;
@@ -23,5 +25,6 @@ export * from "./schemas/auth";
 export * from "./schemas/users";
 export * from "./schemas/settings";
 export * from "./schemas/game_profiles";
+export * from "./schemas/organizations";
 export { defaultSettings } from "./schemas/settings";
 

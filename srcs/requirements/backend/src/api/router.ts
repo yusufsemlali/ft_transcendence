@@ -5,6 +5,7 @@ import { authController } from "./controllers/auth.controller";
 import { usersController } from "./controllers/users.controller";
 import { settingsController } from "./controllers/settings.controller";
 import { gameProfilesController } from "./controllers/game-profiles.controller";
+import { organizationsController } from "./controllers/organizations.controller";
 import { Router, Express, Request, Response, NextFunction } from "express";
 import { authenticateTsRestRequest } from "@/middlewares/auth";
 
@@ -25,6 +26,7 @@ export const addApiRoutes = (app: Express) => {
         users: usersController,
         settings: settingsController,
         gameProfiles: gameProfilesController,
+        organizations: organizationsController,
     }, apiRouter, {
         globalMiddleware: [
             authenticateTsRestRequest()
