@@ -23,4 +23,19 @@ export const tournamentsContract = c.router({
         },
         summary: "Get all tournaments",
     },
+    joinTournament: {
+        method: "POST",
+        path: "/tournaments/:id/join",
+        pathParams: z.object({
+            id: z.coerce.number().int().positive(),
+        }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Join a tournament",
+    },
 });

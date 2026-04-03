@@ -2,6 +2,7 @@ import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import * as TournamentService from "@/services/tournament.service";
 import { RequestWithContext } from "@/api/types";
+import AppError from "@/utils/error";
 
 const s = initServer();
 
@@ -45,5 +46,40 @@ export const tournamentsController = s.router(contract.tournaments, {
             status: 200,
             body: [],
         };
+    },
+    joinTournament: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx.decodedToken?.id;
+
+        if (!userId || contextReq.ctx.decodedToken?.type === "None") {
+            return {
+                status: 401,
+                body: { message: "Unauthorized - Please login first" },
+            };
+        }
+
+        try {
+            await TournamentService.joinTournament({
+                tournamentId: params.id,
+                userId,
+            });
+
+            return {
+                status: 200,
+                body: { message: "Joined tournament successfully" },
+            };
+        } catch (error) {
+            if (error instanceof AppError) {
+                return {
+                    status: error.status as 400 | 401 | 409,
+                    body: { message: error.message },
+                };
+            }
+
+            return {
+                status: 400,
+                body: { message: "Failed to join tournament" },
+            };
+        }
     },
 });

@@ -6,6 +6,7 @@ export * from './schemas/identities';
 export * from './schemas/refresh_tokens';
 export * from './schemas/social';
 export * from './schemas/tournaments';
+export * from './schemas/tournament_registrations';
 export * from './schemas/matches';
 export * from './schemas/settings';
 export * from './schemas/game_profiles';
