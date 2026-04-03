@@ -78,6 +78,8 @@ export const login = async (
         throw new AppError(401, "Invalid credentials");
     }
 
+    await checkAccountHealth(user);
+
     const { accessToken, refreshToken } = await createSession(
         user.id,
         user.username,
@@ -212,6 +214,41 @@ const createSession = async (
     return { session, accessToken, refreshToken };
 };
 
+const checkAccountHealth = async (user: typeof users.$inferSelect) => {
+    if (user.status === "banned") {
+        const reason = user.banReason ? ` Reason: ${user.banReason}` : "";
+        throw new AppError(403, `This account has been permanently banned from the platform.${reason}`);
+    }
+
+    if (user.status === "suspended") {
+        const reason = user.banReason ? ` Reason: ${user.banReason}` : "";
+
+        // Check if suspension has expired
+        if (user.bannedUntil && user.bannedUntil <= new Date()) {
+            // 🔄 Auto-Reactivate the user
+            await db.update(users)
+                .set({
+                    status: 'active',
+                    banReason: null,
+                    bannedUntil: null,
+                    updatedAt: new Date()
+                })
+                .where(eq(users.id, user.id));
+
+            console.log(`[Auth] User ${user.username} suspension expired. Auto-reactivated.`);
+            return; // Allow login to proceed
+        }
+
+        if (user.bannedUntil && user.bannedUntil > new Date()) {
+            const dateStr = user.bannedUntil.toLocaleString();
+            throw new AppError(403, `Your account is currently suspended until ${dateStr}.${reason}`);
+        }
+
+        // Permanent suspension (no end date)
+        throw new AppError(403, `Your account is currently suspended. Please contact support.${reason}`);
+    }
+}
+
 // --- FortyTwo OAuth Logic ---
 
 export const getFortyTwoAuthUrl = () => {
@@ -286,6 +323,9 @@ export const handleFortyTwoCallback = async (code: string, ip: string, userAgent
 
     if (existingUserById) {
         console.log(`[Auth] Existing user found by 42 ID: ${existingUserById.username}`);
+
+        await checkAccountHealth(existingUserById);
+
         const { accessToken, refreshToken } = await createSession(
             existingUserById.id,
             existingUserById.username,

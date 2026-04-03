@@ -4,7 +4,7 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import AppError from "../utils/error";
 import { ExpressRequestWithContext } from "../api/types";
 
-export const REQUEST_MULTIPLIER =  100 ; // set to 100 because wer  are in dev, if later going prod , please change to 1;
+export const REQUEST_MULTIPLIER =  100  ; // set to 100 because wer  are in dev, if later going prod , please change to 1;
 
 // Basic custom handler for rate-limit exceeded
 export const customHandler = (
@@ -18,7 +18,7 @@ export const customHandler = (
 // Root rate limiter
 export const rootRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 1000 * REQUEST_MULTIPLIER,
+  max: 10 * REQUEST_MULTIPLIER,
   handler: customHandler,
 });
 

@@ -1,4 +1,4 @@
-CREATE SCHEMA "auth";
+CREATE SCHEMA IF NOT EXISTS "auth";
 --> statement-breakpoint
 CREATE TYPE "public"."bracket_type" AS ENUM('single_elimination', 'double_elimination', 'round_robin', 'swiss', 'free_for_all');--> statement-breakpoint
 CREATE TYPE "public"."friendship_status" AS ENUM('pending', 'accepted', 'blocked');--> statement-breakpoint
@@ -38,6 +38,7 @@ CREATE TABLE "auth"."users" (
 	"email_confirmed_at" timestamp,
 	"last_sign_in_at" timestamp,
 	"banned_until" timestamp,
+	"ban_reason" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_username_unique" UNIQUE("username"),

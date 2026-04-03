@@ -13,7 +13,7 @@ export const tournamentsController = s.router(contract.tournaments, {
         const userId = contextReq.ctx.decodedToken?.id;
 
         if (!userId || contextReq.ctx.decodedToken?.type === "None") {
-            throw new AppError(401, "Unauthorized - Please login first");
+            throw new AppError(401, "Unauthorized");
         }
 
         await requireOrgRole(userId, body.organizationId, ["owner", "admin"]);

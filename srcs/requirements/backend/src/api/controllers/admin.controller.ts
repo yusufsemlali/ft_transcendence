@@ -124,6 +124,7 @@ export const adminController = s.router(contract.admin, {
             .update(users)
             .set({ 
                 status: body.status,
+                banReason: body.reason || null,
                 bannedUntil: body.until || null,
                 updatedAt: new Date()
             })

@@ -39,6 +39,7 @@ export const users = authSchema.table('users', {
     emailConfirmedAt: timestamp('email_confirmed_at'),
     lastSignInAt: timestamp('last_sign_in_at'),
     bannedUntil: timestamp('banned_until'),
+    banReason: text('ban_reason'),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

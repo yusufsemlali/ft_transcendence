@@ -1,6 +1,6 @@
 {
-  "id": "2b120150-31bb-4fec-94f1-439baea921e0",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "ebaf2e4a-b3be-4921-a9fc-57beefe65bfe",
+  "prevId": "2b120150-31bb-4fec-94f1-439baea921e0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -323,8 +323,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "auth.identities": {
-      "name": "identities",
+    "auth.linked_accounts": {
+      "name": "linked_accounts",
       "schema": "auth",
       "columns": {
         "id": {
@@ -352,14 +352,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "identity_data": {
-          "name": "identity_data",
+        "account_metadata": {
+          "name": "account_metadata",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "last_sign_in_at": {
-          "name": "last_sign_in_at",
+        "last_loaded_at": {
+          "name": "last_loaded_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
@@ -381,9 +381,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "identities_user_id_users_id_fk": {
-          "name": "identities_user_id_users_id_fk",
-          "tableFrom": "identities",
+        "linked_accounts_user_id_users_id_fk": {
+          "name": "linked_accounts_user_id_users_id_fk",
+          "tableFrom": "linked_accounts",
           "tableTo": "users",
           "schemaTo": "auth",
           "columnsFrom": [
@@ -1314,8 +1314,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.game_profiles": {
-      "name": "game_profiles",
+    "public.handles": {
+      "name": "handles",
       "schema": "",
       "columns": {
         "id": {
@@ -1337,8 +1337,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "game_identifier": {
-          "name": "game_identifier",
+        "handle": {
+          "name": "handle",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1367,9 +1367,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "game_profiles_user_id_users_id_fk": {
-          "name": "game_profiles_user_id_users_id_fk",
-          "tableFrom": "game_profiles",
+        "handles_user_id_users_id_fk": {
+          "name": "handles_user_id_users_id_fk",
+          "tableFrom": "handles",
           "tableTo": "users",
           "schemaTo": "auth",
           "columnsFrom": [
@@ -1381,9 +1381,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "game_profiles_sport_id_sports_id_fk": {
-          "name": "game_profiles_sport_id_sports_id_fk",
-          "tableFrom": "game_profiles",
+        "handles_sport_id_sports_id_fk": {
+          "name": "handles_sport_id_sports_id_fk",
+          "tableFrom": "handles",
           "tableTo": "sports",
           "columnsFrom": [
             "sport_id"
@@ -1397,8 +1397,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "game_profiles_user_id_sport_id_unique": {
-          "name": "game_profiles_user_id_sport_id_unique",
+        "handles_user_id_sport_id_unique": {
+          "name": "handles_user_id_sport_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "user_id",
