@@ -27,6 +27,7 @@ export const CreateGameProfileSchema = z.object({
     gameIdentifier: z.string().min(1, "Game identifier is required"),
     metadata: z.record(z.any()).optional(),
 });
+
 export type CreateGameProfile = z.infer<typeof CreateGameProfileSchema>;
 
 export const UpdateGameProfileSchema = z.object({

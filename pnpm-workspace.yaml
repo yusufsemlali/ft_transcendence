@@ -1,4 +1,5 @@
 packages:
   - 'srcs/requirements/backend'
   - 'srcs/requirements/frontend'
+  - 'srcs/requirements/chat'
   - 'srcs/requirements/shared/*'

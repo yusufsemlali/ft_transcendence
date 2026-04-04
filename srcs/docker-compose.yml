@@ -50,6 +50,31 @@ services:
     networks:
       - transcendence-net
 
+  chat:
+    container_name: ft_chat
+    build:
+      context: ./requirements
+      dockerfile: requirements/chat/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - CORS_ORIGIN=*
+    restart: unless-stopped
+    networks:
+      - transcendence-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      database:
+        condition: service_healthy 
+ 
+
   # -------------------------------------------------------------------------
   # FRONTEND (Next.js)
   # -------------------------------------------------------------------------
