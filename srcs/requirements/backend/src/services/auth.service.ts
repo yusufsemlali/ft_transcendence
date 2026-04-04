@@ -16,6 +16,7 @@ import { eq, or, and } from "drizzle-orm";
 import AppError from "@/utils/error";
 import { ApiResponse } from "@/utils/response";
 import jwt from "jsonwebtoken";
+import { UAParser } from "ua-parser-js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "change_me_in_production";
 
@@ -78,6 +79,8 @@ export const login = async (
         throw new AppError(401, "Invalid credentials");
     }
 
+    await checkAccountHealth(user);
+
     const { accessToken, refreshToken } = await createSession(
         user.id,
         user.username,
@@ -96,10 +99,20 @@ export const refreshAccessToken = async (refreshToken: string) => {
     const [storedToken] = await db
         .select()
         .from(refreshTokens)
-        .where(and(eq(refreshTokens.token, tokenHash), eq(refreshTokens.revoked, false)));
+        .where(eq(refreshTokens.token, tokenHash));
 
     if (!storedToken) {
-        throw new AppError(401, "Invalid or expired refresh token");
+        throw new AppError(401, "Invalid refresh token");
+    }
+
+    // --- TOKEN REUSE DETECTION (THE KILL SWITCH) ---
+    if (storedToken.revoked) {
+        console.warn(`[SECURITY] Token reuse detected for session ${storedToken.sessionId}`);
+        
+        // Nuke the entire session family to kick out the attacker AND the victim
+        await db.delete(sessions).where(eq(sessions.id, storedToken.sessionId));
+        
+        throw new AppError(401, "Security Alert: Token compromise detected. You have been logged out of all devices.");
     }
 
     const [session] = await db
@@ -173,6 +186,11 @@ export const getActiveSessions = async (userId: string) => {
             id: sessions.id,
             userAgent: sessions.userAgent,
             ipAddress: sessions.ipAddress,
+            browserName: sessions.browserName,
+            browserVersion: sessions.browserVersion,
+            osName: sessions.osName,
+            osVersion: sessions.osVersion,
+            deviceType: sessions.deviceType,
             createdAt: sessions.createdAt,
             expiresAt: sessions.expiresAt,
         })
@@ -190,12 +208,20 @@ const createSession = async (
     ipAddress: string,
     userAgent?: string,
 ) => {
+    const parser = new UAParser(userAgent);
+    const ua = parser.getResult();
+
     const [session] = await db
         .insert(sessions)
         .values({
             userId,
             ipAddress,
             userAgent,
+            browserName: ua.browser.name,
+            browserVersion: ua.browser.version,
+            osName: ua.os.name,
+            osVersion: ua.os.version,
+            deviceType: ua.device.type || "desktop", // Default to desktop if null
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         })
         .returning();
@@ -211,6 +237,41 @@ const createSession = async (
 
     return { session, accessToken, refreshToken };
 };
+
+const checkAccountHealth = async (user: typeof users.$inferSelect) => {
+    if (user.status === "banned") {
+        const reason = user.banReason ? ` Reason: ${user.banReason}` : "";
+        throw new AppError(403, `This account has been permanently banned from the platform.${reason}`);
+    }
+
+    if (user.status === "suspended") {
+        const reason = user.banReason ? ` Reason: ${user.banReason}` : "";
+
+        // Check if suspension has expired
+        if (user.bannedUntil && user.bannedUntil <= new Date()) {
+            // 🔄 Auto-Reactivate the user
+            await db.update(users)
+                .set({
+                    status: 'active',
+                    banReason: null,
+                    bannedUntil: null,
+                    updatedAt: new Date()
+                })
+                .where(eq(users.id, user.id));
+
+            console.log(`[Auth] User ${user.username} suspension expired. Auto-reactivated.`);
+            return; // Allow login to proceed
+        }
+
+        if (user.bannedUntil && user.bannedUntil > new Date()) {
+            const dateStr = user.bannedUntil.toLocaleString();
+            throw new AppError(403, `Your account is currently suspended until ${dateStr}.${reason}`);
+        }
+
+        // Permanent suspension (no end date)
+        throw new AppError(403, `Your account is currently suspended. Please contact support.${reason}`);
+    }
+}
 
 // --- FortyTwo OAuth Logic ---
 
@@ -286,6 +347,9 @@ export const handleFortyTwoCallback = async (code: string, ip: string, userAgent
 
     if (existingUserById) {
         console.log(`[Auth] Existing user found by 42 ID: ${existingUserById.username}`);
+
+        await checkAccountHealth(existingUserById);
+
         const { accessToken, refreshToken } = await createSession(
             existingUserById.id,
             existingUserById.username,
@@ -351,14 +415,23 @@ export const confirmFortyTwoRegistration = async (
         throw new AppError(401, "Invalid or expired registration token");
     }
 
-    // Check if another user registered with this ID in the meantime
+    // Check if another user registered with this ID or Email in the meantime
     const [existing] = await db
         .select()
         .from(users)
-        .where(or(eq(users.fortytwoId, decoded.fortytwoId), eq(users.username, decoded.username)));
+        .where(
+            or(
+                eq(users.fortytwoId, decoded.fortytwoId), 
+                eq(users.username, decoded.username),
+                eq(users.email, decoded.email)
+            )
+        );
 
     if (existing) {
-        throw new AppError(409, "User already registered");
+        if (existing.email === decoded.email) {
+            throw new AppError(409, "An account with this email already exists. Please log in with your password and link your 42 account in settings.");
+        }
+        throw new AppError(409, "User ID or Username already registered");
     }
 
     // Now we have permission. Create the user.

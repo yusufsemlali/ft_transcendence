@@ -33,8 +33,12 @@ export function authenticateTsRestRequest<
                         }
                     };
                 } catch (err) {
-                    res.status(401).json({ message: "Token expired or invalid - please login again" });
-                    return;
+                    // Silently fail authentication and treat as Guest
+                    // This allows public endpoints (login/register) to work even with expired tokens
+                    req.ctx = {
+                        ...req.ctx,
+                        decodedToken: { type: "None", id: "", sessionId: "", username: "guest", role: "guest" }
+                    } as any;
                 }
             } else {
                 req.ctx = {
