@@ -22,7 +22,7 @@ export const tournamentsContract = c.router({
             403: z.object({ message: z.string() }),
             409: z.object({ message: z.string() }),
         },
-        summary: "Create a tournament for a specific organization (Requires: Owner/Admin)",
+        summary: "Create a tournament (Requires: Owner/Admin)",
     },
     listOrgTournaments: {
         method: "GET",
@@ -31,7 +31,25 @@ export const tournamentsContract = c.router({
         responses: {
             200: z.array(TournamentSchema),
         },
-        summary: "List all tournaments belonging to an organization (Requires: Owner/Admin)",
+        summary: "List organization tournaments (Requires: Owner/Admin/Member)",
+    },
+    updateTournament: {
+        method: "PATCH",
+        path: "/organizations/:organizationId/tournaments/:id",
+        pathParams: z.object({ 
+            organizationId: z.string().uuid(),
+            id: z.string().uuid() 
+        }),
+        body: UpdateTournamentSchema,
+        responses: {
+            200: z.object({ message: z.string(), data: TournamentSchema }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Update tournament settings (Requires: Owner/Admin)",
     },
     deleteTournament: {
         method: "DELETE",
@@ -49,7 +67,7 @@ export const tournamentsContract = c.router({
             403: z.object({ message: z.string() }),
             404: z.object({ message: z.string() }),
         },
-        summary: "Safely delete or cancel a tournament (Requires: Owner/Admin)",
+        summary: "Delete or cancel a tournament (Requires: Owner/Admin)",
     },
 
     getTournamentById: {
@@ -60,22 +78,7 @@ export const tournamentsContract = c.router({
             200: z.object({ data: PublicTournamentSchema }),
             404: z.object({ message: z.string() }),
         },
-        summary: "Get specific tournament details (Sanitized)",
-    },
-    updateTournament: {
-        method: "PATCH",
-        path: "/tournaments/:id",
-        pathParams: z.object({ id: z.string().uuid() }),
-        body: UpdateTournamentSchema,
-        responses: {
-            200: z.object({ message: z.string(), data: TournamentSchema }),
-            400: z.object({ message: z.string() }),
-            401: z.object({ message: z.string() }),
-            403: z.object({ message: z.string() }),
-            404: z.object({ message: z.string() }),
-            409: z.object({ message: z.string() }),
-        },
-        summary: "Update tournament settings (Requires: Owner/Admin)",
+        summary: "Public Discovery Details (Sanitized)",
     },
     getTournaments: {
         method: "GET",
@@ -96,6 +99,6 @@ export const tournamentsContract = c.router({
                 totalPages: z.number(),
             }),
         },
-        summary: "Global Discovery Endpoint (Sanitized and Public Only)",
+        summary: "Global Discovery List (Sanitized and Public Only)",
     },
 });

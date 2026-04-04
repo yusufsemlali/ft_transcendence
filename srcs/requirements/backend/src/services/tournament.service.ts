@@ -5,6 +5,7 @@ import AppError from "@/utils/error";
 import { 
     CreateTournament, 
     UpdateTournament, 
+    UpdateTournamentSchema,
     PublicTournamentSchema 
 } from "@ft-transcendence/contracts";
 import { eq, and, or, sql, desc, ilike } from "drizzle-orm";
@@ -39,6 +40,9 @@ export const createTournament = async (organizationId: string, data: Omit<Create
             requiredHandleType: data.requiredHandleType,
             minParticipants: data.minParticipants,
             maxParticipants: data.maxParticipants,
+            prizePool: data.prizePool,
+            entryFee: data.entryFee,
+            bannerUrl: data.bannerUrl,
             status: 'draft',
             bracketType: data.bracketType,
             isPrivate: data.isPrivate ?? false,
@@ -64,15 +68,14 @@ export const createTournament = async (organizationId: string, data: Omit<Create
 };
 
 export const updateTournament = async (id: string, data: any) => {
+    const validatedData = UpdateTournamentSchema.parse(data);
+
     const [current] = await db
         .select()
         .from(tournaments)
         .where(eq(tournaments.id, id));
 
     if (!current) throw new AppError(404, "Tournament not found");
-
-    TournamentPolicy.enforceModifiableFields(data);
-    const validatedData = UpdateTournamentSchema.parse(data);
 
     TournamentPolicy.enforceUpdateRules(current.status, validatedData);
     

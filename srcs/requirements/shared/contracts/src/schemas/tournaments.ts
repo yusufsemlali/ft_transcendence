@@ -20,6 +20,9 @@ export const TournamentSchema = z.object({
     status: z.enum(["draft", "registration", "upcoming", "ongoing", "completed", "cancelled"]),
     bracketType: z.enum(["single_elimination", "double_elimination", "round_robin", "swiss", "free_for_all"]),
     isPrivate: z.boolean(),
+    prizePool: z.string().nullable().optional(),
+    entryFee: z.number().int().nonnegative().default(0),
+    bannerUrl: z.string().nullable().optional(),
     customSettings: z.record(z.any()),
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date(),
@@ -40,6 +43,9 @@ export const PublicTournamentSchema = TournamentSchema.pick({
     minParticipants: true,
     maxParticipants: true,
     scoringType: true,
+    prizePool: true,
+    entryFee: true,
+    bannerUrl: true,
     createdAt: true,
 });
 
@@ -59,11 +65,16 @@ export const CreateTournamentSchema = z.object({
     requiredHandleType: z.string().nullable(),
     minParticipants: z.number().int().min(2),
     maxParticipants: z.number().int().min(2),
+    prizePool: z.string().optional(),
+    entryFee: z.number().int().nonnegative().optional(),
+    bannerUrl: z.string().optional(),
     customSettings: z.record(z.any()).optional(),
 });
 
 export const UpdateTournamentSchema = CreateTournamentSchema.omit({
     sportId: true, 
+}).extend({
+    status: TournamentSchema.shape.status.optional(),
 }).partial().strict();
 
 export type CreateTournament = z.infer<typeof CreateTournamentSchema>;
