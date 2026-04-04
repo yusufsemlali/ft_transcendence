@@ -8,33 +8,102 @@ import { requireOrgRole } from "@/utils/rbac";
 const s = initServer();
 
 export const tournamentsController = s.router(contract.tournaments, {
-    createTournament: async ({ body, req }: { body: any; req: any }) => {
+    createTournament: async ({ params, body, req }) => {
         const contextReq = req as unknown as RequestWithContext;
-        const userId = contextReq.ctx.decodedToken?.id;
+        const userId = contextReq.ctx?.decodedToken?.id;
 
-        if (!userId || contextReq.ctx.decodedToken?.type === "None") {
-            throw new AppError(401, "Unauthorized");
-        }
+        if (!userId) throw new AppError(401, "Unauthorized");
 
-        await requireOrgRole(userId, body.organizationId, ["owner", "admin"]);
+        await requireOrgRole(userId, params.organizationId, ["owner", "admin"]);
 
-        const tournament = await TournamentService.createTournament({
-            ...body,
-            organizerId: userId
-        }).catch((err) => {
-            console.error("Tournament creation error:", err);
-            throw new AppError(400, "Failed to create tournament");
-        });
+        const response = await TournamentService.createTournament(params.organizationId, body);
 
         return {
             status: 201,
-            body: tournament.data as any,
+            body: { 
+                message: "Tournament created successfully", 
+                data: response.data as any 
+            },
         };
     },
-    getTournaments: async () => {
+
+    listOrgTournaments: async ({ params, req }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        await requireOrgRole(userId, params.organizationId, ["owner", "admin", "member"]);
+
+        const tournaments = await TournamentService.listOrgTournaments(params.organizationId);
         return {
             status: 200,
-            body: [],
+            body: tournaments as any,
+        };
+    },
+
+    deleteTournament: async ({ params, req }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournamentResponse = await TournamentService.getTournamentById(params.id);
+        const currentTournament = tournamentResponse.data;
+
+        if (currentTournament.organizationId !== params.organizationId) {
+            throw new AppError(403, "Tournament does not belong to this organization.");
+        }
+
+        await requireOrgRole(userId, params.organizationId, ["owner", "admin"]);
+
+        const response = await TournamentService.deleteTournament(params.id);
+
+        if (!response) throw new AppError(500, "Deletion failed");
+
+        return {
+            status: 200,
+            body: { 
+                message: response.message,
+                actionTaken: response.actionTaken as any
+            },
+        };
+    },
+
+    getTournamentById: async ({ params }) => {
+        const response = await TournamentService.discoverTournamentById(params.id);
+        return {
+            status: 200,
+            body: { data: response.data as any },
+        };
+    },
+
+    updateTournament: async ({ params, body, req }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        
+        await requireOrgRole(userId, tournament.data.organizationId, ["owner", "admin"]);
+
+        const response = await TournamentService.updateTournament(params.id, body);
+
+        return {
+            status: 200,
+            body: { 
+                message: "Tournament updated successfully", 
+                data: response.data as any 
+            },
+        };
+    },
+
+    getTournaments: async ({ query }) => {
+        const response = await TournamentService.getTournaments(query);
+        return {
+            status: 200,
+            body: response as any,
         };
     },
 });

@@ -50,7 +50,10 @@ export const organizationsController = s.router(contract.organizations, {
             body: new ApiResponse("Organizations retrieved successfully", memberOrgs as any) as any,
         };
     },
-    getOrganization: async ({ params }: { params: any }) => {
+    getOrganization: async ({ params, req }: { params: any, req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
         const [org] = await db
             .select()
             .from(organizations)
@@ -58,6 +61,15 @@ export const organizationsController = s.router(contract.organizations, {
 
         if (!org) {
              throw new AppError(404, "Organization not found");
+        }
+
+        // --- THE FIX (IDOR): Check privacy flag ---
+        if (org.visibility === 'private') {
+            if (!userId) {
+                throw new AppError(401, "Must be logged in to view private organizations");
+            }
+            // This will throw a 403 if they are not a member
+            await requireOrgRole(userId, org.id, ["owner", "admin", "referee", "member"]);
         }
 
         // 📊 Calculate Stats
@@ -128,7 +140,7 @@ export const organizationsController = s.router(contract.organizations, {
                 (constraintName.includes('slug_unique') || constraintName.includes('slug_key') || error.message.includes('slug'));
 
             if (isSlugViolation) {
-                throw new AppError(409, "An organization with this slug already exists.");
+                throw new AppError(409, "Slug already taken.");
             }
             throw error;
         }
@@ -195,7 +207,7 @@ export const organizationsController = s.router(contract.organizations, {
                 (constraintName.includes('slug_unique') || constraintName.includes('slug_key') || error.message.includes('slug'));
 
             if (isSlugViolation) {
-                throw new AppError(409, "An organization with this slug already exists.");
+                throw new AppError(409, "Slug already taken.");  
             }
             throw error;
         }
@@ -209,9 +221,16 @@ export const organizationsController = s.router(contract.organizations, {
         // RBAC: Only owner or admin can add members
         await requireOrgRole(userId, params.id, ["owner", "admin"]);
 
-        // Resolve user by email
+        // --- THE FIX (Enumeration): Resolve user by email but return opaque response ---
         const [targetUser] = await db.select().from(users).where(eq(users.email, body.email));
-        if (!targetUser) throw new AppError(404, "Target user not found");
+        
+        if (!targetUser) {
+            // Do NOT reveal the user doesn't exist.
+            return {
+                status: 201, // Return success anyway
+                body: new ApiResponse("If an account matches that email, an invitation has been sent.", null) as any
+            };
+        }
 
         // Check for existing membership
         const [existing] = await db.select().from(organizationMembers).where(
@@ -220,7 +239,11 @@ export const organizationsController = s.router(contract.organizations, {
                 eq(organizationMembers.userId, targetUser.id)
             )
         );
-        if (existing) throw new AppError(409, "User is already a member of this organization");
+        
+        if (existing) {
+            // It's okay to reveal existing membership as the requester is an admin/owner of THIS org
+            throw new AppError(409, "User is already a member of this organization");
+        }
 
         try {
             await db.insert(organizationMembers).values({
@@ -231,14 +254,14 @@ export const organizationsController = s.router(contract.organizations, {
 
             return {
                 status: 201,
-                body: new ApiResponse("Member added successfully", null) as any
+                body: new ApiResponse("If an account matches that email, an invitation has been sent.", null) as any
             };
         } catch (error: any) {
             const errorCode = error.code || error.cause?.code;
             const constraintName = error.constraint || error.cause?.constraint || "";
 
             if (errorCode === '23505' && constraintName.includes('unique_owner_per_org')) {
-                throw new AppError(400, "This organization already has an owner. You can only have one owner per organization.");
+                throw new AppError(400, "This organization already has an owner.");
             }
             throw error;
         }
@@ -382,8 +405,16 @@ export const organizationsController = s.router(contract.organizations, {
             body: new ApiResponse("Member kicked successfully", null) as any
         };
     },
-    getOrganizationMembers: async ({ params }: { params: any }) => {
-        // 🛡️ The Ghost Guard: Make sure the org exists first
+    getOrganizationMembers: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        // --- THE FIX (IDOR): Verify the requester is actually in the organization ---
+        // Prevents non-members from scraping the member list and PII of private orgs
+        await requireOrgRole(userId, params.id, ["owner", "admin", "referee", "member"]);
+
         const [org] = await db
             .select({ id: organizations.id })
             .from(organizations)
@@ -397,8 +428,13 @@ export const organizationsController = s.router(contract.organizations, {
             .select({
                 id: users.id,
                 username: users.username,
-                email: users.email,
-                role: organizationMembers.role,
+                displayName: users.displayName,
+                avatar: users.avatar,
+                xp: users.xp,
+                level: users.level,
+                isOnline: users.isOnline,
+                // --- THE FIX (PII): We explicitly DO NOT select users.email here ---
+                orgRole: organizationMembers.role,
                 joinedAt: organizationMembers.joinedAt,
             })
             .from(organizationMembers)

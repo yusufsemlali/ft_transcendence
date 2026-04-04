@@ -1,28 +1,24 @@
 import { z } from "zod";
 
-// Background customization
 export const CustomBackgroundSizeSchema = z.enum(["cover", "contain", "max"]);
 export type CustomBackgroundSize = z.infer<typeof CustomBackgroundSizeSchema>;
 
 export const CustomBackgroundFilterSchema = z.tuple([
-    z.number().min(0).max(10),    // blur (rem)
-    z.number().min(0).max(2),     // brightness
-    z.number().min(0).max(2),     // saturate
-    z.number().min(0).max(1),     // opacity
+    z.number().min(0).max(10),
+    z.number().min(0).max(2),
+    z.number().min(0).max(2),
+    z.number().min(0).max(1),
 ]);
 export type CustomBackgroundFilter = z.infer<typeof CustomBackgroundFilterSchema>;
 
 export const CustomBackgroundSchema = z
     .string()
-    .url("Must be a valid URL")
-    .regex(/^https?:\/\/.*/, "Must use http or https protocol")
-    .regex(/^[^`'"]*$/, "May not contain quotes")
-    .max(2048, "URL is too long")
+    .regex(/^[^`'"]*$/)
+    .max(2048)
     .nullable();
 export type CustomBackground = z.infer<typeof CustomBackgroundSchema>;
 
-// Theme customization
-export const ColorHexSchema = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "Must be a valid hex color");
+export const ColorHexSchema = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
 export type ColorHex = z.infer<typeof ColorHexSchema>;
 
 export const ThemeColorsSchema = z.object({
@@ -54,9 +50,7 @@ export const ThemePresetSchema = z.enum([
 ]);
 export type ThemePreset = z.infer<typeof ThemePresetSchema>;
 
-// Font customization - All bundled webfonts
 export const FontFamilySchema = z.enum([
-    // Monospace
     "0xproto",
     "cascadia_mono",
     "commit_mono",
@@ -72,7 +66,6 @@ export const FontFamilySchema = z.enum([
     "roboto_mono",
     "source_code_pro",
     "ubuntu_mono",
-    // Sans-serif
     "atkinson_hyperlegible",
     "comfortaa",
     "geist",
@@ -89,13 +82,11 @@ export const FontFamilySchema = z.enum([
     "sarabun",
     "titillium_web",
     "ubuntu",
-    // Display
     "boon",
     "gallaudet",
     "lalezar",
     "noto_naskh_arabic",
     "vazirmatn",
-    // Handwriting
     "coming_soon",
     "itim",
 ]);
@@ -104,33 +95,22 @@ export type FontFamily = z.infer<typeof FontFamilySchema>;
 export const FontSizeSchema = z.number().min(0.5).max(3);
 export type FontSize = z.infer<typeof FontSizeSchema>;
 
-// Complete user settings schema
 export const UserSettingsSchema = z.object({
-    // Appearance
     theme: ThemePresetSchema.default("default"),
     customTheme: z.boolean().default(false),
     customThemeColors: ThemeColorsSchema.optional().nullable(),
     fontFamily: FontFamilySchema.default("roboto_mono"),
     fontSize: FontSizeSchema.default(1),
-
-    // Custom background - null by default
     customBackground: CustomBackgroundSchema.nullable().default(null),
     customBackgroundSize: CustomBackgroundSizeSchema.default("cover"),
-    // Monkeytype defaults: blur 0.5, brightness 0.2, saturate 2.0, opacity 1.0
     customBackgroundFilter: CustomBackgroundFilterSchema.default([0.5, 0.2, 2.0, 1.0]),
-
-    // UI preferences
     smoothAnimations: z.boolean().default(true),
     showKeyboardShortcuts: z.boolean().default(true),
     compactMode: z.boolean().default(false),
     themeMode: z.enum(["light", "dark", "system"]).default("system"),
-
-    // Notifications
     soundEnabled: z.boolean().default(true),
     soundVolume: z.number().min(0).max(1).default(0.5),
     desktopNotifications: z.boolean().default(false),
-
-    // Theme tokens
     themeHue: z.number().min(0).max(360).default(344),
     borderRadius: z.number().min(0).max(20).default(10),
     glassBlur: z.number().min(0).max(20).default(12),
@@ -139,11 +119,9 @@ export const UserSettingsSchema = z.object({
 
 export type UserSettings = z.infer<typeof UserSettingsSchema>;
 
-// Partial for updates
-export const PartialUserSettingsSchema = UserSettingsSchema.partial();
+export const PartialUserSettingsSchema = UserSettingsSchema.partial().strict();
 export type PartialUserSettings = z.infer<typeof PartialUserSettingsSchema>;
 
-// Default settings - Monkeytype defaults
 export const defaultSettings: UserSettings = {
     theme: "default",
     customTheme: false,
@@ -152,7 +130,7 @@ export const defaultSettings: UserSettings = {
     fontSize: 1,
     customBackground: null,
     customBackgroundSize: "cover",
-    customBackgroundFilter: [0.5, 0.2, 2.0, 1.0], // blur, brightness, saturate, opacity
+    customBackgroundFilter: [0.5, 0.2, 2.0, 1.0],
     smoothAnimations: true,
     showKeyboardShortcuts: true,
     compactMode: false,

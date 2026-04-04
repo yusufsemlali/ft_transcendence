@@ -7,11 +7,40 @@ import { compatibilityCheckMiddleware } from "./middlewares/compatibilityCheck";
 import contextMiddleware from "./middlewares/context";
 import errorHandlingMiddleware from "./middlewares/error";
 import { rootRateLimiter } from "./middlewares/rate-limit";
-import { COMPATIBILITY_CHECK_HEADER } from "@ft-transcendence/contracts";
+import { contract, COMPATIBILITY_CHECK_HEADER } from "@ft-transcendence/contracts";
+import { generateOpenApi } from "@ts-rest/open-api";
+import swaggerUi from "swagger-ui-express";
 
 function buildApp(): express.Application {
-    console.log("init server");
     const app = express();
+
+    // Generate OpenAPI Document from ts-rest contract
+    const openApiDocument = generateOpenApi(contract, {
+        info: {
+            title: "Tournify API",
+            version: "1.0.0",
+            description: "Interactive documentation for the Tournify backend API.",
+        },
+        // 🚀 THE FIX: Tell Swagger that all endpoints are prefixed with /api
+        servers: [
+            {
+                url: "/api",
+                description: "Default API Gateway",
+            },
+        ],
+        // --- ADDED: Allow testing with JWT in Swagger UI ---
+        options: {
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        bearerFormat: 'JWT',
+                    },
+                },
+            },
+        }
+    });
 
     // Standard Middlewares
     app.use(express.json());
@@ -30,6 +59,7 @@ function buildApp(): express.Application {
     app.use(compatibilityCheckMiddleware);
     app.use(contextMiddleware);
     app.use(rootRateLimiter);
+    app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
     // API Routes via ts-rest contract
     addApiRoutes(app);

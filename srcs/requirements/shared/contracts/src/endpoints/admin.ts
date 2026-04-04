@@ -1,6 +1,7 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { UserSchema, UserRoleSchema, UserStatusSchema } from "../schemas/users";
+import { SessionSchema } from "../schemas/auth";
 
 const c = initContract();
 
@@ -71,5 +72,57 @@ export const adminContract = c.router({
             404: z.object({ message: z.string() }),
         },
         summary: "Ban, suspend, or mute a user (Requires: Admin/Moderator)",
+    },
+    deleteUser: {
+        method: "DELETE",
+        path: "/admin/users/:id",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Permanently delete a user (Requires: Admin)",
+    },
+    getUserSessions: {
+        method: "GET",
+        path: "/admin/users/:id/sessions",
+        pathParams: z.object({ id: z.string().uuid() }),
+        responses: {
+            200: z.array(SessionSchema),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "List all active sessions for a specific user (Requires: Admin/Moderator)",
+    },
+    revokeUserSession: {
+        method: "DELETE",
+        path: "/admin/users/:id/sessions/:sessionId",
+        pathParams: z.object({
+            id: z.string().uuid(),
+            sessionId: z.string().uuid(),
+        }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+        },
+        summary: "Force logout a specific session for a user (Requires: Admin)",
+    },
+    revokeAllUserSessions: {
+        method: "DELETE",
+        path: "/admin/users/:id/sessions",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+        },
+        summary: "Force logout ALL active sessions for a user (Requires: Admin)",
     },
 });

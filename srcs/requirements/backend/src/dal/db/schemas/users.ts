@@ -31,8 +31,8 @@ export const users = authSchema.table('users', {
 
     twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
     twoFactorSecret: text('two_factor_secret'),
-    preferredLanguage: varchar('preferred_language', { length: 5 }).default('en'),
-    theme: varchar('theme', { length: 10 }).default('dark'),
+    preferredLanguage: varchar('preferred_language', { length: 5 }).default('en').notNull(),
+    theme: varchar('theme', { length: 10 }).default('dark').notNull(),
 
     metadata: jsonb('metadata').default({}).notNull(),
 

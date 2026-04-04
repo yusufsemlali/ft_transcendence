@@ -5,11 +5,9 @@ import { useState, useEffect } from "react";
 import api from "@/lib/api/api";
 import {
   User,
-  SupportedGame,
-  SupportedGameSchema,
-  GameProfile,
+  Sport,
+  Handle,
 } from "@ft-transcendence/contracts";
-
 import { toast } from "@/components/ui/sonner";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Page } from "@/components/layout/Page";
@@ -25,11 +23,13 @@ function HexAvatar({
   isOnline,
   loading = false,
 }: {
-  src?: string;
+  src?: string | null;
   alt?: string;
   isOnline?: boolean;
   loading?: boolean;
 }) {
+  const [imgError, setImgError] = useState(false);
+
   if (loading) {
     return (
       <div className="relative w-40 h-48 sm:w-48 sm:h-56">
@@ -40,6 +40,9 @@ function HexAvatar({
       </div>
     );
   }
+
+  // Use a fallback if src is missing or image fails to load
+  const showFallback = !src || imgError;
 
   return (
     <div className="relative w-40 h-48 sm:w-48 sm:h-56 group transition-transform duration-500 hover:scale-[1.02]">
@@ -54,11 +57,18 @@ function HexAvatar({
         className="absolute inset-0 bg-card ring-1 ring-border shadow-2xl overflow-hidden"
         style={{ clipPath: "polygon(0% 0%, 100% 0%, 100% 85%, 50% 100%, 0% 85%)" }}
       >
-        <img
-          src={src || "/default-avatar.png"}
-          alt={alt || "User avatar"}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+        {showFallback ? (
+           <div className="w-full h-full flex items-center justify-center bg-muted">
+             <span className="material-symbols-outlined text-4xl text-muted-foreground/30">person</span>
+           </div>
+        ) : (
+          <img
+            src={src}
+            alt={alt || "User avatar"}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        )}
 
         {/* Online Indicator */}
         {isOnline && (
@@ -142,74 +152,88 @@ function MatchRow({ opponent, result, score, kda, map, date }: MatchRowProps) {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [profiles, setProfiles] = useState<GameProfile[]>([]);
+  const [handles, setHandles] = useState<Handle[]>([]);
+  const [sports, setSports] = useState<Sport[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedGame, setSelectedGame] =
-    useState<SupportedGame>("league_of_legends");
+  const [selectedSportId, setSelectedSportId] = useState<string>("");
   const [identifier, setIdentifier] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const [userRes, handlesRes, sportsRes] = await Promise.all([
+          api.users.getMe(),
+          api.handles.getMyHandles({}),
+          api.sports.getSports({}),
+        ]);
 
-  const loadData = async () => {
-    try {
-      const [userRes, profilesRes] = await Promise.all([
-        api.users.getMe(),
-        api.gameProfiles.getMyProfiles(),
-      ]);
+        if (!isMounted) return;
 
-      if (userRes.status === 200) setUser(userRes.body);
-      if (profilesRes.status === 200) setProfiles(profilesRes.body);
+        if (userRes.status === 200) setUser(userRes.body);
+        if (handlesRes.status === 200) setHandles(handlesRes.body);
+        if (sportsRes.status === 200) {
+          setSports(sportsRes.body);
+          if (sportsRes.body.length > 0) setSelectedSportId(sportsRes.body[0].id);
+        }
 
-      // If we got a 401, the user isn't authenticated
-      if (userRes.status === 401) {
-        toast.error("Session expired, please login again");
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Profile load error:", err);
+        // Special case for 401: ts-rest-adapter already handles redirection
+        // Only toast if it's not an auth error to avoid noise
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } catch (err) {
-      console.log("Load performance error:", err);
-      toast.error("Failed to load profile data");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLinkAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedSportId) return;
+
     setSubmitting(true);
     try {
-      const res = await api.gameProfiles.create({
-        body: { game: selectedGame, gameIdentifier: identifier },
+      const res = await api.handles.create({
+        body: { sportId: selectedSportId, handle: identifier },
       });
 
       if (res.status === 201) {
-        setProfiles([...profiles, res.body]);
+        setHandles([...handles, res.body]);
         setIsAddModalOpen(false);
         setIdentifier("");
-        toast.success(`Linked ${selectedGame}`);
+        const sport = sports.find((s: Sport) => s.id === selectedSportId);
+        toast.success(`Linked ${sport?.name || "Game Account"}`);
       } else {
         const errorBody = res.body as { message: string };
         toast.error(`Error: ${errorBody.message}`);
       }
     } catch {
-      toast.error("Failed to link");
+      toast.error("Failed to link account");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleUnlink = async (game: SupportedGame) => {
-    if (!confirm(`Unlink ${game}?`)) return;
+  const handleUnlink = async (handleId: string, handleName: string) => {
+    if (!confirm(`Unlink ${handleName}?`)) return;
     try {
-      await api.gameProfiles.delete({
-        params: { game },
+      const res = await api.handles.delete({
+        params: { id: handleId },
       });
-      setProfiles(profiles.filter((p) => p.game !== game));
-      toast.success("Unlinked");
+      if (res.status === 204) {
+        setHandles(handles.filter((h) => h.id !== handleId));
+        toast.success("Unlinked successfully");
+      }
     } catch {
-      toast.error("Failed");
+      toast.error("Failed to unlink account");
     }
   };
 
@@ -342,33 +366,39 @@ export default function ProfilePage() {
                 <CardContent className="grid grid-cols-2 gap-4 content-start pt-2">
                   {loading ? (
                     Array(3).fill(0).map((_, i) => <Skeleton key={i} className="aspect-square" />)
-                  ) : profiles.length === 0 ? (
+                  ) : handles.length === 0 ? (
                     <div className="col-span-2 py-12 flex flex-col items-center justify-center gap-4 border border-dashed border-border rounded-lg bg-muted/5">
                       <span className="material-symbols-outlined text-muted-foreground/20 text-4xl">link_off</span>
                       <p className="text-[10px] font-mono text-muted-foreground text-center px-4 uppercase tracking-widest">No external nodes connected.</p>
                       <button onClick={() => setIsAddModalOpen(true)} className="btn btn-secondary text-[8px] py-1">INIT_LINK</button>
                     </div>
                   ) : (
-                    profiles.map((p) => (
-                      <div
-                        key={p.game}
-                        className="aspect-square bg-muted/30 border border-border/50 rounded flex flex-col items-center justify-center p-4 hover:border-primary/50 transition-all group relative cursor-pointer"
-                        onClick={() => handleUnlink(p.game)}
-                      >
-                        <div className="text-2xl font-black text-muted-foreground/20 group-hover:text-primary transition-colors">
-                          {p.game.charAt(0).toUpperCase()}
+                    handles.map((h: Handle) => {
+                      const sport = sports.find((s: Sport) => s.id === h.sportId);
+                      return (
+                        <div
+                          key={h.id}
+                          className="aspect-square bg-muted/30 border border-border/50 rounded flex flex-col items-center justify-center p-4 hover:border-primary/50 transition-all group relative cursor-pointer"
+                          onClick={() => handleUnlink(h.id, h.handle)}
+                        >
+                          <div className="text-2xl font-black text-muted-foreground/20 group-hover:text-primary transition-colors">
+                            {sport?.name?.charAt(0).toUpperCase() || "?"}
+                          </div>
+                          <div className="text-[8px] font-mono font-bold text-muted-foreground uppercase mt-2 text-center truncate w-full">
+                            {sport?.name || "Unknown"}
+                          </div>
+                          <div className="text-[7px] text-muted-foreground/40 font-mono mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {h.handle}
+                          </div>
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="material-symbols-outlined text-[10px] text-destructive">close</span>
+                          </div>
                         </div>
-                        <div className="text-[8px] font-mono font-bold text-muted-foreground uppercase mt-2 text-center truncate w-full">
-                          {p.game.replace(/_/g, " ")}
-                        </div>
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="material-symbols-outlined text-[10px] text-destructive">close</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
 
-                  {!loading && profiles.length > 0 && (
+                  {!loading && handles.length > 0 && (
                     <button
                       onClick={() => setIsAddModalOpen(true)}
                       className="aspect-square border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center group"
@@ -409,7 +439,7 @@ export default function ProfilePage() {
                           <Skeleton className="h-4 w-20 ml-auto" />
                         </div>
                       ))
-                    ) : profiles.length === 0 ? (
+                    ) : handles.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20 opacity-30 grayscale">
                         <span className="material-symbols-outlined text-6xl">database_off</span>
                         <span className="text-xs font-mono uppercase tracking-[0.4em]">Historical data synchronization failed: No source links.</span>
@@ -456,13 +486,13 @@ export default function ProfilePage() {
                     <label className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Platform_Node</label>
                     <div className="relative">
                       <select
-                        value={selectedGame}
-                        onChange={(e) => setSelectedGame(e.target.value as SupportedGame)}
+                        value={selectedSportId}
+                        onChange={(e) => setSelectedSportId(e.target.value)}
                         className="input appearance-none capitalize pr-10 h-10 border border-border/50 focus:border-primary/50"
                       >
-                        {SupportedGameSchema.options.map((game: SupportedGame) => (
-                          <option key={game} value={game} className="bg-background text-foreground py-2">
-                            {game.replace(/_/g, " ")}
+                        {sports.map((sport: Sport) => (
+                          <option key={sport.id} value={sport.id} className="bg-background text-foreground py-2">
+                            {sport.name}
                           </option>
                         ))}
                       </select>

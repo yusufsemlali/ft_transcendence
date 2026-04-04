@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api/api";
-import { logoutAction, setAuthCookies } from "@/lib/auth";
+import { logoutAction } from "@/lib/auth";
 import { refreshToken } from "@/lib/api/auth-client";
 import { setLocalSettings, applyAllSettings } from "@/lib/settings";
 import { User } from "@ft-transcendence/contracts";
@@ -91,9 +91,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         });
 
         if (response.status === 200) {
-          const { token, user: userData } = response.body;
-
-          await setAuthCookies(token); 
+          const { user: userData } = response.body;
 
           localStorage.setItem("isLoggedIn", "true");
 
@@ -134,9 +132,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         });
 
         if (response.status === 201) {
-          const { token, user: userData } = response.body;
-
-          await setAuthCookies(token);
+          const { user: userData } = response.body;
 
           localStorage.setItem("isLoggedIn", "true");
 
@@ -182,9 +178,15 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   useEffect(() => {
     const PROTECTED_ROUTES = ["/settings", "/profile", "/tournaments/create"];
 
+    const lastLogoutRef = { current: 0 };
+
     const handleForcedLogout = () => {
+      const now = Date.now();
+      // Throttle to once every 5 seconds to prevent toast storms
+      if (now - lastLogoutRef.current < 5000) return;
+      lastLogoutRef.current = now;
+
       setUser(null);
-      
       localStorage.removeItem("isLoggedIn");
 
       toast.info("Session expired, please login again");

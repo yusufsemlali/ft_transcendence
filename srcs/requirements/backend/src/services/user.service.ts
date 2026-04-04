@@ -37,22 +37,35 @@ export const updateUser = async (
     id: string,
     data: Partial<typeof users.$inferSelect>
 ) => {
-    const { id: _, password: __, ...updateData } = data;
+    try {
+        const { id: _, password: __, ...updateData } = data;
 
-    const [updatedUser] = await db
-        .update(users)
-        .set({
-            ...updateData,
-            updatedAt: new Date(),
-        })
-        .where(eq(users.id, id))
-        .returning();
+        const [updatedUser] = await db
+            .update(users)
+            .set({
+                ...updateData,
+                updatedAt: new Date(),
+            })
+            .where(eq(users.id, id))
+            .returning();
 
-    if (!updatedUser) {
-        throw new AppError(404, "User not found");
+        if (!updatedUser) {
+            throw new AppError(404, "User found but update returned no data");
+        }
+
+        return new ApiResponse("User updated successfully", sanitizeUser(updatedUser));
+    } catch (error: any) {
+        // Gracefully handle PostgreSQL Unique Violations
+        if (error.code === '23505') {
+            if (error.constraint === 'users_username_unique') {
+                throw new AppError(409, "This username is already taken.");
+            }
+            if (error.constraint === 'users_email_unique') {
+                throw new AppError(409, "This email is already registered.");
+            }
+        }
+        throw error;
     }
-
-    return new ApiResponse("User updated successfully", sanitizeUser(updatedUser));
 };
 
 export const updateProfile = async (

@@ -25,6 +25,11 @@ export const SessionSchema = z.object({
     id: z.string().uuid(),
     userAgent: z.string().nullable(),
     ipAddress: z.string().nullable(),
+    browserName: z.string().nullable(),
+    browserVersion: z.string().nullable(),
+    osName: z.string().nullable(),
+    osVersion: z.string().nullable(),
+    deviceType: z.string().nullable(),
     createdAt: z.coerce.date(),
     expiresAt: z.coerce.date().nullable(),
 });

@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, integer, varchar, boolean, jsonb, uuid } from 'drizzle-orm/pg-core';
 import { organizations } from './organizations';
 import { sports } from './sports';
-import { tournamentStatusEnum, bracketTypeEnum, sportModeEnum } from './enums';
+import { tournamentStatusEnum, bracketTypeEnum, sportModeEnum, scoringTypeEnum } from './enums';
 
 export const tournaments = pgTable('tournaments', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -13,6 +13,11 @@ export const tournaments = pgTable('tournaments', {
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 120 }).notNull().unique(),
     description: text('description'),
+
+    // --- THE HISTORICAL SNAPSHOTS ---
+    // These are cloned directly from the sports table at the moment of creation.
+    scoringType: scoringTypeEnum('scoring_type').notNull(),
+    matchConfigSchema: jsonb('match_config_schema').notNull(),
 
     // --- THE TO's CUSTOM RULES (Instance Overrides from the Blueprint) ---
     mode: sportModeEnum('mode').notNull(),  // e.g., A Sport might be 'team' but TO says '1v1'
