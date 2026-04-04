@@ -1,9 +1,38 @@
 import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, ilike, or } from "drizzle-orm";
 import AppError from "@/utils/error";
 import { sanitizeUser } from "@/utils/auth";
 import { ApiResponse } from "@/utils/response";
+
+export const searchUsers = async (query: string, limit: number = 10) => {
+    const pattern = `%${query}%`;
+    const results = await db
+        .select({
+            id: users.id,
+            username: users.username,
+            email: users.email,
+            role: users.role,
+            status: users.status,
+            displayName: users.displayName,
+            avatar: users.avatar,
+            xp: users.xp,
+            level: users.level,
+            eloRating: users.eloRating,
+            isOnline: users.isOnline,
+            createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(
+            or(
+                ilike(users.username, pattern),
+                ilike(users.displayName, pattern)
+            )
+        )
+        .limit(limit);
+
+    return new ApiResponse("Users found", results);
+};
 
 export const getUserById = async (id: string) => {
     const user = await db.query.users.findFirst({
