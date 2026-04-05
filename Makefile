@@ -17,7 +17,7 @@ re: fclean all
 nuke: fclean
 	@echo "🔥 Nuking all Docker containers, images, and volumes..."
 	@docker stop $$(docker ps -qa) 2>/dev/null || true
-	@docker run --rm -v ~/tmp:/clean alpine rm -rf /clean/db_data
+# 	@docker run --rm -v ~/tmp:/clean alpine rm -rf /clean/db_data
 	@docker rm -f $$(docker ps -qa) 2>/dev/null || true
 	@docker rmi -f $$(docker images -qa) 2>/dev/null || true
 	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true

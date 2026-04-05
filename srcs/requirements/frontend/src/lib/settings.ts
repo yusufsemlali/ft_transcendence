@@ -108,7 +108,18 @@ export async function applyBackgroundSettings(settings: UserSettings): Promise<v
     const bgElement = document.querySelector(".custom-background") as HTMLElement | null;
     const effectiveBg = await getEffectiveBackground(settings);
 
-    if (effectiveBg && bgElement) {
+    // Only apply if the URL is valid — prevents partial strings from triggering 404s
+    const isValidBgUrl = (url: string): boolean => {
+        if (url.startsWith("data:") || url.startsWith("blob:")) return true;
+        try {
+            const parsed = new URL(url);
+            return parsed.protocol === "http:" || parsed.protocol === "https:";
+        } catch {
+            return false;
+        }
+    };
+
+    if (effectiveBg && isValidBgUrl(effectiveBg) && bgElement) {
         const img = bgElement.querySelector("img") as HTMLImageElement | null;
         if (img) {
             img.src = effectiveBg;

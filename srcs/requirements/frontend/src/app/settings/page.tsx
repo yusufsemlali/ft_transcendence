@@ -51,7 +51,7 @@ export default function SettingsPage() {
         applyAllSettings(response.body); // Sync with server state
       }
     } catch (error) {
-      console.log("Failed to fetch settings:", error);
+      // Error handling logic - we don't log to console
     }
   };
 
@@ -83,7 +83,7 @@ export default function SettingsPage() {
           body: { [key]: value },
         });
       } catch (error) {
-        console.log("Failed to save setting:", error);
+        // Error handling logic - we don't log to console
       } finally {
         setSaving(false);
       }

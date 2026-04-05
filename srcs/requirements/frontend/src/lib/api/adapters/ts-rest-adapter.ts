@@ -32,11 +32,11 @@ function buildApi(
   args: ApiFetcherArgs,
 ) => Promise<{ status: number; body: unknown; headers: Headers }> {
   return async (request: ApiFetcherArgs) => {
-    
+
     const executeFetch = async (): Promise<{ status: number; body: unknown; headers: Headers }> => {
       try {
         const usePolyfill = AbortSignal?.timeout === undefined;
-        
+
         request.fetchOptions = {
           ...request.fetchOptions,
           credentials: "include", // Browser automatically handles cookies
@@ -45,7 +45,16 @@ function buildApi(
             : AbortSignal.timeout(timeout),
         };
 
-        return await tsRestFetchApi(request);
+        const result = await tsRestFetchApi(request);
+
+        // BFF proxy always returns HTTP 200 to avoid browser console errors.
+        // The real backend status is in the X-BFF-Status header.
+        const bffStatus = result.headers.get("X-BFF-Status");
+        if (bffStatus) {
+          result.status = parseInt(bffStatus, 10);
+        }
+
+        return result;
       } catch (e: Error | unknown) {
         let message = "Unknown error";
         if (e instanceof Error) {
@@ -61,14 +70,6 @@ function buildApi(
 
     // 1. Initial Request
     let response = await executeFetch();
-
-    // 2. Log Errors (Except 401 which we attempt to handle)
-    if (response.status >= 400 && response.status !== 401 && response.status !== 404) {
-      console.log(`${request.method} ${request.path} failed`, {
-        status: response.status,
-        ...(response.body as object),
-      });
-    }
 
     // 3. Handle Compatibility Checks
     const compatibilityCheckHeader = response.headers.get(COMPATIBILITY_CHECK_HEADER);
@@ -92,10 +93,9 @@ function buildApi(
     if (response.status === 401 && typeof window !== "undefined" && !isPublicEndpoint) {
       // If a refresh isn't already happening, start one
       if (!refreshPromise) {
-        console.log(`[Auth] 401 Unauthorized detected on ${request.path}. Initiating token refresh...`);
-        refreshPromise = refreshToken(baseUrl).finally(() => {
+        refreshPromise = refreshToken().finally(() => {
           // Clear the lock when done, whether it succeeded or failed
-          refreshPromise = null; 
+          refreshPromise = null;
         });
       }
 
@@ -103,11 +103,9 @@ function buildApi(
       const refreshed = await refreshPromise;
 
       if (refreshed) {
-        console.log(`[Auth] Token refreshed successfully. Retrying ${request.path}...`);
         // The backend set a new cookie. Simply try the exact same request again.
         response = await executeFetch();
       } else {
-        console.log(`[Auth] Token refresh failed. Logging out.`);
         // Refresh failed (session truly dead). Notify app to kick user out.
         window.dispatchEvent(new CustomEvent("auth:logout"));
       }
