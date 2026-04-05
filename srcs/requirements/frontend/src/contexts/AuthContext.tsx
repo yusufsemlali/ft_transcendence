@@ -19,8 +19,12 @@ export interface UserInfo {
   id: string;
   username: string;
   email: string;
-  level: number;
+  displayName: string;
+  bio: string;
+  tagline: string;
   avatar: string;
+  banner: string;
+  level: number;
   role: string;
 }
 
@@ -53,10 +57,14 @@ function extractUserInfo(userData: User): UserInfo {
     id: userData.id || "",
     username: userData.username || "",
     email: userData.email || "",
-    level: userData.level ?? 1,
+    displayName: userData.displayName || "",
+    bio: userData.bio || "",
+    tagline: userData.tagline || "",
     avatar:
       userData.avatar ||
       "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+    banner: userData.banner || "",
+    level: userData.level ?? 1,
     role: userData.role || "user",
   };
 }
