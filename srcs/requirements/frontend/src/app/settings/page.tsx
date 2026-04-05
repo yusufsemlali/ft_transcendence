@@ -215,7 +215,7 @@ export default function SettingsPage() {
 
         {/* Theme & Tokens Card */}
         <div className="stack-md">
-          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
+          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)", position: "relative", zIndex: 20, overflow: "visible" }}>
             <div className="section-header" style={{ marginBottom: "24px" }}>
               <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>token</span>
               <span className="section-title">THEME TOKENS</span>
@@ -241,17 +241,17 @@ export default function SettingsPage() {
                    />
                 </div>
                 <div>
-                   <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>COLOR HARMONY</label>
-                   <div className="button-group" style={{ width: "100%" }}>
-                      {(["complementary", "analogous", "triadic", "split"] as const).map((mode) => (
-                        <button key={mode} onClick={() => updateSetting("colorHarmony", mode)} className={`button-group-item ${settings.colorHarmony === mode ? "active" : ""}`} style={{ flex: 1 }}>{mode.toUpperCase()}</button>
-                      ))}
-                   </div>
+                  <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>COLOR HARMONY</label>
+                  <div className="button-group" style={{ width: "100%" }}>
+                    {(["complementary", "analogous", "triadic", "split"] as const).map((mode) => (
+                      <button key={mode} onClick={() => updateSetting("colorHarmony", mode)} className={`button-group-item ${settings.colorHarmony === mode ? "active" : ""}`} style={{ flex: 1 }}>{mode.toUpperCase()}</button>
+                    ))}
+                  </div>
                 </div>
+
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                 {/* Simplified advanced grid for persona */}
                  {[
                    { label: "BG", key: "bgPrimary" },
                    { label: "ACCENT", key: "accent" },
@@ -277,21 +277,29 @@ export default function SettingsPage() {
 
             <div className="divider" style={{ margin: "24px 0" }}></div>
 
-            <div className="stack-sm">
-               <div className="slider-item">
-                  <span className="slider-label">RADIUS</span>
-                  <span className="slider-value">{settings.borderRadius}px</span>
-                  <input type="range" min="0" max="20" value={settings.borderRadius} onChange={(e) => updateSetting("borderRadius", parseFloat(e.target.value))} className="slider" />
-               </div>
-               <div className="slider-item">
-                  <span className="slider-label">GLASS OPACITY</span>
-                  <span className="slider-value">{Math.round(settings.glassOpacity * 100)}%</span>
-                  <input type="range" min="0" max="0.5" step="0.01" value={settings.glassOpacity} onChange={(e) => updateSetting("glassOpacity", parseFloat(e.target.value))} className="slider" />
-               </div>
+            <div className="stack-md">
+                   <div>
+                      <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>TYPOGRAPHY</label>
+                      <FontPicker
+                        value={settings.fontFamily}
+                        onChange={(font) => updateSetting("fontFamily", font as any)}
+                      />
+                   </div>
+
+                   <div className="slider-item">
+                      <span className="slider-label">RADIUS</span>
+                      <span className="slider-value">{settings.borderRadius}px</span>
+                      <input type="range" min="0" max="20" value={settings.borderRadius} onChange={(e) => updateSetting("borderRadius", parseFloat(e.target.value))} className="slider" />
+                   </div>
+                   <div className="slider-item">
+                      <span className="slider-label">GLASS OPACITY</span>
+                      <span className="slider-value">{Math.round(settings.glassOpacity * 100)}%</span>
+                      <input type="range" min="0" max="0.5" step="0.01" value={settings.glassOpacity} onChange={(e) => updateSetting("glassOpacity", parseFloat(e.target.value))} className="slider" />
+                   </div>
             </div>
           </section>
 
-          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
+          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)", position: "relative", zIndex: 10 }}>
             <div className="section-header" style={{ marginBottom: "24px" }}>
               <span className="material-symbols-outlined" style={{ color: "var(--accent-warning)" }}>visibility</span>
               <span className="section-title">THEME PREVIEW</span>
