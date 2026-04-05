@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { Metadata } from "next";
 
-export default function NotFound() {
+export const metadata: Metadata = {
+    title: "404 - Page Not Found",
+};
+
+export default function CatchAllNotFound() {
     return (
         <main className="animate-fade-in" style={{
             flex: 1,

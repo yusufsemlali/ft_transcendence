@@ -42,6 +42,32 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
+    updateTournament: async ({ params, body, req }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournamentResponse = await TournamentService.getTournamentById(params.id);
+        const currentTournament = tournamentResponse.data;
+
+        if (currentTournament.organizationId !== params.organizationId) {
+            throw new AppError(403, "Tournament does not belong to this organization.");
+        }
+
+        await requireOrgRole(userId, params.organizationId, ["owner", "admin"]);
+
+        const response = await TournamentService.updateTournament(params.id, body);
+
+        return {
+            status: 200,
+            body: { 
+                message: "Tournament updated successfully", 
+                data: response.data as any 
+            },
+        };
+    },
+
     deleteTournament: async ({ params, req }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
@@ -75,27 +101,6 @@ export const tournamentsController = s.router(contract.tournaments, {
         return {
             status: 200,
             body: { data: response.data as any },
-        };
-    },
-
-    updateTournament: async ({ params, body, req }) => {
-        const contextReq = req as unknown as RequestWithContext;
-        const userId = contextReq.ctx?.decodedToken?.id;
-
-        if (!userId) throw new AppError(401, "Unauthorized");
-
-        const tournament = await TournamentService.getTournamentById(params.id);
-        
-        await requireOrgRole(userId, tournament.data.organizationId, ["owner", "admin"]);
-
-        const response = await TournamentService.updateTournament(params.id, body);
-
-        return {
-            status: 200,
-            body: { 
-                message: "Tournament updated successfully", 
-                data: response.data as any 
-            },
         };
     },
 

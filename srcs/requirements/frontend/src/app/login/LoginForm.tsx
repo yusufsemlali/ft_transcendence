@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
@@ -16,6 +16,23 @@ function LoginFormContent() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
+  // Refs for native browser validation tooltips
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  const clearValidity = (ref: React.RefObject<HTMLInputElement | null>) => {
+    ref.current?.setCustomValidity("");
+  };
+
+  const showFieldError = (ref: React.RefObject<HTMLInputElement | null>, message: string) => {
+    if (ref.current) {
+      ref.current.setCustomValidity(message);
+      requestAnimationFrame(() => {
+        ref.current?.reportValidity();
+      });
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -25,9 +42,14 @@ function LoginFormContent() {
       toast.success("Welcome back!");
       router.push(callbackUrl);
     } else {
-      toast.error(result.error || "Login failed", {
-        description: "Auth Error",
-      });
+      const errorMsg = result.error || "Login failed";
+
+      // "Invalid credentials" → show on password field
+      if (errorMsg.toLowerCase().includes("credentials") || errorMsg.toLowerCase().includes("password")) {
+        showFieldError(passwordRef, errorMsg);
+      } else {
+        showFieldError(emailRef, errorMsg);
+      }
     }
   };
 
@@ -73,7 +95,6 @@ function LoginFormContent() {
                  toast.error("Failed to initiate 42 login");
                }
              } catch (error) {
-               console.error("42 Login Error:", error);
                toast.error("An unexpected error occurred");
              }
           }}
@@ -85,7 +106,7 @@ function LoginFormContent() {
             style={{ 
               width: "24px", 
               height: "24px",
-              filter: "brightness(0) invert(1)" // To make it white if necessary
+              filter: "brightness(0) invert(1)"
             }}
           />
         </button>
@@ -105,24 +126,26 @@ function LoginFormContent() {
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: "1rem" }}>
           <input
+            ref={emailRef}
             type="email"
             required
             className="input"
             placeholder="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); clearValidity(emailRef); }}
             disabled={isLoading}
           />
         </div>
 
         <div style={{ marginBottom: "1rem" }}>
           <input
+            ref={passwordRef}
             type="password"
             required
             className="input"
             placeholder="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); clearValidity(passwordRef); }}
             disabled={isLoading}
           />
         </div>

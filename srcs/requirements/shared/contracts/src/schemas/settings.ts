@@ -95,6 +95,9 @@ export type FontFamily = z.infer<typeof FontFamilySchema>;
 export const FontSizeSchema = z.number().min(0.5).max(3);
 export type FontSize = z.infer<typeof FontSizeSchema>;
 
+export const ColorHarmonySchema = z.enum(["complementary", "analogous", "triadic", "split"]);
+export type ColorHarmony = z.infer<typeof ColorHarmonySchema>;
+
 export const UserSettingsSchema = z.object({
     theme: ThemePresetSchema.default("default"),
     customTheme: z.boolean().default(false),
@@ -111,7 +114,8 @@ export const UserSettingsSchema = z.object({
     soundEnabled: z.boolean().default(true),
     soundVolume: z.number().min(0).max(1).default(0.5),
     desktopNotifications: z.boolean().default(false),
-    themeHue: z.number().min(0).max(360).default(344),
+    themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/i).default("#9c596eff"),
+    colorHarmony: ColorHarmonySchema.default("complementary"),
     borderRadius: z.number().min(0).max(20).default(10),
     glassBlur: z.number().min(0).max(20).default(12),
     glassOpacity: z.number().min(0).max(1).default(0.1),
@@ -138,7 +142,8 @@ export const defaultSettings: UserSettings = {
     soundEnabled: true,
     soundVolume: 0.5,
     desktopNotifications: false,
-    themeHue: 344,
+    themeColor: "#e8366d",
+    colorHarmony: "complementary",
     borderRadius: 10,
     glassBlur: 12,
     glassOpacity: 0.1,

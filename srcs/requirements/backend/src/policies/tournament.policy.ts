@@ -2,25 +2,11 @@ import AppError from "@/utils/error";
 import { 
     TOURNAMENT_PHASES, 
     TOURNAMENT_STRUCTURAL_FIELDS, 
-    TOURNAMENT_PROTECTED_FIELDS, 
     UpdateTournament 
 } from "@ft-transcendence/contracts";
 
 export class TournamentPolicy {
     
-    static enforceModifiableFields(attemptedData: Record<string, any>) {
-        const violations = Object.keys(attemptedData).filter(key => 
-            (TOURNAMENT_PROTECTED_FIELDS as readonly string[]).includes(key)
-        );
-
-        if (violations.length > 0) {
-            throw new AppError(
-                400, 
-                `Validation Error: The following fields are protected and cannot be modified: ${violations.join(', ')}`
-            );
-        }
-    }
-
     static enforceUpdateRules(currentStatus: string, validatedData: UpdateTournament) {
         const isPastSetupPhase = 
             TOURNAMENT_PHASES.LIVE.includes(currentStatus as any) || 

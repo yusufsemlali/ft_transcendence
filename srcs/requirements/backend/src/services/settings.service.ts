@@ -45,7 +45,8 @@ export const updateSettings = async (
     if (updates.soundVolume !== undefined) dbUpdates.soundVolume = updates.soundVolume;
     if (updates.desktopNotifications !== undefined) dbUpdates.desktopNotifications = updates.desktopNotifications;
     if (updates.themeMode !== undefined) dbUpdates.themeMode = updates.themeMode;
-    if (updates.themeHue !== undefined) dbUpdates.themeHue = updates.themeHue;
+    if (updates.themeColor !== undefined) dbUpdates.themeColor = updates.themeColor;
+    if (updates.colorHarmony !== undefined) dbUpdates.colorHarmony = updates.colorHarmony;
     if (updates.borderRadius !== undefined) dbUpdates.borderRadius = updates.borderRadius;
     if (updates.glassBlur !== undefined) dbUpdates.glassBlur = updates.glassBlur;
     if (updates.glassOpacity !== undefined) dbUpdates.glassOpacity = updates.glassOpacity;
@@ -79,7 +80,8 @@ export const resetSettings = async (userId: string): Promise<ApiResponse<UserSet
             soundEnabled: defaultSettings.soundEnabled,
             soundVolume: defaultSettings.soundVolume,
             desktopNotifications: defaultSettings.desktopNotifications,
-            themeHue: defaultSettings.themeHue,
+            themeColor: defaultSettings.themeColor,
+            colorHarmony: defaultSettings.colorHarmony,
             borderRadius: defaultSettings.borderRadius,
             glassBlur: defaultSettings.glassBlur,
             glassOpacity: defaultSettings.glassOpacity,
@@ -109,7 +111,8 @@ function mapDbToSettings(row: typeof userSettings.$inferSelect): UserSettings {
         soundVolume: row.soundVolume,
         desktopNotifications: row.desktopNotifications,
         themeMode: row.themeMode as UserSettings["themeMode"],
-        themeHue: row.themeHue,
+        themeColor: row.themeColor,
+        colorHarmony: row.colorHarmony as UserSettings["colorHarmony"],
         borderRadius: row.borderRadius,
         glassBlur: row.glassBlur,
         glassOpacity: row.glassOpacity,

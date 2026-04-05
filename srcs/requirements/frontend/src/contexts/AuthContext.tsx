@@ -19,8 +19,12 @@ export interface UserInfo {
   id: string;
   username: string;
   email: string;
-  level: number;
+  displayName: string;
+  bio: string;
+  tagline: string;
   avatar: string;
+  banner: string;
+  level: number;
   role: string;
 }
 
@@ -36,7 +40,7 @@ interface AuthContextType {
     email: string,
     username: string,
     password: string,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; validationErrors?: any[] }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -53,10 +57,14 @@ function extractUserInfo(userData: User): UserInfo {
     id: userData.id || "",
     username: userData.username || "",
     email: userData.email || "",
-    level: userData.level ?? 1,
+    displayName: userData.displayName || "",
+    bio: userData.bio || "",
+    tagline: userData.tagline || "",
     avatar:
       userData.avatar ||
       "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+    banner: userData.banner || "",
+    level: userData.level ?? 1,
     role: userData.role || "user",
   };
 }
@@ -105,7 +113,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
               await applyAllSettings(settings);
             }
           } catch (error) {
-            console.log("Failed to load user settings:", error);
+            // Error handling logic - we don't log to console
           }
 
           router.refresh();
@@ -141,10 +149,11 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
           router.refresh();
           return { success: true };
         } else {
-          const body = response.body as { message?: string };
+          const body = response.body as { message?: string, errors?: any[] };
           return {
             success: false,
             error: body?.message || "Registration failed",
+            validationErrors: body?.errors,
           };
         }
       } catch {
@@ -169,7 +178,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
 
       router.refresh();
     } catch (error) {
-      console.log("Logout error:", error);
+      // Error handling logic - we don't log to console
     } finally {
       setIsLoading(false);
     }
@@ -228,13 +237,12 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     // Only run if the user is authenticated in this session
     if (!user) return;
 
-    // 80% rule: refresh at 80% of total lifetime. Fallback to 20s if not set.
+    // 80% rule: refresh at 80% of total lifetime (50m token → 40m interval).
     const intervalFromEnv = process.env.NEXT_PUBLIC_REFRESH_INTERVAL_MS;
-    const REFRESH_INTERVAL_MS = intervalFromEnv ? parseInt(intervalFromEnv) : 20 * 1000; 
+    const REFRESH_INTERVAL_MS = intervalFromEnv ? parseInt(intervalFromEnv) : 40 * 60 * 1000; 
 
     const backgroundRefresh = setInterval(async () => { 
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const success = await refreshToken(baseUrl);
+      const success = await refreshToken();
 
       if (!success) {
         window.dispatchEvent(new CustomEvent("auth:logout"));

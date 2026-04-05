@@ -17,9 +17,6 @@ import api from "@/lib/api/api";
 import { FontPicker } from "@/components/settings";
 
 
-
-
-
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -54,7 +51,7 @@ export default function SettingsPage() {
         applyAllSettings(response.body); // Sync with server state
       }
     } catch (error) {
-      console.log("Failed to fetch settings:", error);
+      // Error handling logic - we don't log to console
     }
   };
 
@@ -86,7 +83,7 @@ export default function SettingsPage() {
           body: { [key]: value },
         });
       } catch (error) {
-        console.log("Failed to save setting:", error);
+        // Error handling logic - we don't log to console
       } finally {
         setSaving(false);
       }
@@ -414,31 +411,151 @@ export default function SettingsPage() {
             </svg>
             <span className="section-title">theme tokens</span>
           </div>
-          <p className="section-description">
-            Customize the core design tokens of the application.
-          </p>
-
-          <div className="slider-row">
-            <div className="slider-item">
-              <span className="slider-label">hue</span>
-              <span className="slider-value">
-                {Math.round(settings.themeHue)}°
-              </span>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                value={settings.themeHue}
-                onChange={(e) =>
-                  updateSetting("themeHue", parseFloat(e.target.value))
-                }
-                className="slider"
-                style={{
-                  background:
-                    "linear-gradient(to right, oklch(62.3% 0.226 0), oklch(62.3% 0.226 60), oklch(62.3% 0.226 120), oklch(62.3% 0.226 180), oklch(62.3% 0.226 240), oklch(62.3% 0.226 300), oklch(62.3% 0.226 360))",
-                }}
-              />
+          {/* Header & Mode Toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
+            <p className="section-description" style={{ margin: 0 }}>
+              Customize the core design tokens of the application.
+            </p>
+            <div className="button-group">
+              <button
+                onClick={() => updateSetting("customTheme", false)}
+                className={`button-group-item ${!settings.customTheme ? "active" : ""}`}
+              >
+                preset
+              </button>
+              <button
+                onClick={() => updateSetting("customTheme", true)}
+                className={`button-group-item ${settings.customTheme ? "active" : ""}`}
+                style={settings.customTheme ? { background: "var(--theme-color)", color: "var(--background)" } : {}}
+              >
+                custom
+              </button>
             </div>
+          </div>
+
+          {!settings.customTheme ? (
+            <>
+              {/* Primary color + Harmony row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+                <span className="slider-label" style={{ minWidth: "auto" }}>primary</span>
+                <input
+                  type="color"
+                  value={settings.themeColor}
+                  onChange={(e) => updateSetting("themeColor", e.target.value)}
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    border: "2px solid var(--border-color)",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: 0,
+                    borderRadius: "var(--radius)",
+                    overflow: "hidden",
+                  }}
+                />
+                <div style={{ width: "1px", height: "20px", background: "var(--border-color)" }} />
+                <span className="slider-label" style={{ minWidth: "auto" }}>harmony</span>
+                <div className="button-group">
+                  {(["complementary", "analogous", "triadic", "split"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => updateSetting("colorHarmony", mode)}
+                      className={`button-group-item ${settings.colorHarmony === mode ? "active" : ""}`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color preview dots */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <div
+                    style={{
+                      width: "14px",
+                      height: "14px",
+                      borderRadius: "50%",
+                      background: "var(--theme-color)",
+                    }}
+                  />
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>primary</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <div
+                    style={{
+                      width: "14px",
+                      height: "14px",
+                      borderRadius: "50%",
+                      background: "var(--theme-color-secondary)",
+                    }}
+                  />
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>secondary</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+              {[
+                { label: "background", key: "bgPrimary" as const, default: "#0a0a0a" },
+                { label: "main", key: "accent" as const, default: "#e8366d" },
+                { label: "caret", key: "accentSecondary" as const, default: "#36e8b1" },
+                { label: "error", key: "error" as const, default: "#ca4754" },
+                { label: "sub alt", key: "bgSecondary" as const, default: "#2c2e31" },
+                { label: "sub", key: "textSecondary" as const, default: "#646669" },
+                { label: "text", key: "textPrimary" as const, default: "#d1d0c5" },
+                { label: "extra error", key: "bgTertiary" as const, default: "#7e2a33" }, // Mapped closely
+              ].map(({ label, key, default: defHex }) => {
+                const colors = settings.customThemeColors || {} as any;
+                const value = colors[key] || defHex;
+                return (
+                  <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--bg-secondary)", padding: "0.5rem 1rem", borderRadius: "var(--radius)" }}>
+                    <span style={{ fontSize: "0.9rem", color: "var(--text-muted)", minWidth: "100px" }}>{label}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "var(--background)", padding: "0.25rem 0.5rem", borderRadius: "calc(var(--radius) - 2px)", width: "100%" }}>
+                      <span style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "var(--text-secondary)", flex: 1 }}>{value}</span>
+                      <input
+                        type="color"
+                        value={value}
+                        onChange={(e) => {
+                          const newColors = { ...settings.customThemeColors } as any;
+                          newColors[key] = e.target.value;
+                          
+                          // If initializing for the first time, populate all defaults
+                          if (!settings.customThemeColors) {
+                            newColors.bgPrimary = "#0a0a0a";
+                            newColors.accent = "#e8366d";
+                            newColors.accentSecondary = "#36e8b1";
+                            newColors.error = "#ca4754";
+                            newColors.bgSecondary = "#2c2e31";
+                            newColors.textSecondary = "#646669";
+                            newColors.textPrimary = "#d1d0c5";
+                            newColors.bgTertiary = "#7e2a33";
+                            newColors.success = "#36e8b1";
+                            newColors.textMuted = "#646669";
+                            newColors[key] = e.target.value; // override the specific one changed
+                          }
+                          updateSetting("customThemeColors", newColors);
+                        }}
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          border: "none",
+                          background: "transparent",
+                          cursor: "pointer",
+                          padding: 0,
+                          borderRadius: "4px",
+                          overflow: "hidden",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Radius + Glass slider */}
+          <div className="slider-row">
             <div className="slider-item">
               <span className="slider-label">radius</span>
               <span className="slider-value">{settings.borderRadius}px</span>
@@ -449,23 +566,6 @@ export default function SettingsPage() {
                 value={settings.borderRadius}
                 onChange={(e) =>
                   updateSetting("borderRadius", parseFloat(e.target.value))
-                }
-                className="slider"
-              />
-            </div>
-          </div>
-
-          <div className="slider-row">
-            <div className="slider-item">
-              <span className="slider-label">glass blur</span>
-              <span className="slider-value">{settings.glassBlur}px</span>
-              <input
-                type="range"
-                min="0"
-                max="20"
-                value={settings.glassBlur}
-                onChange={(e) =>
-                  updateSetting("glassBlur", parseFloat(e.target.value))
                 }
                 className="slider"
               />
@@ -515,7 +615,8 @@ export default function SettingsPage() {
             <span className="section-title">theme preview</span>
           </div>
           <p className="section-description">
-            A live preview of your design tokens applied to core UI components.
+            A live preview of your design tokens — see how primary, secondary,
+            and harmony colors interact across UI components.
           </p>
 
           <div
@@ -525,17 +626,87 @@ export default function SettingsPage() {
               marginTop: "1.5rem",
               display: "flex",
               flexDirection: "column",
-              gap: "2rem",
+              gap: "1.5rem",
               background:
                 "linear-gradient(135deg, oklch(100% 0 0 / var(--glass-opacity)) 0%, oklch(100% 0 0 / calc(var(--glass-opacity) / 2)) 100%)",
             }}
           >
-            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-              <button className="btn btn-primary">Primary Button</button>
+            {/* Gradient Banner */}
+            <div
+              style={{
+                borderRadius: "var(--radius)",
+                padding: "1.25rem 1.5rem",
+                background: "var(--gradient-prism)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "1.1rem", fontWeight: 600, color: "white" }}>
+                  Gradient Prism
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.7)", marginTop: "0.15rem" }}>
+                  Primary → Secondary flow
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    background: "var(--primary)",
+                    border: "2px solid rgba(255,255,255,0.4)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    background: "var(--accent-secondary)",
+                    border: "2px solid rgba(255,255,255,0.4)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Color Swatch Row */}
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              {[
+                { label: "primary", bg: "var(--primary)", fg: "white" },
+                { label: "secondary", bg: "var(--accent-secondary)", fg: "white" },
+                { label: "accent", bg: "var(--accent)", fg: "var(--accent-foreground)" },
+                { label: "surface", bg: "var(--secondary)", fg: "var(--secondary-foreground)" },
+                { label: "ring", bg: "var(--ring)", fg: "white" },
+                { label: "destructive", bg: "var(--destructive)", fg: "var(--destructive-foreground)" },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    padding: "0.4rem 0.75rem",
+                    borderRadius: "var(--radius)",
+                    background: s.bg,
+                    color: s.fg,
+                    fontSize: "0.7rem",
+                    fontFamily: "var(--font-mono)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  {s.label}
+                </div>
+              ))}
+            </div>
+
+            {/* Buttons + Badge row */}
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+              <button className="btn btn-primary">Primary</button>
               <button className="btn btn-secondary">Secondary</button>
+              <button className="btn btn-ghost">Ghost</button>
               <div
                 style={{
-                  padding: "0.25rem 0.75rem",
+                  padding: "0.2rem 0.6rem",
                   background: "var(--accent)",
                   borderRadius: "var(--radius)",
                   fontSize: "0.7rem",
@@ -543,60 +714,135 @@ export default function SettingsPage() {
                   border: "1px solid var(--primary)",
                 }}
               >
-                Sample Badge
+                Badge
               </div>
+              <span className="text-gradient" style={{ fontWeight: 600, fontSize: "0.85rem" }}>
+                Gradient Text
+              </span>
             </div>
 
+            {/* Two-column: Input + Stats */}
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: "1.5rem",
+                gap: "1rem",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>Sample Label</span>
+              {/* Left: Form elements */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>Interactive Elements</span>
                 <input
                   className="input"
-                  placeholder="Interactive input field..."
-                  defaultValue="Focus me to see the ring"
+                  placeholder="Focus to see the ring color..."
+                  readOnly
                 />
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>Progress Example</span>
-                <div
-                  style={{
-                    height: "8px",
-                    background: "var(--secondary)",
-                    borderRadius: "999px",
-                    overflow: "hidden",
-                  }}
-                >
+                {/* Progress bars */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                   <div
                     style={{
-                      height: "100%",
-                      width: "65%",
-                      background: "var(--primary)",
+                      height: "6px",
+                      background: "var(--secondary)",
                       borderRadius: "999px",
+                      overflow: "hidden",
                     }}
-                  />
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: "72%",
+                        background: "var(--primary)",
+                        borderRadius: "999px",
+                        transition: "all 0.3s",
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      height: "6px",
+                      background: "var(--secondary)",
+                      borderRadius: "999px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: "45%",
+                        background: "var(--accent-secondary)",
+                        borderRadius: "999px",
+                        transition: "all 0.3s",
+                      }}
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Right: Stat cards */}
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                {[
+                  { value: "1,247", label: "Matches", color: "var(--primary)" },
+                  { value: "89%", label: "Win Rate", color: "var(--accent-secondary)" },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    style={{
+                      flex: 1,
+                      padding: "0.75rem",
+                      borderRadius: "var(--radius)",
+                      background: "var(--secondary)",
+                      border: "1px solid var(--border)",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "1.25rem",
+                        fontWeight: 300,
+                        color: stat.color,
+                        lineHeight: 1,
+                        transition: "color 0.3s",
+                      }}
+                    >
+                      {stat.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.65rem",
+                        color: "var(--text-muted)",
+                        marginTop: "0.25rem",
+                      }}
+                    >
+                      {stat.label}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
+            {/* Info card */}
             <div
               style={{
                 padding: "1rem",
                 borderRadius: "var(--radius)",
-                background: "var(--bg-tertiary)",
+                background: "var(--secondary)",
                 border: "1px solid var(--border)",
                 fontSize: "0.8rem",
-                lineHeight: "1.4",
+                lineHeight: "1.5",
               }}
             >
               <p style={{ color: "var(--text-secondary)" }}>
-                This is a sample of how your <strong style={{ color: "var(--primary)" }}>text colors</strong> and <strong style={{ color: "var(--primary)" }}>surface layers</strong> interact. Adjust the Hue and Glass tokens to see this card update in real-time.
+                Your{" "}
+                <strong style={{ color: "var(--primary)" }}>primary</strong> and{" "}
+                <strong style={{ color: "var(--accent-secondary)" }}>
+                  secondary
+                </strong>{" "}
+                colors are linked by{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  {settings.colorHarmony}
+                </strong>{" "}
+                harmony. Adjust the hue and harmony mode above to see every
+                element update in real-time.
               </p>
             </div>
           </div>

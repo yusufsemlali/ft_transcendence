@@ -71,7 +71,8 @@
 
 :root {
   /* Dynamic Theme Tokens (driven by JS) */
-  --theme-hue: 344;
+  --theme-color: #e8366d;
+  --theme-color-secondary: #36e8b1;
   --radius-base: 0.625rem;
   --glass-blur: 12px;
   --glass-opacity: 0.1;
@@ -83,19 +84,19 @@
   --card-foreground: oklch(0.2 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0 0);
-  --primary: oklch(0.623 0.226 var(--theme-hue)); /* Dynamic Hue */
+  --primary: var(--theme-color); /* Dynamic Hex */
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.95 0 0);
   --secondary-foreground: oklch(0.2 0 0);
   --muted: oklch(0.95 0 0);
   --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.623 0.226 var(--theme-hue) / 0.1); 
-  --accent-foreground: oklch(0.623 0.226 var(--theme-hue));
+  --accent: color-mix(in srgb, var(--theme-color) 10%, transparent); 
+  --accent-foreground: var(--theme-color);
   --destructive: oklch(0.6 0.2 27);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
-  --ring: oklch(0.623 0.226 var(--theme-hue)); 
+  --ring: var(--theme-color); 
   --chart-1: oklch(0.6 0.2 40);
   --chart-2: oklch(0.6 0.1 180);
   --chart-3: oklch(0.4 0.1 220);
@@ -106,7 +107,7 @@
   --sidebar-foreground: oklch(0.2 0 0);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.6 0.2 var(--theme-hue) / 0.1);
+  --sidebar-accent: color-mix(in srgb, var(--theme-color) 10%, transparent);
   --sidebar-accent-foreground: var(--primary);
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: var(--ring);
@@ -124,13 +125,13 @@
 
   /* Legacy vars support - Mapped for Light Mode */
   --bg-primary: var(--background);
-  --bg-secondary: oklch(0.6 0.2 var(--theme-hue) / var(--glass-opacity));
+  --bg-secondary: color-mix(in srgb, var(--theme-color) 10%, transparent);
   --text-primary: var(--foreground);
   --text-secondary: oklch(0.4 0 0);
   --text-muted: oklch(0.6 0 0);
   --accent-primary: var(--primary);
-  --accent-secondary: oklch(0.58 0.23 285);
-  --gradient-prism: linear-gradient(135deg, var(--primary) 0%, oklch(0.58 0.23 285) 100%);
+  --accent-secondary: var(--theme-color-secondary);
+  --gradient-prism: linear-gradient(135deg, var(--theme-color) 0%, var(--theme-color-secondary) 100%);
   --border-color: oklch(0 0 0 / 0.1);
   --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
 
@@ -145,19 +146,19 @@
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0 0 0);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.623 0.226 var(--theme-hue)); 
+  --primary: var(--theme-color); 
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.145 0 0);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.145 0 0);
   --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.623 0.226 var(--theme-hue) / 0.2); 
-  --accent-foreground: oklch(0.623 0.226 var(--theme-hue));
+  --accent: color-mix(in srgb, var(--theme-color) 20%, transparent); 
+  --accent-foreground: var(--theme-color);
   --destructive: oklch(0.4 0.14 25);
   --destructive-foreground: oklch(0.64 0.24 25);
   --border: oklch(1 0 0 / 0.08); 
   --input: oklch(0.3 0 0);
-  --ring: oklch(0.58 0.23 285); 
+  --ring: var(--theme-color-secondary); 
   --chart-1: oklch(0.48 0.24 264);
   --chart-2: oklch(0.7 0.17 162);
   --chart-3: oklch(0.77 0.19 70);
@@ -165,7 +166,7 @@
   --chart-5: oklch(0.64 0.24 16);
   --sidebar: oklch(0.2 0 0);
   --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.48 0.24 264);
+  --sidebar-primary: var(--theme-color-secondary);
   --sidebar-primary-foreground: oklch(0.98 0 0);
   --sidebar-accent: oklch(0.27 0 0);
   --sidebar-accent-foreground: oklch(0.98 0 0);
@@ -173,7 +174,7 @@
   --sidebar-ring: oklch(0.44 0 0);
 
   /* Override Legacy vars for Dark Mode */
-  --bg-secondary: oklch(0.623 0.226 var(--theme-hue) / var(--glass-opacity));
+  --bg-secondary: color-mix(in srgb, var(--theme-color) 20%, transparent);
   --text-secondary: oklch(0.708 0 0);
   --text-muted: oklch(0.556 0 0);
   --border-color: oklch(1 0 0 / 0.08);
