@@ -91,7 +91,7 @@ export default function RegisterForm() {
       </div>
 
       <p className="section-description" style={{ marginBottom: "24px", fontSize: "0.8rem" }}>
-        Enter your details below to finalize your registration and enter the competition.
+        Enter your details below to create your account and start your journey.
       </p>
 
       <form onSubmit={handleRegister} className="stack-md">
@@ -174,7 +174,7 @@ export default function RegisterForm() {
             className="btn btn-primary"
             style={{ width: "100%", justifyContent: "center", padding: "10px 24px" }}
           >
-            {isLoading ? "Signing up..." : "CREATE CITIZEN ACCOUNT"}
+            {isLoading ? "Signing up..." : "CREATE ACCOUNT"}
             <span className="material-symbols-outlined" style={{ fontSize: "16px", marginLeft: "8px" }}>person_add</span>
           </button>
         </div>

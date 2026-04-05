@@ -60,7 +60,7 @@ function LoginFormContent() {
       </div>
 
       <p className="section-description" style={{ marginBottom: "24px", fontSize: "0.8rem" }}>
-        Access your personalized dashboard and tournaments.
+        Enter your credentials to access your account dashboard.
       </p>
 
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
@@ -136,7 +136,7 @@ function LoginFormContent() {
             className="btn btn-primary"
             style={{ width: "100%", justifyContent: "center", padding: "10px 24px" }}
           >
-            {isLoading ? "Signing in..." : "SIGN IN TO THE ARENA"}
+            {isLoading ? "Signing in..." : "SIGN IN"}
             <span className="material-symbols-outlined" style={{ fontSize: "16px", marginLeft: "8px" }}>login</span>
           </button>
         </div>
