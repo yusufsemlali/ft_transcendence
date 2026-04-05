@@ -45,7 +45,7 @@ export async function requireGlobalRole(userId: string, allowedRoles: string[]) 
     const [user] = await db
         .select({ role: users.role, status: users.status })
         .from(users)
-        .where(eq(users.id, userId));
+        .where(eq(users.id, userId))
 
     if (!user) {
         throw new AppError(404, "User not found.");
@@ -58,7 +58,7 @@ export async function requireGlobalRole(userId: string, allowedRoles: string[]) 
     if (!allowedRoles.includes(user.role)) {
         throw new AppError(
             403, 
-            `Insufficient platform permissions. Requires: ${allowedRoles.join(", ")}.`
+            `Insufficient platform permissions.`
         );
     }
 
@@ -66,7 +66,7 @@ export async function requireGlobalRole(userId: string, allowedRoles: string[]) 
 }
 
 /**
- * 🛡️ Safeguard: Ensures that the user is not the VERY LAST active Admin in the system.
+ * Ensures that the user is not the VERY LAST active Admin in the system.
  * This prevents deadlocks where no one is left to manage the platform.
  */
 export async function ensureNotLastAdmin(targetId: string) {

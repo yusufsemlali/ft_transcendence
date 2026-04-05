@@ -10,8 +10,7 @@ import { sportsContract } from "./endpoints/sports";
 import { ORG_ROLES } from "./constants/roles";
 import { 
     TOURNAMENT_PHASES, 
-    TOURNAMENT_STRUCTURAL_FIELDS, 
-    TOURNAMENT_PROTECTED_FIELDS 
+    TOURNAMENT_STRUCTURAL_FIELDS
 } from "./constants/tournament_rules";
 import { PublicTournamentSchema, UpdateTournamentSchema } from "./schemas/tournaments";
 
@@ -34,7 +33,6 @@ export const COMPATIBILITY_CHECK_HEADER = "X-Compatibility-Check";
 export { 
     TOURNAMENT_PHASES, 
     TOURNAMENT_STRUCTURAL_FIELDS,
-    TOURNAMENT_PROTECTED_FIELDS,
     PublicTournamentSchema,
     UpdateTournamentSchema
 };
@@ -48,4 +46,5 @@ export * from "./schemas/organizations";
 export * from "./endpoints/sports";
 export * from "./constants/tournament_rules";
 export { defaultSettings } from "./schemas/settings";
-export { ORG_ROLES, OrgRole } from "./constants/roles";
+export { ORG_ROLES } from "./constants/roles";
+export type { OrgRole } from "./constants/roles";

@@ -5,9 +5,12 @@ import { useEffect, useState, useCallback } from "react";
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import {
   getLocalSettings,
+  setLocalSettings,
   getEffectiveBackground,
+  applyAllSettings,
   SETTINGS_UPDATED_EVENT,
 } from "@/lib/settings";
+import api from "@/lib/api/api";
 
 export function CustomBackground() {
   const [settings, setSettings] = useState<UserSettings>(() => {
@@ -29,9 +32,22 @@ export function CustomBackground() {
     // Load local settings immediately for fast render
     const local = getLocalSettings();
 
-    // Explicitly call async function to avoid linter warning about sync effects
     const init = async () => {
       await loadBackground(local);
+
+      // Then fetch from API to sync with server state
+      try {
+        const response = await api.settings.getSettings({});
+        if (response.status === 200) {
+          const serverSettings = response.body;
+          setSettings(serverSettings);
+          setLocalSettings(serverSettings);
+          await loadBackground(serverSettings);
+          await applyAllSettings(serverSettings);
+        }
+      } catch {
+        // Not logged in or API unavailable — local settings are fine
+      }
     };
     init();
 

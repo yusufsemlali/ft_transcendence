@@ -18,13 +18,11 @@ export const adminController = s.router(contract.admin, {
 
         if (!userId) throw new AppError(401, "Unauthorized");
 
-        // 🛡️ High Security Check: Must be Admin to list all users
         await requireGlobalRole(userId, ["admin"]);
 
         const { page, pageSize, search, role, status } = query;
         const offset = (page - 1) * pageSize;
 
-        // Build Filters
         const filters = [];
         if (search) {
             filters.push(or(
