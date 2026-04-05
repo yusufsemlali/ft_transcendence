@@ -655,11 +655,12 @@ a {
   border-radius: 4px;
 }
 
-/* Page container — tokenized */
+/* Page container — 1200px Persona Standard */
 .page {
-  max-width: 900px;
+  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
-  padding: var(--space-xl);
+  padding: 40px 20px;
 }
 
 .page-title {
