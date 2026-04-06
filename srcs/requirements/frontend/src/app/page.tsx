@@ -6,234 +6,207 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Home() {
   const { isAuthenticated } = useAuth();
 
+  const workflow = [
+    {
+      label: "Phase 01",
+      title: "Establish Organization",
+      description: "Define your management node, configure staff roles, and initialize your professional brand infrastructure.",
+      icon: "add_business",
+    },
+    {
+      label: "Phase 02",
+      title: "Configure Brackets",
+      description: "Deploy automated single or double elimination logic. Support for 16, 64, or 256+ participant clusters.",
+      icon: "account_tree",
+    },
+    {
+      label: "Phase 03",
+      title: "Govern Operations",
+      description: "Execute real-time match monitoring, finalize score vectors, and oversee tournament lifecycle from a central command.",
+      icon: "dashboard_customize",
+    }
+  ];
+
+  const stats = [
+    { label: "ORGANIZATIONS", value: "842", color: "var(--accent-info)" },
+    { label: "ACTIVE_NODES", value: "12,470", color: "var(--text-primary)" },
+    { label: "TOURNAMENTS_RUN", value: "3.2k", color: "var(--accent-success)" }
+  ];
+
   return (
-    <>
-      <main className="hero animate-fade-in" style={{ padding: "1rem" }}>
-        <div
-          className="glass-card"
-          style={{
-            padding: "4rem 3rem",
-            textAlign: "center",
-            maxWidth: "800px",
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "2rem",
-          }}
-        >
-          {/* Gradient Trophy Icon */}
-          <div
-            style={{
-              fontSize: "5rem",
-              marginBottom: "0.5rem",
-              background: "var(--gradient-prism)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: "inherit" }}
-            >
-              trophy
-            </span>
+    <div className="page" style={{
+      minHeight: "100vh",
+      color: "var(--text-primary)",
+      fontFamily: "var(--font-sans)",
+      backgroundColor: "transparent",
+    }}>
+      
+      {/* Cinematic Hero: The Command Center */}
+      <div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))", 
+        gap: "40px",
+        alignItems: "center",
+        padding: "clamp(40px, 8vw, 80px) 0",
+        position: "relative",
+        overflow: "hidden"
+      }}>
+        
+        <div className="stack-xl" style={{ position: "relative", zIndex: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
+            <span className="badge" style={{ backgroundColor: "var(--accent-secondary)", color: "white" }}>INFRASTRUCTURE_V2</span>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: "700", letterSpacing: "2px" }}>MANAGEMENT PORTAL</span>
           </div>
 
-          <div>
-            <h1
-              className="hero-title text-gradient"
-              style={{
-                fontWeight: 700,
-                letterSpacing: "-0.05em",
-                marginBottom: "0.5rem",
-              }}
-            >
-              PRISM TOURNAMENTS
-            </h1>
-            <p
-              className="hero-subtitle"
-              style={{
-                maxWidth: "600px",
-                margin: "0 auto",
-                fontSize: "1.1rem",
-              }}
-            >
-              Create brackets, manage competitions, and track leaderboards with
-              a modern, fluid experience.
-            </p>
-          </div>
+          <h2 className="text-gradient" style={{
+            fontSize: "clamp(40px, 8vw, 72px)",
+            fontWeight: "900",
+            margin: "0 0 24px 0",
+            lineHeight: "0.95",
+            letterSpacing: "-0.06em",
+            textTransform: "uppercase"
+          }}>
+            Orchestrate<br />Excellence.
+          </h2>
 
-          <div
-            className="hero-actions"
-            style={{ marginTop: "1rem" }}
-            suppressHydrationWarning
-          >
-            {isAuthenticated ? (
-              <Link
-                href="/tournaments/create"
-                className="btn btn-primary"
-                style={{
-                  padding: "0.8rem 2rem",
-                  fontSize: "1rem",
-                  borderRadius: "50px",
-                }}
-              >
-                New Tournament
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="btn btn-primary"
-                style={{
-                  padding: "0.8rem 2rem",
-                  fontSize: "1rem",
-                  borderRadius: "50px",
-                }}
-              >
-                Get Started
+          <p style={{ 
+            fontSize: "clamp(1rem, 2vw, 1.25rem)", 
+            color: "var(--text-secondary)", 
+            marginBottom: "40px",
+            lineHeight: "1.6",
+            maxWidth: "500px"
+          }}>
+            The definitive infrastructure for tournament coordinators. Establish your organization, deploy professional-grade brackets, and govern participants at scale.
+          </p>
+
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            <Link href={isAuthenticated ? "/dashboard" : "/register"} className="btn btn-primary" style={{ padding: "16px 32px", fontSize: "12px", fontWeight: "800", letterSpacing: "1px" }}>
+              {isAuthenticated ? "ACCESS COMMAND DASHBOARD" : "ESTABLISH ORGANIZATION"}
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginLeft: "8px" }}>{isAuthenticated ? "terminal" : "add_business"}</span>
+            </Link>
+            {!isAuthenticated && (
+              <Link href="/login" className="btn btn-secondary" style={{ padding: "16px 32px", fontSize: "12px", borderRadius: "12px" }}>
+                RETURN TO COMMAND
               </Link>
             )}
-            <Link
-              href="/tournaments"
-              className="btn btn-secondary"
-              style={{
-                padding: "0.8rem 2rem",
-                fontSize: "1rem",
-                borderRadius: "50px",
-              }}
-            >
-              Browse Events
-            </Link>
           </div>
 
-          <div
-            className="hero-stats"
-            style={{
-              marginTop: "2rem",
-              paddingTop: "2rem",
-              borderTop: "1px solid var(--border-color)",
-              width: "100%",
-              justifyContent: "space-around",
-              gap: "1rem",
-            }}
-          >
-            <div>
-              <div
-                className="stat-value"
-                style={{ fontSize: "1.5rem", fontWeight: 700 }}
-              >
-                1,247
+          {/* Micro Stats */}
+          <div style={{ display: "flex", gap: "clamp(24px, 4vw, 48px)", marginTop: "clamp(32px, 5vw, 60px)", flexWrap: "wrap" }}>
+            {stats.map(stat => (
+              <div key={stat.label}>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "2px", fontWeight: "700" }}>{stat.label}</div>
+                <div style={{ fontSize: "clamp(20px, 3vw, 28px)", color: "var(--text-primary)", fontWeight: "300" }}>{stat.value}</div>
               </div>
-              <div className="stat-label">Events</div>
-            </div>
-            <div>
-              <div
-                className="stat-value"
-                style={{ fontSize: "1.5rem", fontWeight: 700 }}
-              >
-                42.5k
-              </div>
-              <div className="stat-label">Players</div>
-            </div>
-            <div>
-              <div
-                className="stat-value"
-                style={{ fontSize: "1.5rem", fontWeight: 700 }}
-              >
-                8.2k
-              </div>
-              <div className="stat-label">Communities</div>
-            </div>
+            ))}
           </div>
         </div>
-      </main>
 
-      <footer className="footer">
-        <Link href="/contact" className="footer-link">
-          <svg
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
-          contact
+        {/* Infrastructure Preview Card - Hidden on very small screens */}
+        <div className="hide-mobile" style={{ position: "relative" }}>
+          <div className="glass-card" style={{
+            padding: "40px",
+            border: "1px solid var(--border-color)",
+            position: "relative",
+            zIndex: 2,
+            backdropFilter: "blur(40px)",
+            transform: "perspective(1000px) rotateY(-10deg) rotateX(5deg)",
+            boxShadow: "20px 40px 80px rgba(0,0,0,0.4)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "32px" }}>
+              <div style={{ background: "var(--accent-info)", width: "12px", height: "12px", borderRadius: "50%" }}></div>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <div style={{ width: "24px", height: "4px", borderRadius: "2px", background: "var(--border-color)" }}></div>
+                <div style={{ width: "48px", height: "4px", borderRadius: "2px", background: "var(--border-color)" }}></div>
+              </div>
+            </div>
+            
+            <div className="stack-lg">
+              <div style={{ background: "rgba(255,255,255,0.03)", height: "40px", borderRadius: "8px", border: "1px solid var(--border-color)", padding: "12px", display: "flex", alignItems: "center" }}>
+                 <div style={{ width: "20%", height: "8px", background: "var(--primary)", borderRadius: "4px" }}></div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                 <div style={{ background: "rgba(255,255,255,0.03)", height: "80px", borderRadius: "8px", border: "1px solid var(--border-color)" }}></div>
+                 <div style={{ background: "rgba(255,255,255,0.03)", height: "80px", borderRadius: "8px", border: "1px solid var(--border-color)" }}></div>
+              </div>
+              <div style={{ background: "var(--gradient-prism)", height: "120px", borderRadius: "8px", opacity: 0.1 }}></div>
+            </div>
+
+            <div style={{ marginTop: "32px", fontSize: "10px", color: "var(--text-muted)", letterSpacing: "2px", textAlign: "center" }}>SYSTEM_STATUS: OPERATIONAL</div>
+          </div>
+
+          {/* Background Glow */}
+          <div style={{ 
+            position: "absolute", 
+            top: "50%", 
+            left: "50%", 
+            transform: "translate(-50%, -50%)",
+            width: "400px", 
+            height: "400px", 
+            background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)", 
+            opacity: 0.2,
+            filter: "blur(60px)",
+            zIndex: 1 
+          }} />
+        </div>
+      </div>
+
+      {/* Workflow Section */}
+      <section style={{ padding: "clamp(40px, 8vw, 100px) 0", borderTop: "1px solid var(--border-color)" }}>
+        <div style={{ marginBottom: "clamp(32px, 5vw, 60px)" }}>
+          <h3 style={{ fontSize: "10px", color: "var(--primary)", letterSpacing: "4px", fontWeight: "900", marginBottom: "12px" }}>PLATFORM_LIFECYCLE</h3>
+          <div style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: "300", color: "var(--text-primary)" }}>Coordination Workflow.</div>
+        </div>
+
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", 
+          gap: "24px" 
+        }}>
+          {workflow.map((p, i) => (
+            <div key={i} className="glass-card" style={{ padding: "clamp(24px, 4vw, 40px)", border: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "32px", color: "var(--primary)" }}>{p.icon}</span>
+                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: "800", letterSpacing: "2px" }}>{p.label}</span>
+              </div>
+              <div>
+                <h4 style={{ fontSize: "clamp(16px, 2vw, 20px)", fontWeight: "700", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "-0.02em" }}>{p.title}</h4>
+                <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: "1.6" }}>{p.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA Area */}
+      <div className="glass-card" style={{
+        padding: "clamp(40px, 6vw, 80px)",
+        textAlign: "center",
+        background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.02))",
+        border: "1px solid var(--border-color)",
+        borderRadius: "32px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "32px"
+      }}>
+        <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "var(--primary)" }}>account_balance</span>
+        <div className="stack-md">
+          <h2 style={{ fontSize: "clamp(24px, 5vw, 40px)", fontWeight: "300", color: "var(--text-primary)" }}>Initialize Your Organization.</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "clamp(0.9rem, 2vw, 1.1rem)", maxWidth: "600px" }}>Connect with the definitively professional management system for tournament coordination.</p>
+        </div>
+        <Link href="/register" className="btn btn-primary" style={{ padding: "16px 48px", borderRadius: "16px", textTransform: "uppercase", fontWeight: "900", letterSpacing: "2px", fontSize: "12px" }}>
+          Create Management Node
         </Link>
-        <Link href="/support" className="footer-link">
-          <svg
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          support
-        </Link>
-        <a
-          href="https://github.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="footer-link"
-        >
-          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"
-            />
-          </svg>
-          github
-        </a>
-        <Link href="/terms" className="footer-link">
-          <svg
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          terms
-        </Link>
-        <Link href="/privacy" className="footer-link">
-          <svg
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            />
-          </svg>
-          privacy
-        </Link>
+      </div>
+
+      <footer className="footer" style={{ marginTop: "clamp(60px, 10vw, 120px)" }}>
+        <Link href="/contact" className="footer-link">contact</Link>
+        <Link href="/support" className="footer-link">support</Link>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-link">github</a>
+        <Link href="/terms" className="footer-link">terms</Link>
+        <Link href="/privacy" className="footer-link">privacy</Link>
       </footer>
-    </>
+    </div>
   );
 }

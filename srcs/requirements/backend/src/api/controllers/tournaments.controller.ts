@@ -20,9 +20,9 @@ export const tournamentsController = s.router(contract.tournaments, {
 
         return {
             status: 201,
-            body: { 
-                message: "Tournament created successfully", 
-                data: response.data as any 
+            body: {
+                message: "Tournament created successfully",
+                data: response.data as any
             },
         };
     },
@@ -61,9 +61,9 @@ export const tournamentsController = s.router(contract.tournaments, {
 
         return {
             status: 200,
-            body: { 
-                message: "Tournament updated successfully", 
-                data: response.data as any 
+            body: {
+                message: "Tournament updated successfully",
+                data: response.data as any
             },
         };
     },
@@ -89,7 +89,7 @@ export const tournamentsController = s.router(contract.tournaments, {
 
         return {
             status: 200,
-            body: { 
+            body: {
                 message: response.message,
                 actionTaken: response.actionTaken as any
             },

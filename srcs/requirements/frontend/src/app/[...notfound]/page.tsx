@@ -7,39 +7,57 @@ export const metadata: Metadata = {
 
 export default function CatchAllNotFound() {
     return (
-        <main className="animate-fade-in" style={{
-            flex: 1,
+        <div style={{
+            minHeight: "80vh",
+            padding: "40px 20px",
+            color: "var(--text-primary)",
+            fontFamily: "var(--font-sans)",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            padding: "2rem",
-            textAlign: "center"
+            justifyContent: "center"
         }}>
-            <div style={{ fontSize: "6rem", fontWeight: "bold", color: "var(--accent-primary)", lineHeight: 1 }}>
-                404
-            </div>
-            <div style={{
-                fontSize: "1.5rem",
-                color: "var(--text-primary)",
-                marginTop: "1rem",
-                fontFamily: "var(--font-mono)"
-            }}>
-                page not found
-            </div>
-            <div style={{
-                maxWidth: "400px",
-                color: "var(--text-secondary)",
-                marginTop: "1.5rem",
-                marginBottom: "2.5rem",
-                fontSize: "0.9rem"
-            }}>
-                the page you are looking for doesn&apos;t exist or has been moved to another dimension.
-            </div>
+            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", textAlign: "center" }} className="animate-fade-in">
+                <div 
+                  className="text-gradient" 
+                  style={{ 
+                    fontSize: "120px", 
+                    fontWeight: "700", 
+                    lineHeight: 0.8,
+                    marginBottom: "20px"
+                  }}
+                >
+                    404
+                </div>
+                
+                <h1 style={{
+                    fontSize: "36px",
+                    fontWeight: "300",
+                    letterSpacing: "-1px",
+                    margin: "0 0 1rem 0"
+                }}>
+                    Page Not Found
+                </h1>
 
-            <Link href="/" className="btn btn-primary">
-                go back home
-            </Link>
-        </main>
+                <p style={{
+                    maxWidth: "500px",
+                    margin: "0 auto 2.5rem auto",
+                    color: "var(--text-secondary)",
+                    fontSize: "1rem",
+                    lineHeight: "1.6"
+                }}>
+                    The content you are looking for has been moved to another dimension or doesn&apos;t exist in this timeline.
+                </p>
+
+                <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
+                    <Link href="/" className="btn btn-primary" style={{ padding: "10px 24px" }}>
+                        Return to Home
+                        <span className="material-symbols-outlined" style={{ fontSize: "16px", marginLeft: "8px" }}>home</span>
+                    </Link>
+                    <Link href="/tournaments" className="btn btn-secondary" style={{ padding: "10px 24px" }}>
+                        Browse Tournaments
+                    </Link>
+                </div>
+            </div>
+        </div>
     );
 }
