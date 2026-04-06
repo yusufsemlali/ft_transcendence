@@ -8,6 +8,7 @@ import { userLinksController } from "./controllers/user-links.controller";
 import { organizationsController } from "./controllers/organizations.controller";
 import { adminController } from "./controllers/admin.controller";
 import { sportsController } from "./controllers/sports.controller";
+import { chatController } from "./controllers/chat.controller";
 import { Router, Express, Request, Response, NextFunction } from "express";
 import { authenticateTsRestRequest } from "@/middlewares/auth";
 
@@ -29,6 +30,7 @@ export const addApiRoutes = (app: Express) => {
         settings: settingsController,
         handles: userLinksController,
         organizations: organizationsController,
+        chat: chatController,
         admin: adminController,
         sports: sportsController,
     }, apiRouter, {

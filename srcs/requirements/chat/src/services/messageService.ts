@@ -39,9 +39,11 @@ class MessageService {
     return message;
   }
 
-  getMessagesByRoom(room: string, limit: number = 50): Message[] {
+  getMessagesByRoom(room: string, limit: number = 50, offset: number = 0): Message[] {
     const roomMessages = this.messages.get(room) || [];
-    return roomMessages.slice(-limit);
+    const startIndex = Math.max(roomMessages.length - offset - limit, 0);
+    const endIndex = Math.max(roomMessages.length - offset, 0);
+    return roomMessages.slice(startIndex, endIndex);
   }
 
   clearRoomMessages(room: string): void {

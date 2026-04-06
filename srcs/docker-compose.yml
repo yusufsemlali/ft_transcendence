@@ -54,14 +54,14 @@ services:
     container_name: ft_chat
     build:
       context: ./requirements
-      dockerfile: requirements/chat/Dockerfile
+      dockerfile: chat/Dockerfile
+    restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
       - NODE_ENV=production
       - PORT=4000
       - CORS_ORIGIN=*
-    restart: unless-stopped
     networks:
       - transcendence-net
     healthcheck:
@@ -108,6 +108,7 @@ services:
       - "8080:8080"
     depends_on:
       - backend
+      - chat
       - frontend
     networks:
       - transcendence-net

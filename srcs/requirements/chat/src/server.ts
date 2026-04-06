@@ -1,11 +1,12 @@
 import express from 'express';
 import { createServer } from 'http';
+import { createExpressEndpoints } from '@ts-rest/express';
 import { Server as SocketIOServer } from 'socket.io';
-import { initServer } from '@ts-rest/express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { contract } from '@ft-transcendence/contracts';
 import SocketController from './controllers/socketController';
+import { chatController } from './controllers/chatController';
 import socketConfig from './config/socket';
 
 dotenv.config();
@@ -23,63 +24,14 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Initialize Socket Controller
 const socketController = new SocketController(io);
 
-// Initialize ts-rest server with chat contract
-const s = initServer();
-
-// export const chatController = s.router(contract.chat, {
-//   getStats: async () => {
-//     return {
-//       status: 200 as const,
-//       body: {
-//         connectedUsers: io.engine.clientsCount,
-//         activeRooms: io.sockets.adapter.rooms.size,
-//         totalMessages: 0, // Track this in your service
-//       },
-//     };
-//   },
-//   getRoomInfo: async ({ params }) => {
-//     const room = io.sockets.adapter.rooms.get(params.roomId);
-//     if (!room) {
-//       return {
-//         status: 404 as const,
-//         body: { message: 'Room not found' },
-//       };
-//     }
-//     return {
-//       status: 200 as const,
-//       body: {
-//         room: params.roomId,
-//         userCount: room.size,
-//         messageCount: 0, // Track this in your service
-//         createdAt: new Date(),
-//       },
-//     };
-//   },
-//   getRooms: async () => {
-//     const rooms = Array.from(io.sockets.adapter.rooms.keys())
-//       .filter(room => !io.sockets.adapter.sids.has(room))
-//       .map(room => ({
-//         id: room,
-//         name: room,
-//         description: null,
-//         createdAt: new Date(),
-//       }));
-//     return {
-//       status: 200 as const,
-//       body: rooms,
-//     };
-//   },
-//   getRoomMessages: async ({ params }) => {
-//     // This would be implemented with actual message storage
-//     return {
-//       status: 200 as const,
-//       body: [],
-//     };
-//   },
-// });
-
 // Apply ts-rest routes
-// app.use('/api', chatController);
+createExpressEndpoints(contract.chat, chatController, app, {
+  jsonQuery: true,
+});
+
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Serve test client
 app.get('/', (req, res) => {

@@ -29,6 +29,7 @@ export function Header() {
           icon="social_leaderboard"
           title="leaderboard"
         />
+        <NavLink href="/chat" icon="forum" title="chat" />
         <NavLink href="/about" icon="info" title="about" />
         <NavLink href="/settings" icon="settings" title="settings" />
       </div>
