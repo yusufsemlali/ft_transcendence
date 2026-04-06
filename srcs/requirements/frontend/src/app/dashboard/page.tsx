@@ -26,9 +26,21 @@ export default function DashboardPage() {
     fetchOrgs();
   }, []);
 
+  const handleOrgCreated = (org: Organization) => {
+    setOrgs(prev => [...prev, org]);
+    setSelectedOrg(org); // jump straight into the new org's dashboard
+  };
+
   if (selectedOrg) {
     return <Shell org={selectedOrg} onBack={() => setSelectedOrg(null)} />;
   }
 
-  return <OrgPicker orgs={orgs} loading={loading} onSelect={setSelectedOrg} />;
+  return (
+    <OrgPicker
+      orgs={orgs}
+      loading={loading}
+      onSelect={setSelectedOrg}
+      onOrgCreated={handleOrgCreated}
+    />
+  );
 }

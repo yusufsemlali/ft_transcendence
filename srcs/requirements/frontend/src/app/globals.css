@@ -1793,6 +1793,33 @@ a {
   opacity: 0.4;
 }
 
+/* ── Visibility Toggle ── */
+.dashboard-visibility-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dashboard-visibility-btn:hover {
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
+.dashboard-visibility-btn.active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+
 .dashboard-status-badge {
   display: inline-flex;
   align-items: center;
