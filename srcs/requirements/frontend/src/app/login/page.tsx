@@ -5,14 +5,12 @@ import RegisterForm from "./RegisterForm";
 
 export default function LoginPage() {
     return (
-        <div style={{
+        <div className="page" style={{
             minHeight: "100vh",
-            padding: "40px 20px",
             color: "var(--text-primary)",
             fontFamily: "var(--font-sans)",
             backgroundColor: "transparent",
         }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
                 <header style={{
                     display: "flex",
                     justifyContent: "space-between",
@@ -23,7 +21,7 @@ export default function LoginPage() {
                     borderBottom: "1px solid var(--border-color)",
                     paddingBottom: "24px"
                 }}>
-                    <h1 style={{ fontSize: "36px", fontWeight: "300", margin: 0 }}>
+                    <h1 style={{ fontSize: "clamp(28px, 5vw, 36px)", fontWeight: "300", margin: 0 }}>
                         Account Login
                     </h1>
                     <div className="glass" style={{
@@ -43,7 +41,7 @@ export default function LoginPage() {
                     className="animate-fade-in"
                     style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(min(350px, 100%), 1fr))",
                         gap: "40px",
                         alignItems: "start"
                     }}
@@ -56,7 +54,7 @@ export default function LoginPage() {
                         <LoginForm />
                     </div>
                 </main>
-            </div>
         </div>
     );
 }
+

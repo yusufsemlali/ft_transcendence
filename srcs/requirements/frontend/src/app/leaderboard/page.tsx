@@ -18,14 +18,12 @@ export default function LeaderboardPage() {
   ];
 
   return (
-    <div style={{
+    <div className="page" style={{
       minHeight: "100vh",
-      padding: "40px 20px",
       color: "var(--text-primary)",
       fontFamily: "var(--font-sans)",
       backgroundColor: "transparent",
     }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <header style={{ 
           display: "flex", 
           justifyContent: "space-between", 
@@ -34,7 +32,7 @@ export default function LeaderboardPage() {
           flexWrap: "wrap",
           gap: "20px"
         }}>
-          <h1 style={{ fontSize: "36px", fontWeight: "300", margin: 0 }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 36px)", fontWeight: "300", margin: 0 }}>
             Global Rankings
           </h1>
           <div className="glass" style={{
@@ -53,7 +51,7 @@ export default function LeaderboardPage() {
         {/* Podium Section */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
           gap: "24px",
           marginBottom: "64px",
           alignItems: "end"
@@ -63,13 +61,12 @@ export default function LeaderboardPage() {
               key={player.rank}
               className="glass-card"
               style={{
-                padding: player.rank === 1 ? "48px" : "32px",
+                padding: player.rank === 1 ? "clamp(32px, 4vw, 48px)" : "clamp(24px, 3vw, 32px)",
                 textAlign: "center",
                 border: player.rank === 1 ? "2px solid var(--primary)" : "1px solid var(--border-color)",
                 position: "relative",
                 overflow: "hidden",
-                order: player.rank === 1 ? 2 : player.rank === 2 ? 1 : 3,
-                transform: player.rank === 1 ? "scale(1.05)" : "scale(1)"
+                order: player.rank === 1 ? -1 : player.rank,
               }}
             >
               {player.rank === 1 && (
@@ -83,8 +80,8 @@ export default function LeaderboardPage() {
               )}
 
               <div style={{
-                width: player.rank === 1 ? "120px" : "80px",
-                height: player.rank === 1 ? "120px" : "80px",
+                width: player.rank === 1 ? "clamp(80px, 12vw, 120px)" : "clamp(60px, 10vw, 80px)",
+                height: player.rank === 1 ? "clamp(80px, 12vw, 120px)" : "clamp(60px, 10vw, 80px)",
                 borderRadius: "50%",
                 margin: "0 auto 20px auto",
                 border: `3px solid ${player.rank === 1 ? "var(--primary)" : "var(--border-color)"}`,
@@ -93,11 +90,11 @@ export default function LeaderboardPage() {
               }} />
 
               <div style={{ fontSize: "12px", color: "var(--text-muted)", letterSpacing: "2px", fontWeight: "600" }}>RANK #{player.rank}</div>
-              <h2 className={player.rank === 1 ? "text-gradient" : ""} style={{ fontSize: player.rank === 1 ? "32px" : "24px", fontWeight: "700", margin: "8px 0" }}>
+              <h2 className={player.rank === 1 ? "text-gradient" : ""} style={{ fontSize: player.rank === 1 ? "clamp(24px, 4vw, 32px)" : "clamp(18px, 3vw, 24px)", fontWeight: "700", margin: "8px 0" }}>
                 {player.name}
               </h2>
 
-              <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "16px", flexWrap: "wrap" }}>
                 <div>
                   <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px" }}>POINTS</div>
                   <div style={{ fontSize: "18px", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>{player.points}</div>
@@ -122,49 +119,74 @@ export default function LeaderboardPage() {
           ))}
         </div>
 
-        {/* Tiers List Section */}
+        {/* Tiers List Section — Mobile-responsive card layout */}
         <div className="stack-md">
-           <div style={{ 
-             display: "grid", 
-             gridTemplateColumns: "80px 1fr 120px 120px 100px 100px", 
-             padding: "0 24px", 
-             marginBottom: "12px",
-             color: "var(--text-muted)",
-             fontSize: "10px",
-             letterSpacing: "1px",
-             fontWeight: "700"
-           }}>
-             <div>RANK</div>
-             <div>PLAYER ALIAS</div>
-             <div>MAIN GAME</div>
-             <div style={{ textAlign: "right" }}>ELO RATING</div>
-             <div style={{ textAlign: "right" }}>WINS</div>
-             <div style={{ textAlign: "right" }}>WIN RATE</div>
-           </div>
+          {/* Desktop table header - hidden on mobile */}
+          <div className="hide-mobile" style={{ 
+            display: "grid", 
+            gridTemplateColumns: "80px 1fr 120px 120px 100px 100px", 
+            padding: "0 24px", 
+            marginBottom: "12px",
+            color: "var(--text-muted)",
+            fontSize: "10px",
+            letterSpacing: "1px",
+            fontWeight: "700"
+          }}>
+            <div>RANK</div>
+            <div>PLAYER ALIAS</div>
+            <div>MAIN GAME</div>
+            <div style={{ textAlign: "right" }}>ELO RATING</div>
+            <div style={{ textAlign: "right" }}>WINS</div>
+            <div style={{ textAlign: "right" }}>WIN RATE</div>
+          </div>
 
-           {ranks.map((r) => (
-             <div
-               key={r.rank}
-               className="glass-card"
-               style={{
-                 display: "grid",
-                 gridTemplateColumns: "80px 1fr 120px 120px 100px 100px",
-                 padding: "20px 24px",
-                 alignItems: "center",
-                 border: "1px solid var(--border-color)",
-                 transition: "transform 0.2s ease"
-               }}
-             >
-               <div style={{ fontSize: "18px", fontWeight: "700", opacity: 0.5 }}>#{r.rank}</div>
-               <div style={{ fontWeight: "600", fontSize: "16px" }}>{r.name}</div>
-               <div style={{ fontSize: "12px", color: "var(--accent-info)", fontWeight: "600" }}>{r.game}</div>
-               <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", color: "var(--accent-success)" }}>{r.elo}</div>
-               <div style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{r.wins}</div>
-               <div style={{ textAlign: "right", color: "var(--text-secondary)" }}>{r.ratio}</div>
-             </div>
-           ))}
+          {ranks.map((r) => (
+            <div
+              key={r.rank}
+              className="glass-card leaderboard-row"
+              style={{
+                padding: "20px 24px",
+                border: "1px solid var(--border-color)",
+                transition: "transform 0.2s ease"
+              }}
+            >
+              {/* Desktop: 6-column grid row */}
+              <div className="hide-mobile" style={{
+                display: "grid",
+                gridTemplateColumns: "80px 1fr 120px 120px 100px 100px",
+                alignItems: "center",
+              }}>
+                <div style={{ fontSize: "18px", fontWeight: "700", opacity: 0.5 }}>#{r.rank}</div>
+                <div style={{ fontWeight: "600", fontSize: "16px" }}>{r.name}</div>
+                <div style={{ fontSize: "12px", color: "var(--accent-info)", fontWeight: "600" }}>{r.game}</div>
+                <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", color: "var(--accent-success)" }}>{r.elo}</div>
+                <div style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{r.wins}</div>
+                <div style={{ textAlign: "right", color: "var(--text-secondary)" }}>{r.ratio}</div>
+              </div>
+
+              {/* Mobile: stacked card layout */}
+              <div className="show-mobile" style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexWrap: "wrap"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ fontSize: "18px", fontWeight: "700", opacity: 0.5 }}>#{r.rank}</div>
+                  <div>
+                    <div style={{ fontWeight: "600", fontSize: "16px" }}>{r.name}</div>
+                    <div style={{ fontSize: "11px", color: "var(--accent-info)", fontWeight: "600" }}>{r.game}</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "var(--font-mono)", color: "var(--accent-success)", fontSize: "16px" }}>{r.elo}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{r.wins}W · {r.ratio}</div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
     </div>
   );
 }

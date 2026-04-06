@@ -15,7 +15,7 @@ export default function AboutPage() {
         flexWrap: "wrap",
         gap: "20px"
       }}>
-        <h1 style={{ fontSize: "36px", fontWeight: "300", margin: 0 }}>
+        <h1 style={{ fontSize: "clamp(28px, 5vw, 36px)", fontWeight: "300", margin: 0 }}>
           About the Platform
         </h1>
         <div className="glass" style={{
@@ -33,13 +33,13 @@ export default function AboutPage() {
 
       {/* --- Mission Cinematic Card --- */}
       <div
-        className="glass-card"
+        className="glass-card about-hero-card"
         style={{
-          padding: "64px",
+          padding: "clamp(32px, 5vw, 64px)",
           marginBottom: "40px",
           position: "relative",
           overflow: "hidden",
-          minHeight: "400px",
+          minHeight: "clamp(280px, 40vw, 400px)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -64,7 +64,7 @@ export default function AboutPage() {
         />
 
         <div style={{ position: "relative", zIndex: 2, maxWidth: "600px" }}>
-           <h2 className="text-gradient" style={{ fontSize: "48px", fontWeight: "700", marginBottom: "24px", lineHeight: "1.1" }}>
+           <h2 className="text-gradient about-hero-title" style={{ fontSize: "clamp(32px, 6vw, 48px)", fontWeight: "700", marginBottom: "24px", lineHeight: "1.1" }}>
              ELEVATE YOUR GAME
            </h2>
            <p style={{ fontSize: "1.2rem", color: "var(--text-secondary)", lineHeight: "1.6", marginBottom: "32px" }}>
@@ -88,7 +88,7 @@ export default function AboutPage() {
         }} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(320px, 100%), 1fr))", gap: "24px" }}>
         
         {/* Core Pillars */}
         <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>

@@ -107,7 +107,7 @@ export default function SettingsPage() {
         flexWrap: "wrap",
         gap: "20px"
       }}>
-        <h1 style={{ fontSize: "36px", fontWeight: "300", margin: 0 }}>
+        <h1 style={{ fontSize: "clamp(28px, 5vw, 36px)", fontWeight: "300", margin: 0 }}>
           Global Appearance
         </h1>
         <div className="glass" style={{
@@ -123,7 +123,7 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))", gap: "24px" }}>
         
         {/* Background & Filters Card */}
         <div className="stack-md">

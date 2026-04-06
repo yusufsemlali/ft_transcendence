@@ -148,11 +148,11 @@ function AccountSettingsContent() {
       <div
         className="glass-card"
         style={{
-          padding: "48px",
+          padding: "clamp(24px, 4vw, 48px)",
           marginBottom: "40px",
           position: "relative",
           overflow: "hidden",
-          minHeight: "400px",
+          minHeight: "clamp(280px, 40vw, 400px)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -179,19 +179,20 @@ function AccountSettingsContent() {
         />
 
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "24px", marginBottom: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "clamp(16px, 3vw, 24px)", marginBottom: "32px", flexWrap: "wrap" }}>
              <div style={{
-               width: "120px",
-               height: "120px",
+               width: "clamp(80px, 15vw, 120px)",
+               height: "clamp(80px, 15vw, 120px)",
                borderRadius: "50%",
                border: "4px solid var(--background)",
                background: profile.avatar ? `url(${profile.avatar}) center/cover no-repeat` : "var(--bg-secondary)",
                boxShadow: "var(--shadow-glass)",
-               overflow: "hidden"
+               overflow: "hidden",
+               flexShrink: 0
              }}>
                {!profile.avatar && (
                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                   <span className="material-symbols-outlined" style={{ fontSize: "64px", color: "var(--text-muted)" }}>person</span>
+                   <span className="material-symbols-outlined" style={{ fontSize: "clamp(40px, 8vw, 64px)", color: "var(--text-muted)" }}>person</span>
                  </div>
                )}
              </div>
@@ -207,7 +208,7 @@ function AccountSettingsContent() {
                <h2
                  className="text-gradient"
                  style={{
-                   fontSize: "48px",
+                   fontSize: "clamp(28px, 5vw, 48px)",
                    fontWeight: "700",
                    margin: 0,
                    lineHeight: "1.1",
@@ -250,7 +251,7 @@ function AccountSettingsContent() {
       </div>
 
        {/* Form Grid Section (Matching Listing Card Style) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))", gap: "24px" }}>
         
         {/* Profile Identity Card */}
         <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
@@ -262,7 +263,7 @@ function AccountSettingsContent() {
           </div>
 
           <form onSubmit={handleUpdateProfile} className="stack-md">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "16px" }}>
                <div>
                   <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>USERNAME</label>
                   <input
@@ -385,7 +386,7 @@ function AccountSettingsContent() {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "16px" }}>
                 <div>
                   <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>NEW PASSWORD</label>
                   <input
@@ -428,15 +429,14 @@ function AccountSettingsContent() {
 export default function AccountSettingsPage() {
   return (
     <div
+      className="page"
       style={{
         minHeight: "100vh",
-        padding: "40px 20px",
         color: "var(--text-primary)",
         fontFamily: "var(--font-sans)",
         backgroundColor: "transparent",
       }}
     >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <header
           style={{
             display: "flex",
@@ -447,7 +447,7 @@ export default function AccountSettingsPage() {
             gap: "20px",
           }}
         >
-          <h1 style={{ fontSize: "36px", fontWeight: "300", margin: 0 }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 36px)", fontWeight: "300", margin: 0 }}>
             Account Settings
           </h1>
 
@@ -470,7 +470,6 @@ export default function AccountSettingsPage() {
         <Suspense fallback={<div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>Loading secure details...</div>}>
           <AccountSettingsContent />
         </Suspense>
-      </div>
     </div>
   );
 }
