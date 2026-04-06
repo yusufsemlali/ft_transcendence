@@ -5,7 +5,7 @@ export const OrganizationSchema = z.object({
     name: z.string().min(3).max(100),
     slug: z.string().min(3).max(120),
     description: z.string().trim().max(500).nullish(),
-    logoUrl: z.string().url().nullish(),
+    logoUrl: z.string().trim().url().max(2048).nullish(),
     
     visibility: z.enum(["public", "private"]).default("public"),
     
@@ -24,7 +24,7 @@ export const CreateOrganizationSchema = z.object({
             message: "Invalid slug format: must be lowercase alphanumeric and can contain internal hyphens.",
         }),
     description: z.string().trim().max(500).optional(),
-    logoUrl: z.string().url().optional(),
+    logoUrl: z.string().trim().url().max(2048).optional(),
     visibility: z.enum(["public", "private"]).default("public").optional(),
 });
 

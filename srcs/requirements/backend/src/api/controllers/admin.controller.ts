@@ -5,8 +5,9 @@ import { users } from "@/dal/db/schemas/users";
 import { eq, ilike, or, and, sql, desc } from "drizzle-orm";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
-import { requireGlobalRole } from "@/utils/rbac";
+import { requireGlobalRole, ensureNotLastAdmin } from "@/utils/rbac";
 import { ApiResponse } from "@/utils/response";
+import { logout, logoutAll, getActiveSessions } from "@/services/auth.service";
 
 const s = initServer();
 
@@ -17,13 +18,11 @@ export const adminController = s.router(contract.admin, {
 
         if (!userId) throw new AppError(401, "Unauthorized");
 
-        // 🛡️ High Security Check: Must be Admin to list all users
         await requireGlobalRole(userId, ["admin"]);
 
         const { page, pageSize, search, role, status } = query;
         const offset = (page - 1) * pageSize;
 
-        // Build Filters
         const filters = [];
         if (search) {
             filters.push(or(
@@ -88,12 +87,22 @@ export const adminController = s.router(contract.admin, {
     },
     updateUserRole: async ({ params, body, req }: { params: any; body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
-        const userId = contextReq.ctx?.decodedToken?.id;
+        const adminId = contextReq.ctx?.decodedToken?.id;
 
-        if (!userId) throw new AppError(401, "Unauthorized");
+        if (!adminId) throw new AppError(401, "Unauthorized");
 
         // 🛡️ High Security Check: Only Admins can promote/demote others
-        await requireGlobalRole(userId, ["admin"]);
+        await requireGlobalRole(adminId, ["admin"]);
+
+        // 🛡️ Safeguard 1: Prevent self-demotion/role change
+        if (adminId === params.id && body.role !== "admin") {
+            throw new AppError(400, "For forensic and audit integrity, admins cannot change their own privileges. Please have another admin perform this action.");
+        }
+
+        // 🛡️ Safeguard 2: Prevent the "Last Admin" deadlock
+        if (body.role !== "admin") {
+            await ensureNotLastAdmin(params.id);
+        }
 
         const [updated] = await db
             .update(users)
@@ -113,12 +122,22 @@ export const adminController = s.router(contract.admin, {
     },
     updateUserStatus: async ({ params, body, req }: { params: any; body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
-        const userId = contextReq.ctx?.decodedToken?.id;
+        const adminId = contextReq.ctx?.decodedToken?.id;
 
-        if (!userId) throw new AppError(401, "Unauthorized");
+        if (!adminId) throw new AppError(401, "Unauthorized");
 
         // 🛡️ High Security Check: Admins and Moderators can manage status
-        await requireGlobalRole(userId, ["admin", "moderator"]);
+        await requireGlobalRole(adminId, ["admin", "moderator"]);
+
+        // 🛡️ Safeguard 1: Prevent self-lockout (Ban/Suspend/Mute)
+        if (adminId === params.id && body.status !== "active") {
+            throw new AppError(400, "For operational safety, you cannot suspend or ban your own account. This action must be performed by a peer.");
+        }
+
+        // 🛡️ Safeguard 2: Prevent the "Last Admin" deadlock if suspending an admin
+        if (body.status !== "active") {
+            await ensureNotLastAdmin(params.id);
+        }
 
         const [updated] = await db
             .update(users)
@@ -136,6 +155,83 @@ export const adminController = s.router(contract.admin, {
         return {
             status: 200,
             body: updated as any,
+        };
+    },
+    deleteUser: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const adminId = contextReq.ctx?.decodedToken?.id;
+
+        if (!adminId) throw new AppError(401, "Unauthorized");
+
+        // 🛡️ High Security Check: ONLY Admins can delete users
+        await requireGlobalRole(adminId, ["admin"]);
+
+        // 🛡️ Safeguard 1: Prevent self-deletion through management API
+        if (adminId === params.id) {
+            throw new AppError(400, "For forensics and safety, admins cannot delete their own account through management tools. This must be performed by a peer.");
+        }
+
+        // 🛡️ Safeguard 2: Prevent the "Last Admin" deadlock
+        await ensureNotLastAdmin(params.id);
+
+        const [deleted] = await db
+            .delete(users)
+            .where(eq(users.id, params.id))
+            .returning();
+
+        if (!deleted) throw new AppError(404, "User not found");
+
+        return {
+            status: 200,
+            body: { message: `User ${deleted.username} has been permanently deleted.` },
+        };
+    },
+    getUserSessions: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const adminId = contextReq.ctx?.decodedToken?.id;
+
+        if (!adminId) throw new AppError(401, "Unauthorized");
+
+        // 🛡️ High Security Check: Admin/Moderator can audit sessions
+        await requireGlobalRole(adminId, ["admin", "moderator"]);
+
+        const response = await getActiveSessions(params.id);
+        
+        return {
+            status: 200,
+            body: response.data as any,
+        };
+    },
+    revokeUserSession: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const adminId = contextReq.ctx?.decodedToken?.id;
+
+        if (!adminId) throw new AppError(401, "Unauthorized");
+
+        // 🛡️ High Security Check: ONLY Admins can force logout others
+        await requireGlobalRole(adminId, ["admin"]);
+
+        await logout(params.sessionId);
+
+        return {
+            status: 200,
+            body: { message: "Session revoked successfully" },
+        };
+    },
+    revokeAllUserSessions: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const adminId = contextReq.ctx?.decodedToken?.id;
+
+        if (!adminId) throw new AppError(401, "Unauthorized");
+
+        // 🛡️ High Security Check: ONLY Admins can perform a nuclear logout
+        await requireGlobalRole(adminId, ["admin"]);
+
+        await logoutAll(params.id);
+
+        return {
+            status: 200,
+            body: { message: "All sessions for this user have been revoked" },
         };
     },
 });

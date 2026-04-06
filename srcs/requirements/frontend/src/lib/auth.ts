@@ -53,19 +53,6 @@ export async function getServerUser(): Promise<UserInfo | null> {
     return null;
 }
 
-export async function setAuthCookies(accessToken: string) {
-    const cookieStore = await cookies();
-    cookieStore.set("access_token", accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: process.env.NEXT_PUBLIC_ACCESS_TOKEN_MAX_AGE 
-            ? parseInt(process.env.NEXT_PUBLIC_ACCESS_TOKEN_MAX_AGE) 
-            : 60 * 60, 
-    });
-}
-
 export async function logoutAction(): Promise<{ success: boolean }> {
     try {
         const cookieStore = await cookies();
@@ -153,5 +140,3 @@ export async function getActiveSessions() {
     }
     return [];
 }
-
-export const loginAction = setAuthCookies;

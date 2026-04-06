@@ -5,7 +5,7 @@ import { buildClient } from "./adapters/ts-rest-adapter";
 const isServer = typeof window === "undefined";
 const baseUrl = isServer
     ? (process.env.INTERNAL_BACKEND_API_URL || "http://ft_backend:3000/api")
-    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api");
+    : "/bff"; // Client-side: route through Next.js BFF proxy to avoid browser console errors
 
 const timeout =  Number(process.env.NEXT_PUBLIC_API_TIMEOUT) || 10_000;
 

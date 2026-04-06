@@ -27,7 +27,8 @@ export const userSettings = pgTable('user_settings', {
     soundVolume: real('sound_volume').default(0.5).notNull(),
     desktopNotifications: boolean('desktop_notifications').default(false).notNull(),
 
-    themeHue: real('theme_hue').default(344).notNull(),
+    themeColor: varchar('theme_color', { length: 7 }).default('#e8366d').notNull(),
+    colorHarmony: varchar('color_harmony', { length: 20 }).default('complementary').notNull(),
     borderRadius: real('border_radius').default(10).notNull(),
     glassBlur: real('glass_blur').default(12).notNull(),
     glassOpacity: real('glass_opacity').default(0.1).notNull(),

@@ -1,6 +1,7 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { OrganizationSchema, CreateOrganizationSchema, UpdateOrganizationSchema } from "../schemas/organizations";
+import { PublicUserSchema } from "../schemas/users";
 import { ORG_ROLES } from "../constants/roles";
 
 const c = initContract();
@@ -15,11 +16,8 @@ export const OrganizationProfileSchema = OrganizationSchema.extend({
     }),
 });
 
-export const MemberSchema = z.object({
-    id: z.string().uuid(),
-    username: z.string(),
-    email: z.string().email(),
-    role: OrgRolesSchema,
+export const MemberSchema = PublicUserSchema.extend({
+    orgRole: OrgRolesSchema,
     joinedAt: z.coerce.date(),
 });
 

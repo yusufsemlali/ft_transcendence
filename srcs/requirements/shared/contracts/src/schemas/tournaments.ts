@@ -8,47 +8,74 @@ export const TournamentSchema = z.object({
     name: z.string().min(3).max(100),
     slug: z.string(),
     description: z.string().nullable().optional(),
-
+    scoringType: z.string(), 
+    matchConfigSchema: z.record(z.any()),
     mode: z.enum(SPORT_MODES),
     minTeamSize: z.number().int().min(1),
     maxTeamSize: z.number().int().min(1),
     allowDraws: z.boolean(),
     requiredHandleType: z.string().nullable(),
-
     minParticipants: z.number().int().min(2),
     maxParticipants: z.number().int().min(2),
-
     status: z.enum(["draft", "registration", "upcoming", "ongoing", "completed", "cancelled"]),
     bracketType: z.enum(["single_elimination", "double_elimination", "round_robin", "swiss", "free_for_all"]),
-    
-    isPrivate: z.boolean().optional(),
-    customSettings: z.record(z.any()),  // Dynamic TO decisions
-
+    isPrivate: z.boolean(),
+    prizePool: z.string().nullable().optional(),
+    entryFee: z.number().int().nonnegative().default(0),
+    bannerUrl: z.string().nullable().optional(),
+    customSettings: z.record(z.any()),
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date(),
 });
 
-export type Tournament = z.infer<typeof TournamentSchema>;
+export const PublicTournamentSchema = TournamentSchema.pick({
+    id: true,
+    organizationId: true,
+    sportId: true,
+    name: true,
+    slug: true,
+    description: true,
+    status: true,
+    bracketType: true,
+    mode: true,
+    minTeamSize: true,
+    maxTeamSize: true,
+    minParticipants: true,
+    maxParticipants: true,
+    scoringType: true,
+    prizePool: true,
+    entryFee: true,
+    bannerUrl: true,
+    createdAt: true,
+});
 
-// Payload for creating a new tournament (Admin/Org Owner)
+export type Tournament = z.infer<typeof TournamentSchema>;
+export type PublicTournament = z.infer<typeof PublicTournamentSchema>;
+
 export const CreateTournamentSchema = z.object({
-    organizationId: z.string().uuid(),
     sportId: z.string().uuid(),
     name: z.string().min(3).max(100),
     description: z.string().max(500).optional(),
     bracketType: z.enum(["single_elimination", "double_elimination", "round_robin", "swiss", "free_for_all"]),
-    
-    // --- Manual Overrides (Defaulted from Blueprint by Frontend) ---
+    isPrivate: z.boolean().default(false).optional(),
     mode: z.enum(SPORT_MODES),
     minTeamSize: z.number().int().min(1),
     maxTeamSize: z.number().int().min(1),
     allowDraws: z.boolean(),
     requiredHandleType: z.string().nullable(),
-
     minParticipants: z.number().int().min(2),
     maxParticipants: z.number().int().min(2),
-
+    prizePool: z.string().optional(),
+    entryFee: z.number().int().nonnegative().optional(),
+    bannerUrl: z.string().optional(),
     customSettings: z.record(z.any()).optional(),
 });
 
+export const UpdateTournamentSchema = CreateTournamentSchema.omit({
+    sportId: true, 
+}).extend({
+    status: TournamentSchema.shape.status.optional(),
+}).partial().strict();
+
 export type CreateTournament = z.infer<typeof CreateTournamentSchema>;
+export type UpdateTournament = z.infer<typeof UpdateTournamentSchema>;

@@ -5,9 +5,12 @@ import { useEffect, useState, useCallback } from "react";
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import {
   getLocalSettings,
+  setLocalSettings,
   getEffectiveBackground,
+  applyAllSettings,
   SETTINGS_UPDATED_EVENT,
 } from "@/lib/settings";
+import api from "@/lib/api/api";
 
 export function CustomBackground() {
   const [settings, setSettings] = useState<UserSettings>(() => {
@@ -22,16 +25,48 @@ export function CustomBackground() {
 
   const loadBackground = useCallback(async (settingsToUse: UserSettings) => {
     const bg = await getEffectiveBackground(settingsToUse);
-    setBackgroundSrc(bg);
+
+    // Only set as img src if it's a valid URL or data URI — prevents
+    // partial strings (typed keystroke-by-keystroke) from triggering 404s
+    if (bg && (bg.startsWith("data:") || bg.startsWith("blob:"))) {
+      setBackgroundSrc(bg);
+    } else if (bg) {
+      try {
+        const url = new URL(bg);
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          setBackgroundSrc(bg);
+        } else {
+          setBackgroundSrc(null);
+        }
+      } catch {
+        // Not a valid URL yet (user still typing) — don't load
+        setBackgroundSrc(null);
+      }
+    } else {
+      setBackgroundSrc(null);
+    }
   }, []);
 
   useEffect(() => {
     // Load local settings immediately for fast render
     const local = getLocalSettings();
 
-    // Explicitly call async function to avoid linter warning about sync effects
     const init = async () => {
       await loadBackground(local);
+
+      // Then fetch from API to sync with server state
+      try {
+        const response = await api.settings.getSettings({});
+        if (response.status === 200) {
+          const serverSettings = response.body;
+          setSettings(serverSettings);
+          setLocalSettings(serverSettings);
+          await loadBackground(serverSettings);
+          await applyAllSettings(serverSettings);
+        }
+      } catch {
+        // Not logged in or API unavailable — local settings are fine
+      }
     };
     init();
 

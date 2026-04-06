@@ -6,13 +6,17 @@ import AppError from "@/utils/error";
 
 const s = initServer();
 
+// --- Auth Source of Truth ---
+const ACCESS_TOKEN_MS = 50 * 60 * 1000; // 50 mins
+const REFRESH_TOKEN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
 const setRefreshTokenCookie = (res: any, refreshToken: string) => {
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax", // 'lax' is required for OAuth redirects to work
     path: "/",
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    maxAge: REFRESH_TOKEN_MS,
   });
 };
 
@@ -20,9 +24,9 @@ const setAccessTokenCookie = (res: any, accessToken: string) => {
   res.cookie("access_token", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
-    maxAge: 1 * 60 * 60 * 1000, // 1 hour
+    maxAge: ACCESS_TOKEN_MS,
   });
 };
 

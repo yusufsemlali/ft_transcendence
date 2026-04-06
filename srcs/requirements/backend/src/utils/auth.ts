@@ -3,8 +3,13 @@ import crypto from "crypto";
 import { DecodedToken } from "@/api/types";
 import { users } from "@/dal/db/schemas/users";
 
-const JWT_SECRET = process.env.JWT_SECRET || "change_me_in_production";
-const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "15m";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    // Fail-fast architecture: Crash the container immediately on boot
+    throw new Error("FATAL EXCEPTION: JWT_SECRET environment variable is missing.");
+}
+
+const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "50m";
 const REFRESH_TOKEN_BYTES = 32;
 
 export const generateAccessToken = (id: string, sessionId: string, username: string, role: string): string => {
