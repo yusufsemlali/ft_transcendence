@@ -16,8 +16,8 @@ export function Header() {
           justifyContent: "space-between"
       }}>
         {/* Left side: Logo + Navigation Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Link href="/" className="nav-logo" style={{ marginRight: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <Link href="/dashboard" className="nav-logo" style={{ marginRight: "0.75rem" }}>
             <span
               className="material-symbols-outlined"
               style={{ fontSize: "inherit", color: "var(--accent-primary)" }}
@@ -26,19 +26,19 @@ export function Header() {
             </span>
             <span>tournify</span>
           </Link>
-  
-          <NavLink
-            href="/tournaments"
-            icon="sports_esports"
-            title="tournaments"
-          />
-          <NavLink
-            href="/leaderboard"
-            icon="social_leaderboard"
-            title="leaderboard"
-          />
-          <NavLink href="/about" icon="info" title="about" />
-          <NavLink href="/settings" icon="settings" title="settings" />
+
+          <NavLink href="/dashboard" icon="dashboard" title="Dashboard" />
+          <NavLink href="/tournaments" icon="sports_esports" title="Tournaments" />
+          <NavLink href="/organizations" icon="corporate_fare" title="Organizations" />
+          <NavLink href="/friends" icon="group" title="Friends" />
+          <NavLink href="/leaderboard" icon="social_leaderboard" title="Leaderboard" />
+
+          <div style={{ width: "1px", height: "16px", background: "var(--border-color)", margin: "0 0.25rem", opacity: 0.3 }} />
+
+          <NavLink href="/profile" icon="person" title="Profile" />
+          <NavLink href="/account-settings" icon="manage_accounts" title="Account Settings" />
+          <NavLink href="/settings" icon="tune" title="Settings" />
+          <NavLink href="/admin/sports" icon="sports" title="Admin: Sports" />
         </div>
   
         {/* Right side: User area */}

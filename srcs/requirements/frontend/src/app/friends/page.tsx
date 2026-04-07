@@ -32,9 +32,9 @@ function FriendRow({
   onUnblock: (userId: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-4 py-4 px-6 border-b border-border/10 hover:bg-muted/30 transition-all group last:border-0">
+    <div className="flex items-center gap-4 py-3.5 px-5 border-b border-border/5 hover:bg-muted/20 transition-all group last:border-0">
       <div className="relative flex-shrink-0">
-        <div className="w-10 h-10 rounded-sm bg-muted overflow-hidden ring-1 ring-border/50">
+        <div className="w-10 h-10 rounded-full bg-muted overflow-hidden ring-1 ring-border/30">
           <img
             src={friend.avatar || "/default-avatar.png"}
             alt={friend.username}
@@ -42,7 +42,7 @@ function FriendRow({
           />
         </div>
         {friend.isOnline && (
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-background shadow-[0_0_8px_#4ade80]" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2 border-background shadow-[0_0_8px_#4ade80]" />
         )}
       </div>
 
@@ -52,13 +52,18 @@ function FriendRow({
             {friend.displayName || friend.username}
           </span>
           {friend.displayName && (
-            <span className="text-[10px] font-mono text-muted-foreground/60 truncate">
+            <span className="text-[10px] font-mono text-muted-foreground/50 truncate">
               @{friend.username}
             </span>
           )}
         </div>
-        <div className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest mt-0.5">
-          {friend.isOnline ? "online" : "offline"} · since{" "}
+        <div className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-widest mt-0.5">
+          {friend.isOnline ? (
+            <span className="text-green-400/80">online</span>
+          ) : (
+            "offline"
+          )}{" "}
+          · since{" "}
           {new Date(friend.since).toLocaleDateString()}
         </div>
       </div>
@@ -151,9 +156,9 @@ function SearchResultRow({
   sending: string | null;
 }) {
   return (
-    <div className="flex items-center gap-4 py-3 px-4 hover:bg-muted/30 transition-all rounded-sm">
+    <div className="flex items-center gap-3 py-2.5 px-3 hover:bg-muted/40 transition-all rounded-md">
       <div className="relative flex-shrink-0">
-        <div className="w-8 h-8 rounded-sm bg-muted overflow-hidden ring-1 ring-border/50">
+        <div className="w-9 h-9 rounded-full bg-muted overflow-hidden ring-1 ring-border/50">
           <img
             src={user.avatar || "/default-avatar.png"}
             alt={user.username}
@@ -177,7 +182,7 @@ function SearchResultRow({
       <button
         onClick={() => onSendRequest(user.id)}
         disabled={sending === user.id}
-        className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest rounded-sm bg-primary text-primary-foreground hover:bg-primary/80 transition-all disabled:opacity-50"
+        className="flex-shrink-0 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest rounded-sm bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
       >
         {sending === user.id ? "sending..." : "add friend"}
       </button>
@@ -427,9 +432,9 @@ export default function FriendsPage() {
 
         {/* ─── Search & Add ─── */}
         <Section title="add friend" icon="person_add">
-          <div ref={searchContainerRef} className="relative">
+          <div ref={searchContainerRef} className="relative z-30">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-base">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-base">
                 search
               </span>
               <input
@@ -440,12 +445,12 @@ export default function FriendsPage() {
                   if (searchQuery.trim().length > 0) setShowSearch(true);
                 }}
                 placeholder="Search users by username or display name..."
-                className="input h-12 pl-11 pr-4 w-full border border-border/50 focus:border-primary/50 text-sm font-mono"
+                className="input h-11 pl-11 pr-4 w-full rounded-lg bg-muted/30 border border-border/30 focus:border-primary/50 focus:bg-muted/50 text-sm font-mono placeholder:text-muted-foreground/40 transition-all"
               />
             </div>
 
             {showSearch && (
-              <Card className="absolute top-full left-0 right-0 mt-2 z-50 max-h-80 overflow-y-auto p-2">
+              <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg border border-border/30 bg-background/95 backdrop-blur-xl shadow-2xl shadow-black/30 max-h-72 overflow-y-auto p-1.5">
                 {searching ? (
                   <div className="flex items-center justify-center py-8 gap-2">
                     <span className="material-symbols-outlined animate-spin text-muted-foreground text-base">
@@ -474,7 +479,7 @@ export default function FriendsPage() {
                     />
                   ))
                 )}
-              </Card>
+              </div>
             )}
           </div>
         </Section>
@@ -482,19 +487,19 @@ export default function FriendsPage() {
         {/* ─── Friends List ─── */}
         <Section title="connections" icon="people">
           <Card className="overflow-hidden">
-            <div className="flex items-center gap-1 px-6 pt-4 pb-2 border-b border-border/10">
+            <div className="flex items-center gap-1.5 px-4 py-3 border-b border-border/10">
               {filters.map((f) => (
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key)}
-                  className={`px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest rounded-sm transition-all ${
+                  className={`px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-widest rounded-md transition-all ${
                     filter === f.key
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                 >
                   {f.label}
-                  <span className="ml-1.5 opacity-60">{f.count}</span>
+                  <span className={`ml-1.5 tabular-nums ${filter === f.key ? "opacity-80" : "opacity-40"}`}>{f.count}</span>
                 </button>
               ))}
             </div>
@@ -506,7 +511,7 @@ export default function FriendsPage() {
                     .fill(0)
                     .map((_, i) => <FriendRowSkeleton key={i} />)
                 ) : filtered.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20 opacity-30 grayscale">
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 opacity-20">
                     <span className="material-symbols-outlined text-6xl">
                       {filter === "all"
                         ? "group_off"
