@@ -8,10 +8,10 @@ import { ApiResponse } from "@/utils/response";
 type FriendshipStatus = 'pending' | 'accepted' | 'blocked';
 
 interface FriendResult {
-    id: string;
-    username: string;
-    displayName: string | null;
-    avatar: string;
+    friendId: string;
+    friendUsername: string;
+    friendDisplayName: string | null;
+    friendAvatar: string;
     isOnline: boolean;
     status: FriendshipStatus;
     friendshipId: string;
@@ -40,11 +40,11 @@ export const getMyFriends = async (
             receiverId: friendships.receiverId,
             status: friendships.status,
             createdAt: friendships.createdAt,
-            senderUserId: users.id,
-            senderUsername: users.username,
-            senderDisplayName: users.displayName,
-            senderAvatar: users.avatar,
-            senderIsOnline: users.isOnline,
+            friendUserId: users.id,
+            friendUsername: users.username,
+            friendDisplayName: users.displayName,
+            friendAvatar: users.avatar,
+            friendIsOnline: users.isOnline,
         })
         .from(friendships)
         .innerJoin(users, or(
@@ -54,11 +54,11 @@ export const getMyFriends = async (
         .where(and(...conditions));
 
     const friends: FriendResult[] = rows.map((row) => ({
-        id: row.senderUserId,
-        username: row.senderUsername,
-        displayName: row.senderDisplayName,
-        avatar: row.senderAvatar,
-        isOnline: row.senderIsOnline,
+        friendId: row.friendUserId,
+        friendUsername: row.friendUsername,
+        friendDisplayName: row.friendDisplayName,
+        friendAvatar: row.friendAvatar,
+        isOnline: row.friendIsOnline,
         status: row.status as FriendshipStatus,
         friendshipId: row.friendshipId,
         since: row.createdAt,
@@ -97,10 +97,10 @@ export const getFriendship = async (currentUserId: string, targetUserId: string)
 
     const r = row[0];
     const friend: FriendResult = {
-        id: r.targetId,
-        username: r.targetUsername,
-        displayName: r.targetDisplayName,
-        avatar: r.targetAvatar,
+        friendId: r.targetId,
+        friendUsername: r.targetUsername,
+        friendDisplayName: r.targetDisplayName,
+        friendAvatar: r.targetAvatar,
         isOnline: r.targetIsOnline,
         status: r.status as FriendshipStatus,
         friendshipId: r.friendshipId,
@@ -149,7 +149,7 @@ export const sendFriendRequest = async (senderId: string, targetUserId: string) 
             throw new AppError(409, "A friend request already exists between you and this user");
         }
         if (rel.status === 'blocked') {
-            throw new AppError(400, "Cannot send friend request to this user");
+            throw new AppError(404, "User not found or unavailable");
         }
     }
 
@@ -285,6 +285,8 @@ export const blockUser = async (currentUserId: string, targetUserId: string) => 
         if (rel.status === 'blocked' && rel.senderId === currentUserId) {
             throw new AppError(400, "You have already blocked this user");
         }
+        
+        // Ensure Blocker ID Trap is avoided: the person blocking is ALWAYS the senderId
         await db
             .delete(friendships)
             .where(eq(friendships.id, rel.id));

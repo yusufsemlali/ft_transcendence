@@ -1,4 +1,5 @@
-import { pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { users } from './users';
 import { friendshipStatusEnum } from './enums';
 
@@ -9,5 +10,8 @@ export const friendships = pgTable('friendships', {
     status: friendshipStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => ({
-    unq: unique().on(t.senderId, t.receiverId)
+    unq: uniqueIndex('unq_friendship').on(
+        sql`LEAST(${t.senderId}, ${t.receiverId})`,
+        sql`GREATEST(${t.senderId}, ${t.receiverId})`
+    )
 }));
