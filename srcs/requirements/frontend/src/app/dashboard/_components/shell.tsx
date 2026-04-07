@@ -14,6 +14,8 @@ import { TournamentsTab } from "../_tabs/tournaments";
 import { MembersTab } from "../_tabs/members";
 import { ActivityTab } from "../_tabs/activity";
 import { SettingsTab } from "../_tabs/settings";
+import { TournamentSettingsTab } from "../_tabs/tournament-settings";
+import { TournamentOverviewTab } from "../_tabs/tournament-overview";
 
 /* ═══════════════════════════════════════
    SECTION / PAGE DEFINITIONS
@@ -272,12 +274,23 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
           {/* ═══ TOURNAMENT LEVEL ═══ */}
           {inTournament && (
             <>
-              {tournamentPage === "overview"  && <EmptyPanel icon="dashboard"     title="Tournament Overview"  subtitle={`Overview for ${activeTournament.name}. Stats, participants, and progress will appear here.`} />}
+              {tournamentPage === "overview"  && (
+                <TournamentOverviewTab 
+                    tournament={activeTournament} 
+                    org={org} 
+                />
+              )}
               {tournamentPage === "brackets"  && <EmptyPanel icon="account_tree"  title="Brackets"             subtitle="View and manage the tournament bracket tree. Drag to rearrange seedings." />}
               {tournamentPage === "matches"   && <EmptyPanel icon="scoreboard"    title="Matches"              subtitle="Track live matches, submit scores, and review completed games." />}
               {tournamentPage === "standings"  && <EmptyPanel icon="leaderboard"   title="Standings"            subtitle="Current rankings, win rates, and point tables for all participants." />}
               {tournamentPage === "schedule"   && <EmptyPanel icon="calendar_month" title="Schedule"            subtitle="Plan match dates, set check-in windows, and manage the event timeline." />}
-              {tournamentPage === "settings"   && <EmptyPanel icon="settings"      title="Tournament Settings"  subtitle="Edit tournament rules, visibility, and configuration." />}
+              {tournamentPage === "settings"   && (
+                <TournamentSettingsTab 
+                    tournament={activeTournament} 
+                    org={org} 
+                    onUpdate={(t) => setActiveTournament(t)} 
+                />
+              )}
             </>
           )}
 
