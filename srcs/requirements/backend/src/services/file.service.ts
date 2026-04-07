@@ -7,8 +7,10 @@ import AppError from "../utils/error";
 
 export class FileService {
     static async saveFileRecord(uploaderId: string, file: Express.Multer.File) {
-        // Construct the public URL path for serving via express.static
-        const fileUrl = `${process.env.APP_URL || "http://localhost:3000"}/uploads/${file.filename}`;
+        // Public URL must match app.ts static mount: app.use("/api/uploads", ...)
+        // NEXT_PUBLIC_API_URL is shared via .env (e.g. https://localhost:8080/api)
+        const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api").replace(/\/$/, "");
+        const fileUrl = `${apiBase}/uploads/${file.filename}`;
         
         const [insertedFile] = await db.insert(files).values({
             uploaderId: uploaderId,

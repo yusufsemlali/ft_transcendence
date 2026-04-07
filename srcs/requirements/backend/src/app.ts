@@ -43,7 +43,7 @@ function buildApp(): express.Application {
 
     console.log("[INFO] Regenerated OpenAPI documentation from contracts.");
 
-    // Standard Middlewares ... [rest of middlewares]
+    // Body parsing, cookies, CORS, and security headers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());

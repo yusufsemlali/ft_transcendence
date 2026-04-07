@@ -21,7 +21,16 @@ export const filesController = s.router(contract.files, {
 
             return {
                 status: 201,
-                body: { message: "Uploaded successfully", data: savedFile as any }
+                body: {
+                    message: "Uploaded successfully",
+                    data: {
+                        id: savedFile.id,
+                        originalName: savedFile.originalName,
+                        url: savedFile.url,
+                        mimeType: savedFile.mimeType,
+                        sizeBytes: savedFile.sizeBytes,
+                    },
+                },
             };
         }
     },

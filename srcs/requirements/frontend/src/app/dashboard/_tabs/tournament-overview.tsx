@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { StatWidget } from "../_components/stat-widget";
-import Head from "next/head";
 
 export function TournamentOverviewTab({ tournament, org }: { tournament: Tournament; org: Organization }) {
   const [stats, setStats] = useState({
@@ -32,9 +31,6 @@ export function TournamentOverviewTab({ tournament, org }: { tournament: Tournam
 
   return (
     <div className="animate-fade-in" style={{ width: "100%" }}>
-      {/* Preload the banner image with correct 'as' value to fix browser warning */}
-      <link rel="preload" href={bannerUrl} as="image" />
-
       {/* Hero Header */}
       <div className="glass-card" style={{ 
           height: "220px", 
