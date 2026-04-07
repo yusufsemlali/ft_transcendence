@@ -193,26 +193,26 @@ export function applyThemeSettings(settings: UserSettings): void {
     // Custom theme colors (monkeytype style grid)
     if (settings.customTheme && settings.customThemeColors) {
         const colors = settings.customThemeColors;
-        root.style.setProperty("--background", colors.bgPrimary);
-        root.style.setProperty("--popover", colors.bgPrimary);
-        root.style.setProperty("--card", colors.bgPrimary);
+        root.style.setProperty("--background", colors.bgPrimary ?? "");
+        root.style.setProperty("--popover", colors.bgPrimary ?? "");
+        root.style.setProperty("--card", colors.bgPrimary ?? "");
         
-        root.style.setProperty("--theme-color", colors.accent);
-        root.style.setProperty("--primary", colors.accent);
+        root.style.setProperty("--theme-color", colors.accent ?? "");
+        root.style.setProperty("--primary", colors.accent ?? "");
         
-        root.style.setProperty("--theme-color-secondary", colors.accentSecondary);
-        root.style.setProperty("--ring", colors.accentSecondary);
+        root.style.setProperty("--theme-color-secondary", colors.accentSecondary ?? "");
+        root.style.setProperty("--ring", colors.accentSecondary ?? "");
         
-        root.style.setProperty("--destructive", colors.error);
+        root.style.setProperty("--destructive", colors.error ?? "");
         
-        root.style.setProperty("--secondary", colors.bgSecondary);
+        root.style.setProperty("--secondary", colors.bgSecondary ?? "");
         
-        root.style.setProperty("--muted", colors.textSecondary); // Map sub-text properly
-        root.style.setProperty("--muted-foreground", colors.textSecondary);
+        root.style.setProperty("--muted", colors.textSecondary ?? ""); // Map sub-text properly
+        root.style.setProperty("--muted-foreground", colors.textSecondary ?? "");
         
-        root.style.setProperty("--foreground", colors.textPrimary);
-        root.style.setProperty("--popover-foreground", colors.textPrimary);
-        root.style.setProperty("--card-foreground", colors.textPrimary);
+        root.style.setProperty("--foreground", colors.textPrimary ?? "");
+        root.style.setProperty("--popover-foreground", colors.textPrimary ?? "");
+        root.style.setProperty("--card-foreground", colors.textPrimary ?? "");
     } else {
         // Clear custom overrides to let globals.css cascade back in
         root.style.removeProperty("--background");

@@ -9,7 +9,8 @@ export const TOURNAMENT_STRUCTURAL_FIELDS = [
     "minTeamSize",
     "maxTeamSize",
     "bracketType",
-    "allowDraws"
+    "allowDraws",
+    "matchConfigSchema"
 ] as const;
 
 export type TournamentStructuralField = typeof TOURNAMENT_STRUCTURAL_FIELDS[number];

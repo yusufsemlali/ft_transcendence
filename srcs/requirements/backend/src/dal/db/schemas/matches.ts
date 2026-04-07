@@ -23,6 +23,7 @@ export const matches = pgTable('matches', {
     nextMatchId: uuid('next_match_id'),
 
     matchStats: jsonb('match_stats').default({}).notNull(),
+    matchConfigSchema: jsonb('match_config_schema').default({}).notNull(),
 
     scheduledAt: timestamp('scheduled_at'),
     completedAt: timestamp('completed_at'),

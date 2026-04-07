@@ -80,7 +80,7 @@ export default function Home() {
           </p>
 
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            <Link href={isAuthenticated ? "/dashboard" : "/register"} className="btn btn-primary" style={{ padding: "16px 32px", fontSize: "12px", fontWeight: "800", letterSpacing: "1px" }}>
+            <Link href={isAuthenticated ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: "16px 32px", fontSize: "12px", fontWeight: "800", letterSpacing: "1px" }}>
               {isAuthenticated ? "ACCESS COMMAND DASHBOARD" : "ESTABLISH ORGANIZATION"}
               <span className="material-symbols-outlined" style={{ fontSize: "18px", marginLeft: "8px" }}>{isAuthenticated ? "terminal" : "add_business"}</span>
             </Link>

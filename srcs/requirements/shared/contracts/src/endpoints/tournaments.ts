@@ -101,4 +101,92 @@ export const tournamentsContract = c.router({
         },
         summary: "Global Discovery List (Sanitized and Public Only)",
     },
+
+    joinLobby: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/join",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}), // empty
+        responses: {
+            201: z.object({ message: z.string(), state: z.enum(['LOBBY_JOINED', 'READY_ENTRANT_CREATED']) }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Enter the tournament waiting room (Auto-registers for 1v1s)",
+    },
+    createLobbyTeam: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/teams",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({ name: z.string().min(2).max(255) }),
+        responses: {
+            201: z.object({ message: z.string(), teamId: z.string().uuid() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Form a team in the lobby as the Captain",
+    },
+
+    getLobbyState: {
+        method: "GET",
+        path: "/tournaments/:id/lobby",
+        pathParams: z.object({ id: z.string().uuid() }),
+        responses: {
+            200: z.object({
+                soloPlayers: z.array(z.object({
+                    userId: z.string().uuid(),
+                    username: z.string(),
+                    avatarUrl: z.string().nullable(),
+                    status: z.string(),
+                    joinedAt: z.date(),
+                })),
+                teams: z.array(z.object({
+                    id: z.string().uuid(),
+                    name: z.string(),
+                    status: z.string(),
+                    roster: z.array(z.object({
+                        userId: z.string().uuid(),
+                        username: z.string(),
+                        role: z.string(),
+                    })),
+                })),
+            }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Get current players and teams in the waiting room",
+    },
+
+    inviteToTeam: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/teams/:teamId/invite",
+        pathParams: z.object({ id: z.string().uuid(), teamId: z.string().uuid() }),
+        body: z.object({ targetUserId: z.string().uuid() }),
+        responses: {
+            201: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Send an invite to a solo player in the lobby",
+    },
+
+    joinTeam: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/teams/:teamId/join",
+        pathParams: z.object({ id: z.string().uuid(), teamId: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Accept an invite and join a team roster",
+    },
 });

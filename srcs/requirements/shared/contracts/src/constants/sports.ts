@@ -4,7 +4,7 @@
 export const SPORT_MODES = ['1v1', 'team', 'ffa'] as const;
 export type SportMode = (typeof SPORT_MODES)[number];
 
-export const SPORT_CATEGORIES = ['esports', 'physical', 'tabletop'] as const;
+export const SPORT_CATEGORIES = ['esports', 'physical', 'tabletop', 'custom'] as const;
 export type SportCategory = (typeof SPORT_CATEGORIES)[number];
 
 /**
@@ -37,5 +37,6 @@ export const HANDLE_TYPES = [
     'epic_id',
     'fide_id',     
     'other',
+    'generic_id',
 ] as const;
 export type HandleType = (typeof HANDLE_TYPES)[number];

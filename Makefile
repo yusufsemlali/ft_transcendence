@@ -60,4 +60,15 @@ backend:
 database:
 	$(COMPOSE) up -d --build database
 
-.PHONY: all down clean fclean re nuke logs status db db-generate db-push db-migrate db-reset frontend backend logs-b logs-f
+# Positional argument hack for admin command
+%:
+	@:
+
+admin:
+	@EMAIL=$(filter-out $@,$(MAKECMDGOALS)) && \
+	if [ -z "$$EMAIL" ]; then echo "Usage: make admin user@example.com"; exit 1; fi; \
+	U=$$(grep "^DB_USER=" srcs/.env | cut -d= -f2) && \
+	D=$$(grep "^DB_NAME=" srcs/.env | cut -d= -f2) && \
+	docker exec ft_database psql -U $$U -d $$D -c "UPDATE auth.users SET role = 'admin' WHERE email = '$$EMAIL';"
+
+.PHONY: all down clean fclean re nuke logs status db db-generate db-push db-migrate db-reset frontend backend logs-b logs-f admin

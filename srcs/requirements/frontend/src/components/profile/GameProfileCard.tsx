@@ -1,6 +1,15 @@
 "use client";
 
-import { GameProfile, SupportedGame } from "@ft-transcendence/contracts";
+type SupportedGame = "league_of_legends" | "cs2" | "valorant" | "apex_legends" | "dota2" | "overwatch2";
+
+interface GameProfile {
+  game: string;
+  gameIdentifier: string;
+  rank: string | null;
+  level: number | null;
+  isVerified: boolean;
+  metadata: Record<string, unknown>;
+}
 
 interface GameProfileCardProps {
   profile: GameProfile;

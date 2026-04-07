@@ -55,7 +55,7 @@ export type PublicTournament = z.infer<typeof PublicTournamentSchema>;
 export const CreateTournamentSchema = z.object({
     sportId: z.string().uuid(),
     name: z.string().min(3).max(100),
-    description: z.string().max(500).optional(),
+    description: z.string().max(500).nullable().optional(),
     bracketType: z.enum(["single_elimination", "double_elimination", "round_robin", "swiss", "free_for_all"]),
     isPrivate: z.boolean().default(false).optional(),
     mode: z.enum(SPORT_MODES),
@@ -65,10 +65,11 @@ export const CreateTournamentSchema = z.object({
     requiredHandleType: z.string().nullable(),
     minParticipants: z.number().int().min(2),
     maxParticipants: z.number().int().min(2),
-    prizePool: z.string().optional(),
+    prizePool: z.string().nullable().optional(),
     entryFee: z.number().int().nonnegative().optional(),
-    bannerUrl: z.string().optional(),
+    bannerUrl: z.string().nullable().optional(),
     customSettings: z.record(z.any()).optional(),
+    matchConfigSchema: z.record(z.any()).optional(),
 });
 
 export const UpdateTournamentSchema = CreateTournamentSchema.omit({

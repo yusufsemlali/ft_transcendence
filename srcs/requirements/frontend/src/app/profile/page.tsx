@@ -16,6 +16,7 @@ import { Stack } from "@/components/layout/Stack";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 function HexAvatar({
   src,
@@ -484,20 +485,18 @@ export default function ProfilePage() {
                 <Stack gap="md">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Platform_Node</label>
-                    <div className="relative">
-                      <select
-                        value={selectedSportId}
-                        onChange={(e) => setSelectedSportId(e.target.value)}
-                        className="input appearance-none capitalize pr-10 h-10 border border-border/50 focus:border-primary/50"
-                      >
+                    <Select value={selectedSportId} onValueChange={setSelectedSportId}>
+                      <SelectTrigger className="capitalize h-10 border border-border/50 focus:border-primary/50">
+                        <SelectValue placeholder="Select Platform..." />
+                      </SelectTrigger>
+                      <SelectContent>
                         {sports.map((sport: Sport) => (
-                          <option key={sport.id} value={sport.id} className="bg-background text-foreground py-2">
+                          <SelectItem key={sport.id} value={sport.id} className="capitalize">
                             {sport.name}
-                          </option>
+                          </SelectItem>
                         ))}
-                      </select>
-                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">expand_more</span>
-                    </div>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">

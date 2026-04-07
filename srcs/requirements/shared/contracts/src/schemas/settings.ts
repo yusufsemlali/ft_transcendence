@@ -101,7 +101,7 @@ export type ColorHarmony = z.infer<typeof ColorHarmonySchema>;
 export const UserSettingsSchema = z.object({
     theme: ThemePresetSchema.default("default"),
     customTheme: z.boolean().default(false),
-    customThemeColors: ThemeColorsSchema.optional().nullable(),
+    customThemeColors: ThemeColorsSchema.partial().optional().nullable(),
     fontFamily: FontFamilySchema.default("roboto_mono"),
     fontSize: FontSizeSchema.default(1),
     customBackground: CustomBackgroundSchema.nullable().default(null),
