@@ -123,12 +123,11 @@ export const createLobbyTeam = async ({ tournamentId, userId, name }: { tourname
 };
 
 export const getLobbyState = async (tournamentId: string) => {
-    // 1. Fetch Solo Players (LFT)
     const soloPlayers = await db
         .select({
             userId: users.id,
             username: users.username,
-            avatarUrl: users.avatarUrl,
+            avatarUrl: users.avatar,
             status: tournamentPlayers.status,
             joinedAt: tournamentPlayers.joinedAt,
         })
