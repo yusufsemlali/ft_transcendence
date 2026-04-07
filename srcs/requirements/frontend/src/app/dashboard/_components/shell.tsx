@@ -12,8 +12,13 @@ import { EmptyPanel } from "./empty-panel";
 import { OverviewTab } from "../_tabs/overview";
 import { TournamentsTab } from "../_tabs/tournaments";
 import { MembersTab } from "../_tabs/members";
-import { ActivityTab } from "../_tabs/activity";
-import { SettingsTab } from "../_tabs/settings";
+import { RolesTab } from "../_tabs/roles";
+import { InviteTab } from "../_tabs/invite";
+import { RefereesTab } from "../_tabs/referees";
+import { AuditLogTab } from "../_tabs/audit-log";
+import { OrgSettingsTab } from "../_tabs/org-settings";
+import { SportModesTab } from "../_tabs/sport-modes";
+import { IntegrationsTab } from "../_tabs/integrations";
 
 /* ═══════════════════════════════════════
    SECTION / PAGE DEFINITIONS
@@ -290,14 +295,14 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {section === "tournaments" && page === "create" && <TournamentsTab org={org} onSelectTournament={openTournament} initialCreate />}
 
               {section === "admin" && page === "members"  && <MembersTab org={org} />}
-              {section === "admin" && page === "roles"    && <EmptyPanel icon="shield_person" title="Roles & Permissions" subtitle="Define custom roles and fine-tune member permissions for your organization." />}
-              {section === "admin" && page === "invite"   && <EmptyPanel icon="person_add" title="Invite Players" subtitle="Send invitations to players via email or share an invite link." />}
-              {section === "admin" && page === "referees" && <EmptyPanel icon="gavel" title="Referee Panel" subtitle="Assign referees to tournaments and manage match officiating." />}
-              {section === "admin" && page === "audit"    && <ActivityTab />}
+              {section === "admin" && page === "roles"    && <RolesTab org={org} />}
+              {section === "admin" && page === "invite"   && <InviteTab org={org} />}
+              {section === "admin" && page === "referees" && <RefereesTab org={org} />}
+              {section === "admin" && page === "audit"    && <AuditLogTab />}
 
-              {section === "config" && page === "org-settings" && <SettingsTab />}
-              {section === "config" && page === "sport-modes"  && <EmptyPanel icon="sports" title="Sport Modes" subtitle="Browse and configure available sports and game modes for your tournaments." />}
-              {section === "config" && page === "integrations" && <EmptyPanel icon="webhook" title="Integrations" subtitle="Connect external services like Discord, Twitch, and webhook notifications." />}
+              {section === "config" && page === "org-settings" && <OrgSettingsTab org={org} />}
+              {section === "config" && page === "sport-modes"  && <SportModesTab />}
+              {section === "config" && page === "integrations" && <IntegrationsTab />}
             </>
           )}
         </div>

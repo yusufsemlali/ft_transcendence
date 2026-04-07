@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/lib/api/api";
 import type { Organization } from "@ft-transcendence/contracts";
 import { OrgPicker } from "./_components/org-picker";
 import { Shell } from "./_components/shell";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlOrgId = searchParams.get("org");
@@ -64,5 +64,17 @@ export default function DashboardPage() {
       onSelect={selectOrg}
       onOrgCreated={handleOrgCreated}
     />
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 0" }}>
+        <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

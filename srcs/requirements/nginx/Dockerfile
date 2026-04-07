@@ -7,12 +7,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN mkdir -p /etc/nginx/ssl
 
-# Adjust paths to match new build context (srcs/)
+# Copy nginx config
 COPY conf/nginx.conf /etc/nginx/nginx.conf
-COPY tools/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+
+# Generate SSL certificate inline
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/server.key \
+    -out /etc/nginx/ssl/server.crt \
+    -subj "/CN=localhost" \
+    2>/dev/null
 
 EXPOSE 8080
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

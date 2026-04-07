@@ -6,8 +6,12 @@ export interface UserInfo {
     id: string;
     username: string;
     email: string;
-    level: number;
+    displayName: string;
+    bio: string;
+    tagline: string;
     avatar: string;
+    banner: string;
+    level: number;
     role: string;
 }
 
@@ -40,8 +44,12 @@ export async function getServerUser(): Promise<UserInfo | null> {
                 id: data.id,
                 username: data.username,
                 email: data.email,
+                displayName: data.displayName || "",
+                bio: data.bio || "",
+                tagline: data.tagline || "",
+                avatar: data.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                banner: data.banner || "",
                 level: data.level,
-                avatar: data.avatar,
                 role: data.role,
             };
         }

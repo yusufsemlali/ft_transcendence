@@ -14,16 +14,14 @@ function Select({
   value,
   onValueChange,
   ...props
-}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & {
+}: Omit<React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>, 'value' | 'onValueChange'> & {
   value?: string;
   onValueChange?: (value: string) => void;
 }) {
   return (
     <SelectPrimitive.Root
       value={value}
-      onValueChange={(val: any) => {
-        if (typeof val === "string" && onValueChange) onValueChange(val);
-      }}
+      onValueChange={onValueChange ? ((val: unknown) => onValueChange(String(val))) : undefined}
       {...props}
     >
       {children}
