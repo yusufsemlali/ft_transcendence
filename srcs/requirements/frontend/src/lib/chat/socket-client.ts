@@ -1,7 +1,7 @@
 "use client";
 
 import { io, Socket } from "socket.io-client";
-import type { Message, User } from "@ft-transcendence/contracts";
+import type { Message } from "@ft-transcendence/contracts";
 
 export type ChatSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -30,14 +30,19 @@ export type ServerToClientEvents = {
 };
 
 export type ClientToServerEvents = {
-  "user:join": (payload: { user: ChatUser; room: string }) => void;
+  "user:join": (payload: { room: string }) => void;
   "message:send": (payload: { content: string }) => void;
   "user:typing": (payload: { isTyping: boolean }) => void;
   "room:getInfo": (payload: { room: string }) => void;
   "server:getStats": () => void;
 };
 
-export type ChatUser = Pick<User, "id" | "username" | "email">;
+export type ChatUser = {
+  id: string;
+  username: string;
+  email?: string;
+  role?: string;
+};
 
 function resolveChatUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_CHAT_URL;
@@ -66,8 +71,8 @@ export function createChatSocket(): ChatSocket {
   });
 }
 
-export function joinChatRoom(socket: ChatSocket, user: ChatUser, room: string): void {
-  socket.emit("user:join", { user, room });
+export function joinChatRoom(socket: ChatSocket, _user: ChatUser, room: string): void {
+  socket.emit("user:join", { room });
 }
 
 export function sendChatMessage(socket: ChatSocket, content: string): void {

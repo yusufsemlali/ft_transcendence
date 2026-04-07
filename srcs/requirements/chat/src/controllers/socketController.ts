@@ -1,6 +1,6 @@
 import { Socket, Server as SocketIOServer } from 'socket.io';
 import SocketService from '../services/socketService';
-import { User, Message } from '@ft-transcendence/contracts';
+import { AuthenticatedSocketUser } from '../types/chatUser';
 
 class SocketController {
   private socketService: SocketService;
@@ -18,16 +18,17 @@ class SocketController {
     });
   }
 
-  handleUserJoin(socket: Socket, data: { user: User; room: string }): void {
+  async handleUserJoin(socket: Socket, data: { room: string }): Promise<void> {
     try {
-      const { user, room } = data;
+      const room = data?.room;
+      const user = socket.data.user as AuthenticatedSocketUser | undefined;
 
       if (!user || !user.id || !room) {
         socket.emit('error', 'Invalid user or room data');
         return;
       }
 
-      this.socketService.userJoinRoom(socket, user, room);
+      await this.socketService.userJoinRoom(socket, user, room);
       socket.emit('room:joined', { room, message: `Joined room: ${room}` });
     } catch (error) {
       console.error('Error joining room:', error);
@@ -35,14 +36,14 @@ class SocketController {
     }
   }
 
-  handleMessage(socket: Socket, data: { content: string }): void {
+  async handleMessage(socket: Socket, data: { content: string }): Promise<void> {
     try {
       if (!data.content || typeof data.content !== 'string') {
         socket.emit('error', 'Invalid message content');
         return;
       }
 
-      this.socketService.broadcastMessage(socket, data.content.trim());
+      await this.socketService.broadcastMessage(socket, data.content.trim());
     } catch (error) {
       console.error('Error sending message:', error);
       socket.emit('error', 'Failed to send message');
@@ -57,9 +58,9 @@ class SocketController {
     }
   }
 
-  handleGetRoomInfo(socket: Socket, data: { room: string }): void {
+  async handleGetRoomInfo(socket: Socket, data: { room: string }): Promise<void> {
     try {
-      const roomInfo = this.socketService.getRoomInfo(data.room);
+      const roomInfo = await this.socketService.getRoomInfo(data.room);
       socket.emit('room:info', roomInfo);
     } catch (error) {
       console.error('Error getting room info:', error);
@@ -67,9 +68,9 @@ class SocketController {
     }
   }
 
-  handleGetStats(socket: Socket): void {
+  async handleGetStats(socket: Socket): Promise<void> {
     try {
-      const stats = this.socketService.getStats();
+      const stats = await this.socketService.getStats();
       socket.emit('server:stats', stats);
     } catch (error) {
       console.error('Error getting stats:', error);
@@ -77,9 +78,9 @@ class SocketController {
     }
   }
 
-  handleDisconnect(socket: Socket): void {
+  async handleDisconnect(socket: Socket): Promise<void> {
     try {
-      this.socketService.userLeaveRoom(socket);
+      await this.socketService.userLeaveRoom(socket);
       console.log(`Client disconnected: ${socket.id}`);
     } catch (error) {
       console.error('Error on disconnect:', error);
@@ -88,4 +89,3 @@ class SocketController {
 }
 
 export default SocketController;
-

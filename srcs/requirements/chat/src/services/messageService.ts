@@ -1,17 +1,16 @@
+import { desc, eq } from 'drizzle-orm';
 import { Message } from '@ft-transcendence/contracts';
 import { v4 as uuidv4 } from 'uuid';
+import { db } from '../db';
+import { chatMessages } from '../db/schema';
 
 class MessageService {
-  private messages: Map<string, Message[]> = new Map();
-  private messageHistory: Message[] = [];
-  private maxMessagesPerRoom: number = 100;
-
-  addMessage(
+  async addMessage(
     userId: string,
     username: string,
     content: string,
-    room: string
-  ): Message {
+    roomId: string
+  ): Promise<Message> {
     const message: Message = {
       id: uuidv4(),
       userId,
@@ -20,46 +19,62 @@ class MessageService {
       timestamp: new Date(),
     };
 
-    // Store in room-specific messages
-    if (!this.messages.has(room)) {
-      this.messages.set(room, []);
-    }
-
-    const roomMessages = this.messages.get(room)!;
-    roomMessages.push(message);
-
-    // Keep only the last N messages
-    if (roomMessages.length > this.maxMessagesPerRoom) {
-      roomMessages.shift();
-    }
-
-    // Store in general history
-    this.messageHistory.push(message);
+    await db.insert(chatMessages).values({
+      id: message.id,
+      roomId,
+      userId,
+      username,
+      content,
+      createdAt: message.timestamp,
+    });
 
     return message;
   }
 
-  getMessagesByRoom(room: string, limit: number = 50, offset: number = 0): Message[] {
-    const roomMessages = this.messages.get(room) || [];
-    const startIndex = Math.max(roomMessages.length - offset - limit, 0);
-    const endIndex = Math.max(roomMessages.length - offset, 0);
-    return roomMessages.slice(startIndex, endIndex);
+  async getMessagesByRoom(roomId: string, limit: number = 50, offset: number = 0): Promise<Message[]> {
+    const rows = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.roomId, roomId))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return rows
+      .map((row) => ({
+        id: row.id,
+        userId: row.userId,
+        username: row.username,
+        content: row.content,
+        timestamp: row.createdAt,
+      }))
+      .reverse();
   }
 
-  clearRoomMessages(room: string): void {
-    this.messages.delete(room);
+  async clearRoomMessages(roomId: string): Promise<void> {
+    await db.delete(chatMessages).where(eq(chatMessages.roomId, roomId));
   }
 
-  getMessageHistory(limit: number = 100): Message[] {
-    return this.messageHistory.slice(-limit);
+  async getMessageHistory(limit: number = 100): Promise<Message[]> {
+    const rows = await db
+      .select()
+      .from(chatMessages)
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
+
+    return rows
+      .map((row) => ({
+        id: row.id,
+        userId: row.userId,
+        username: row.username,
+        content: row.content,
+        timestamp: row.createdAt,
+      }))
+      .reverse();
   }
 
-  getRoomCount(): number {
-    return this.messages.size;
-  }
-
-  getTotalMessageCount(): number {
-    return this.messageHistory.length;
+  async getTotalMessageCount(): Promise<number> {
+    return db.$count(chatMessages);
   }
 }
 

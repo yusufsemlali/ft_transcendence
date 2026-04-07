@@ -14,13 +14,13 @@ export const chatController = s.router(contract.chat, {
       status: 200 as const,
       body: {
         connectedUsers: userService.getAllUsers().length,
-        activeRooms: roomService.getRoomCount(),
-        totalMessages: messageService.getTotalMessageCount(),
+        activeRooms: await roomService.getRoomCount(),
+        totalMessages: await messageService.getTotalMessageCount(),
       },
     };
   },
   getRoomInfo: async ({ params }) => {
-    const room = roomService.getRoom(params.roomId);
+    const room = await roomService.getRoom(params.roomId);
 
     if (!room) {
       return {
@@ -29,12 +29,15 @@ export const chatController = s.router(contract.chat, {
       };
     }
 
+    const roomDatabaseId = await roomService.getRoomDatabaseId(room.id);
     return {
       status: 200 as const,
       body: {
         room: room.id,
         userCount: userService.getUsersInRoom(room.id).length,
-        messageCount: messageService.getMessagesByRoom(room.id).length,
+        messageCount: roomDatabaseId
+          ? (await messageService.getMessagesByRoom(roomDatabaseId)).length
+          : 0,
         createdAt: room.createdAt,
       },
     };
@@ -42,11 +45,11 @@ export const chatController = s.router(contract.chat, {
   getRooms: async () => {
     return {
       status: 200 as const,
-      body: roomService.getRooms(),
+      body: await roomService.getRooms(),
     };
   },
   getRoomMessages: async ({ params, query }) => {
-    const room = roomService.getRoom(params.roomId);
+    const room = await roomService.getRoom(params.roomId);
 
     if (!room) {
       return {
@@ -59,10 +62,13 @@ export const chatController = s.router(contract.chat, {
     const parsedOffset = query.offset ? parseInt(query.offset, 10) : 0;
     const limit = Number.isFinite(parsedLimit) ? parsedLimit : 50;
     const offset = Number.isFinite(parsedOffset) ? parsedOffset : 0;
+    const roomDatabaseId = await roomService.getRoomDatabaseId(room.id);
 
     return {
       status: 200 as const,
-      body: messageService.getMessagesByRoom(room.id, limit, offset),
+      body: roomDatabaseId
+        ? await messageService.getMessagesByRoom(roomDatabaseId, limit, offset)
+        : [],
     };
   },
 });

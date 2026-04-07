@@ -2,8 +2,8 @@
 
 import {
   startTransition,
+  useCallback,
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -23,6 +23,7 @@ import type { Message, Room } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";
 
 type ConnectionStatus = "idle" | "connecting" | "connected" | "error";
+type ChatAvailability = "ready" | "login_required" | "session_expired" | "unavailable";
 
 export interface ChatStats {
   totalUsers: number;
@@ -33,6 +34,7 @@ export interface ChatStats {
 export interface ChatStoreState {
   socket: ChatSocket | null;
   connectionStatus: ConnectionStatus;
+  availability: ChatAvailability;
   activeRoom: string;
   rooms: Room[];
   messages: Message[];
@@ -50,6 +52,8 @@ export interface ChatStoreState {
 }
 
 const DEFAULT_ROOM = "general";
+const CHAT_ROOM_STORAGE_KEY = "chat.activeRoom";
+const MAX_MESSAGE_LENGTH = 500;
 
 function upsertRoom(rooms: Room[], roomId: string): Room[] {
   if (rooms.some((room) => room.id === roomId)) {
@@ -69,7 +73,15 @@ function upsertRoom(rooms: Room[], roomId: string): Room[] {
 export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
   const [socket, setSocket] = useState<ChatSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
-  const [activeRoom, setActiveRoom] = useState(DEFAULT_ROOM);
+  const [availability, setAvailability] = useState<ChatAvailability>("ready");
+  const [activeRoom, setActiveRoom] = useState(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_ROOM;
+    }
+
+    const storedRoom = window.localStorage.getItem(CHAT_ROOM_STORAGE_KEY)?.trim();
+    return storedRoom || DEFAULT_ROOM;
+  });
   const [rooms, setRooms] = useState<Room[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [users, setUsers] = useState<ChatUser[]>([]);
@@ -84,7 +96,11 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
   const typingTimeoutRef = useRef<number | null>(null);
   const roomRefreshTimerRef = useRef<number | null>(null);
 
-  const loadRooms = useEffectEvent(async () => {
+  const loadRooms = useCallback(async () => {
+    if (!currentUser) {
+      return;
+    }
+
     const response = await api.chat.getRooms({});
     if (response.status === 200) {
       setRooms((existing) => {
@@ -95,9 +111,13 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
         return activeRoom ? upsertRoom(fromApi, activeRoom) : fromApi;
       });
     }
-  });
+  }, [activeRoom, currentUser]);
 
-  const loadStats = useEffectEvent(async () => {
+  const loadStats = useCallback(async () => {
+    if (!currentUser) {
+      return;
+    }
+
     const response = await api.chat.getStats({});
     if (response.status === 200) {
       setStats({
@@ -106,9 +126,9 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
         totalRooms: response.body.activeRooms,
       });
     }
-  });
+  }, [currentUser]);
 
-  const loadRoomMessages = useEffectEvent(async (roomId: string) => {
+  const loadRoomMessages = useCallback(async (roomId: string) => {
     setIsLoadingHistory(true);
     const response = await api.chat.getRoomMessages({
       params: { roomId },
@@ -123,9 +143,9 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     }
 
     setIsLoadingHistory(false);
-  });
+  }, []);
 
-  const joinCurrentRoom = useEffectEvent((targetRoom: string) => {
+  const joinCurrentRoom = useCallback((targetRoom: string) => {
     if (!socket || !currentUser || !targetRoom) {
       return;
     }
@@ -134,14 +154,16 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     joinChatRoom(socket, currentUser, targetRoom);
     requestRoomInfo(socket, targetRoom);
     requestServerStats(socket);
-  });
+  }, [currentUser, socket]);
 
   useEffect(() => {
     if (!currentUser) {
       setConnectionStatus("idle");
+      setAvailability("login_required");
       setUsers([]);
       setTypingUsers([]);
       setMessages([]);
+      setError(null);
       return;
     }
 
@@ -151,12 +173,31 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
 
     const onConnect = () => {
       setConnectionStatus("connected");
+      setAvailability("ready");
       setError(null);
       joinCurrentRoom(joinedRoomRef.current ?? activeRoom);
     };
 
-    const onConnectError = () => {
+    const onConnectError = (eventError?: { message?: string; description?: unknown }) => {
       setConnectionStatus("error");
+      const message = eventError?.message || "";
+      const isUnauthorized = message.toLowerCase().includes("unauthorized");
+
+      if (isUnauthorized) {
+        const nextAvailability = currentUser ? "session_expired" : "login_required";
+        setAvailability(nextAvailability);
+        setError(
+          currentUser
+            ? "Your chat session expired. Refresh your session or sign in again."
+            : "Sign in to use chat.",
+        );
+        if (currentUser) {
+          window.dispatchEvent(new CustomEvent("auth:logout"));
+        }
+        return;
+      }
+
+      setAvailability("unavailable");
       setError("Unable to connect to chat right now.");
     };
 
@@ -209,7 +250,11 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
 
     const onError = (message: string) => {
       setError(message);
-      toast.error(message);
+      if (message.toLowerCase().includes("unauthorized")) {
+        setAvailability(currentUser ? "session_expired" : "login_required");
+      } else {
+        toast.error(message);
+      }
       setIsSending(false);
       setIsLoadingHistory(false);
     };
@@ -234,25 +279,12 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
   }, [currentUser, joinCurrentRoom]);
 
   useEffect(() => {
-    void loadRooms();
-    void loadStats();
-  }, [loadRooms, loadStats]);
-
-  useEffect(() => {
     if (!currentUser) {
       return;
     }
 
-    roomRefreshTimerRef.current = window.setInterval(() => {
-      void loadRooms();
-      void loadStats();
-    }, 15000);
-
-    return () => {
-      if (roomRefreshTimerRef.current) {
-        window.clearInterval(roomRefreshTimerRef.current);
-      }
-    };
+    void loadRooms();
+    void loadStats();
   }, [currentUser, loadRooms, loadStats]);
 
   useEffect(() => {
@@ -260,12 +292,16 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
       if (typingTimeoutRef.current) {
         window.clearTimeout(typingTimeoutRef.current);
       }
-
-      if (roomRefreshTimerRef.current) {
-        window.clearInterval(roomRefreshTimerRef.current);
-      }
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(CHAT_ROOM_STORAGE_KEY, activeRoom);
+  }, [activeRoom]);
 
   useEffect(() => {
     if (!currentUser || connectionStatus !== "connected") {
@@ -281,37 +317,40 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     setRooms((existing) => upsertRoom(existing, activeRoom));
   }, [activeRoom, connectionStatus, currentUser, joinCurrentRoom, loadRoomMessages]);
 
-  const sendMessageAction = useEffectEvent(async () => {
-    if (!socket || !draft.trim() || connectionStatus !== "connected") {
+  const sendMessageAction = useCallback(async () => {
+    const nextMessage = draft.trim().slice(0, MAX_MESSAGE_LENGTH);
+
+    if (!socket || !nextMessage || connectionStatus !== "connected") {
       return;
     }
 
     setIsSending(true);
-    sendChatMessage(socket, draft.trim());
+    sendChatMessage(socket, nextMessage);
     setDraftValue("");
     setTypingState(socket, false);
     setTimeout(() => {
       setIsSending(false);
     }, 150);
-  });
+  }, [connectionStatus, draft, socket]);
 
-  const retryConnection = useEffectEvent(() => {
+  const retryConnection = useCallback(() => {
     if (!socket) {
       return;
     }
 
     setConnectionStatus("connecting");
     socket.connect();
-  });
+  }, [socket]);
 
-  const setDraft = useEffectEvent((value: string) => {
-    setDraftValue(value);
+  const setDraft = useCallback((value: string) => {
+    const nextValue = value.slice(0, MAX_MESSAGE_LENGTH);
+    setDraftValue(nextValue);
 
     if (!socket || connectionStatus !== "connected") {
       return;
     }
 
-    setTypingState(socket, value.trim().length > 0);
+    setTypingState(socket, nextValue.trim().length > 0);
 
     if (typingTimeoutRef.current) {
       window.clearTimeout(typingTimeoutRef.current);
@@ -320,12 +359,13 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     typingTimeoutRef.current = window.setTimeout(() => {
       setTypingState(socket, false);
     }, 1200);
-  });
+  }, [connectionStatus, socket]);
 
   const state = useMemo<ChatStoreState>(
     () => ({
       socket,
       connectionStatus,
+      availability,
       activeRoom,
       rooms,
       messages,
@@ -339,6 +379,7 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
       setDraft,
       selectRoom: async (roomId: string) => {
         startTransition(() => {
+          setError(null);
           setActiveRoom(roomId.trim() || DEFAULT_ROOM);
         });
       },
@@ -350,6 +391,7 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     [
       socket,
       connectionStatus,
+      availability,
       activeRoom,
       rooms,
       messages,

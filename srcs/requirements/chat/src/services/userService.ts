@@ -1,17 +1,22 @@
-import { User } from '@ft-transcendence/contracts';
+import { ChatUser } from '../types/chatUser';
 
-interface UserWithSocket extends User {
+interface UserWithSocket extends ChatUser {
   socketId: string;
   room?: string;
   isOnline: boolean;
   lastSeen: Date;
+  sessionId?: string;
 }
 
 class UserService {
   private users: Map<string, UserWithSocket> = new Map();
   private usersBySocket: Map<string, string> = new Map();
 
-  addUser(socketId: string, user: User, room?: string): UserWithSocket {
+  addUser(
+    socketId: string,
+    user: ChatUser & { sessionId?: string },
+    room?: string
+  ): UserWithSocket {
     const userWithSocket: UserWithSocket = {
       ...user,
       socketId,

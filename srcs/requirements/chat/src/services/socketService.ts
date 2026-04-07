@@ -2,7 +2,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import userService from './userService';
 import messageService from './messageService';
 import roomService from './roomService';
-import { User } from '@ft-transcendence/contracts';
+import { ChatUser } from '../types/chatUser';
 
 class SocketService {
   private io: SocketIOServer;
@@ -11,10 +11,10 @@ class SocketService {
     this.io = io;
   }
 
-  userJoinRoom(socket: Socket, user: User, room: string): void {
+  async userJoinRoom(socket: Socket, user: ChatUser & { sessionId?: string }, room: string): Promise<void> {
     // Add user to service
     userService.addUser(socket.id, user, room);
-    roomService.ensureRoom(room);
+    const persistedRoom = await roomService.ensureRoom(room, user.id);
 
     // Join socket to room
     socket.join(room);
@@ -27,7 +27,10 @@ class SocketService {
     });
 
     // Send previous messages to the new user
-    const previousMessages = messageService.getMessagesByRoom(room);
+    const roomDatabaseId = await roomService.getRoomDatabaseId(persistedRoom.id);
+    const previousMessages = roomDatabaseId
+      ? await messageService.getMessagesByRoom(roomDatabaseId)
+      : [];
     socket.emit('messages:history', previousMessages);
 
     // Send current users in room
@@ -37,7 +40,7 @@ class SocketService {
     console.log(`User ${user.username} joined room: ${room}`);
   }
 
-  userLeaveRoom(socket: Socket): void {
+  async userLeaveRoom(socket: Socket): Promise<void> {
     const user = userService.getUserBySocketId(socket.id);
 
     if (user) {
@@ -60,17 +63,13 @@ class SocketService {
         // Send updated user list
         const usersInRoom = userService.getUsersInRoom(room);
         this.io.to(room).emit('users:list', usersInRoom);
-
-        if (usersInRoom.length === 0) {
-          roomService.removeRoom(room);
-        }
       }
 
       console.log(`User ${user.username} left room: ${room}`);
     }
   }
 
-  broadcastMessage(socket: Socket, content: string): void {
+  async broadcastMessage(socket: Socket, content: string): Promise<void> {
     const user = userService.getUserBySocketId(socket.id);
 
     if (!user || !user.room) {
@@ -78,8 +77,14 @@ class SocketService {
       return;
     }
 
-    const message = messageService.addMessage(user.id, user.username, content, user.room);
-    roomService.touchRoom(user.room);
+    const roomDatabaseId = await roomService.getRoomDatabaseId(user.room);
+    if (!roomDatabaseId) {
+      socket.emit('error', 'Room not found');
+      return;
+    }
+
+    const message = await messageService.addMessage(user.id, user.username, content, roomDatabaseId);
+    await roomService.touchRoom(user.room);
 
     // Broadcast to room
     this.io.to(user.room).emit('message:new', message);
@@ -102,10 +107,13 @@ class SocketService {
     });
   }
 
-  getRoomInfo(room: string): object {
-    const roomMetadata = roomService.getRoom(room);
+  async getRoomInfo(room: string): Promise<object> {
+    const roomMetadata = await roomService.getRoom(room);
     const users = userService.getUsersInRoom(room);
-    const messages = messageService.getMessagesByRoom(room, 10);
+    const roomDatabaseId = await roomService.getRoomDatabaseId(room);
+    const messages = roomDatabaseId
+      ? await messageService.getMessagesByRoom(roomDatabaseId, 10)
+      : [];
 
     return {
       room,
@@ -116,11 +124,11 @@ class SocketService {
     };
   }
 
-  getStats(): object {
+  async getStats(): Promise<object> {
     return {
       totalUsers: userService.getAllUsers().length,
-      totalMessages: messageService.getTotalMessageCount(),
-      totalRooms: roomService.getRoomCount(),
+      totalMessages: await messageService.getTotalMessageCount(),
+      totalRooms: await roomService.getRoomCount(),
     };
   }
 }

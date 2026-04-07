@@ -1,52 +1,86 @@
+import { eq } from 'drizzle-orm';
 import { Room } from '@ft-transcendence/contracts';
-
-interface RoomState extends Room {
-  lastActivityAt: Date;
-}
+import { db } from '../db';
+import { chatRooms } from '../db/schema';
 
 class RoomService {
-  private rooms: Map<string, RoomState> = new Map();
-
-  ensureRoom(roomId: string): RoomState {
-    const existingRoom = this.rooms.get(roomId);
+  async ensureRoom(roomSlug: string, createdByUserId?: string): Promise<Room> {
+    const existingRoom = await this.getRoom(roomSlug);
 
     if (existingRoom) {
-      existingRoom.lastActivityAt = new Date();
+      await this.touchRoom(roomSlug);
       return existingRoom;
     }
 
-    const room: RoomState = {
-      id: roomId,
-      name: roomId,
-      createdAt: new Date(),
-      lastActivityAt: new Date(),
+    const [createdRoom] = await db
+      .insert(chatRooms)
+      .values({
+        slug: roomSlug,
+        name: roomSlug,
+        createdByUserId,
+      })
+      .returning();
+
+    return {
+      id: createdRoom.slug,
+      name: createdRoom.name,
+      description: createdRoom.description ?? undefined,
+      createdAt: createdRoom.createdAt,
     };
-
-    this.rooms.set(roomId, room);
-    return room;
   }
 
-  getRoom(roomId: string): RoomState | undefined {
-    return this.rooms.get(roomId);
-  }
+  async getRoom(roomSlug: string): Promise<Room | undefined> {
+    const row = await db.query.chatRooms.findFirst({
+      where: eq(chatRooms.slug, roomSlug),
+    });
 
-  getRooms(): Room[] {
-    return Array.from(this.rooms.values()).map(({ lastActivityAt: _lastActivityAt, ...room }) => room);
-  }
-
-  touchRoom(roomId: string): void {
-    const room = this.rooms.get(roomId);
-    if (room) {
-      room.lastActivityAt = new Date();
+    if (!row) {
+      return undefined;
     }
+
+    return {
+      id: row.slug,
+      name: row.name,
+      description: row.description ?? undefined,
+      createdAt: row.createdAt,
+    };
   }
 
-  removeRoom(roomId: string): void {
-    this.rooms.delete(roomId);
+  async getRooms(): Promise<Room[]> {
+    const rows = await db.query.chatRooms.findMany({
+      orderBy: (fields, { desc }) => [desc(fields.updatedAt)],
+    });
+
+    return rows.map((row) => ({
+      id: row.slug,
+      name: row.name,
+      description: row.description ?? undefined,
+      createdAt: row.createdAt,
+    }));
   }
 
-  getRoomCount(): number {
-    return this.rooms.size;
+  async touchRoom(roomSlug: string): Promise<void> {
+    await db
+      .update(chatRooms)
+      .set({ updatedAt: new Date() })
+      .where(eq(chatRooms.slug, roomSlug));
+  }
+
+  async removeRoom(roomSlug: string): Promise<void> {
+    await db.delete(chatRooms).where(eq(chatRooms.slug, roomSlug));
+  }
+
+  async getRoomCount(): Promise<number> {
+    return db.$count(chatRooms);
+  }
+
+  async getRoomDatabaseId(roomSlug: string): Promise<string | null> {
+    const row = await db.query.chatRooms.findFirst({
+      where: eq(chatRooms.slug, roomSlug),
+      columns: { id: true },
+    });
+
+    return row?.id ?? null;
   }
 }
 

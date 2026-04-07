@@ -8,10 +8,13 @@ import { contract } from '@ft-transcendence/contracts';
 import SocketController from './controllers/socketController';
 import { chatController } from './controllers/chatController';
 import socketConfig from './config/socket';
+import { authenticateSocket } from './utils/auth';
+import { ensureChatTables } from './db/bootstrap';
 
 dotenv.config();
 
 const app = express();
+const apiRouter = express.Router();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, socketConfig);
 
@@ -24,10 +27,20 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Initialize Socket Controller
 const socketController = new SocketController(io);
 
+io.use((socket, next) => {
+  try {
+    socket.data.user = authenticateSocket(socket);
+    next();
+  } catch (_error) {
+    next(new Error('Unauthorized'));
+  }
+});
+
 // Apply ts-rest routes
-createExpressEndpoints(contract.chat, chatController, app, {
+createExpressEndpoints(contract.chat, chatController, apiRouter, {
   jsonQuery: true,
 });
+app.use('/api', apiRouter);
 
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
@@ -59,7 +72,14 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => socketController.handleDisconnect(socket));
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Chat server running on port ${PORT}`);
-  console.log(`Test client available at http://localhost:${PORT}`);
-});
+ensureChatTables()
+  .then(() => {
+    httpServer.listen(PORT, () => {
+      console.log(`Chat server running on port ${PORT}`);
+      console.log(`Test client available at http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to initialize chat persistence:', error);
+    process.exit(1);
+  });
