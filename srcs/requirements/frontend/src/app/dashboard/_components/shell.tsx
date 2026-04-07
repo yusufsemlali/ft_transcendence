@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
+import api from "@/lib/api/api";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
 import { EmptyPanel } from "./empty-panel";
@@ -60,44 +62,105 @@ const ORG_SECTION_META: Record<OrgSection, { title: string; icon: string }> = {
   config:      { title: "Configuration",  icon: "settings" },
 };
 
+const VALID_SECTIONS: OrgSection[] = ["overview", "tournaments", "admin", "config"];
+const VALID_TPAGES: TournamentPage[] = ["overview", "brackets", "matches", "standings", "schedule", "settings"];
+
 /* ═══════════════════════════════════════
    SHELL
    ═══════════════════════════════════════ */
 
 export function Shell({ org, onBack }: { org: Organization; onBack: () => void }) {
-  // Org-level navigation
-  const [section, setSection] = useState<OrgSection>("overview");
-  const [page, setPage] = useState("overview");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Read initial state from URL
+  const urlSection = searchParams.get("s") as OrgSection | null;
+  const urlPage = searchParams.get("p");
+  const urlTournamentId = searchParams.get("t");
+  const urlTournamentPage = searchParams.get("tp") as TournamentPage | null;
+
+  const [section, setSection] = useState<OrgSection>(
+    VALID_SECTIONS.includes(urlSection as OrgSection) ? urlSection! : "overview"
+  );
+  const [page, setPage] = useState(urlPage || "overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Tournament-level navigation (null = org level)
   const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
-  const [tournamentPage, setTournamentPage] = useState<TournamentPage>("overview");
+  const [tournamentPage, setTournamentPage] = useState<TournamentPage>(
+    VALID_TPAGES.includes(urlTournamentPage as TournamentPage) ? urlTournamentPage! : "overview"
+  );
+
+  // Sync URL → state: restore tournament from URL on mount
+  useEffect(() => {
+    if (urlTournamentId && !activeTournament) {
+      api.tournaments.listOrgTournaments({ params: { organizationId: org.id } })
+        .then(res => {
+          if (res.status === 200) {
+            const found = res.body.find((t: Tournament) => t.id === urlTournamentId);
+            if (found) setActiveTournament(found);
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  // Sync state → URL
+  const updateUrl = useCallback((s: OrgSection, p: string, tId?: string | null, tp?: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Always set org-level params
+    if (s !== "overview" || p !== "overview") {
+      params.set("s", s);
+      params.set("p", p);
+    } else {
+      params.delete("s");
+      params.delete("p");
+    }
+
+    // Tournament params
+    if (tId) {
+      params.set("t", tId);
+      if (tp && tp !== "overview") params.set("tp", tp);
+      else params.delete("tp");
+    } else {
+      params.delete("t");
+      params.delete("tp");
+    }
+
+    const qs = params.toString();
+    router.replace(`/dashboard${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [searchParams, router]);
 
   // Navigation helpers
   const navigateOrg = (s: OrgSection, p: string) => {
     setSection(s);
     setPage(p);
-    setActiveTournament(null); // always return to org level
+    setActiveTournament(null);
     setSidebarOpen(false);
+    updateUrl(s, p, null, null);
   };
 
   const openTournament = (t: Tournament) => {
     setActiveTournament(t);
     setTournamentPage("overview");
     setSidebarOpen(false);
+    updateUrl(section, page, t.id, "overview");
   };
 
   const navigateTournament = (p: TournamentPage) => {
     setTournamentPage(p);
     setSidebarOpen(false);
+    updateUrl(section, page, activeTournament?.id, p);
   };
 
   const backToOrg = () => {
     setActiveTournament(null);
     setSection("tournaments");
     setPage("all");
+    updateUrl("tournaments", "all", null, null);
   };
+
 
   /* ── Which tabs/content to render ── */
   const inTournament = activeTournament !== null;
@@ -226,7 +289,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {section === "tournaments" && page === "all"    && <TournamentsTab org={org} onSelectTournament={openTournament} />}
               {section === "tournaments" && page === "create" && <TournamentsTab org={org} onSelectTournament={openTournament} initialCreate />}
 
-              {section === "admin" && page === "members"  && <MembersTab />}
+              {section === "admin" && page === "members"  && <MembersTab org={org} />}
               {section === "admin" && page === "roles"    && <EmptyPanel icon="shield_person" title="Roles & Permissions" subtitle="Define custom roles and fine-tune member permissions for your organization." />}
               {section === "admin" && page === "invite"   && <EmptyPanel icon="person_add" title="Invite Players" subtitle="Send invitations to players via email or share an invite link." />}
               {section === "admin" && page === "referees" && <EmptyPanel icon="gavel" title="Referee Panel" subtitle="Assign referees to tournaments and manage match officiating." />}

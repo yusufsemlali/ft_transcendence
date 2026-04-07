@@ -5,6 +5,7 @@ import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import type { Sport } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { EmptyPanel } from "../_components/empty-panel";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 /* ── Status badge colors ── */
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -147,10 +148,16 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Sport */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Sport *</span>
-          <select value={form.sportId} onChange={e => handleSportChange(e.target.value)} className="dashboard-input">
-            <option value="">Select a sport...</option>
-            {sports.map(s => <option key={s.id} value={s.id}>{s.name} ({s.category})</option>)}
-          </select>
+          <Select value={form.sportId} onValueChange={handleSportChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a sport..." />
+            </SelectTrigger>
+            <SelectContent>
+              {sports.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.name} ({s.category})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
 
         {/* Name */}
@@ -168,23 +175,33 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Bracket Type */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Bracket Type</span>
-          <select value={form.bracketType} onChange={e => setForm(prev => ({ ...prev, bracketType: e.target.value as any }))} className="dashboard-input">
-            <option value="single_elimination">Single Elimination</option>
-            <option value="double_elimination">Double Elimination</option>
-            <option value="round_robin">Round Robin</option>
-            <option value="swiss">Swiss</option>
-            <option value="free_for_all">Free for All</option>
-          </select>
+          <Select value={form.bracketType} onValueChange={val => setForm(prev => ({ ...prev, bracketType: val as any }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="single_elimination">Single Elimination</SelectItem>
+              <SelectItem value="double_elimination">Double Elimination</SelectItem>
+              <SelectItem value="round_robin">Round Robin</SelectItem>
+              <SelectItem value="swiss">Swiss</SelectItem>
+              <SelectItem value="free_for_all">Free for All</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
 
         {/* Mode */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Mode</span>
-          <select value={form.mode} onChange={e => setForm(prev => ({ ...prev, mode: e.target.value as any }))} className="dashboard-input">
-            <option value="1v1">1v1</option>
-            <option value="team">Team</option>
-            <option value="ffa">Free for All</option>
-          </select>
+          <Select value={form.mode} onValueChange={val => setForm(prev => ({ ...prev, mode: val as any }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1v1">1v1</SelectItem>
+              <SelectItem value="team">Team</SelectItem>
+              <SelectItem value="ffa">Free for All</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
 
         {/* Participants */}

@@ -49,7 +49,7 @@ export function Sidebar({ org, section, page, navigateOrg, activeTournament, tou
       {inTournament ? (
         /* Tournament context */
         <div className="dashboard-sidebar-org-context">
-          <div className="dashboard-org-card-avatar" style={{ width: "28px", height: "28px", borderRadius: "6px", background: activeTournament.bannerUrl ? undefined : "color-mix(in srgb, var(--primary) 10%, transparent)", backgroundImage: activeTournament.bannerUrl ? `url(${activeTournament.bannerUrl})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
+          <div className="dashboard-org-card-avatar" style={{ width: "28px", height: "28px", borderRadius: "6px", backgroundColor: activeTournament.bannerUrl ? undefined : "color-mix(in srgb, var(--primary) 10%, transparent)", backgroundImage: activeTournament.bannerUrl ? `url(${activeTournament.bannerUrl})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
             {!activeTournament.bannerUrl && (
               <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--primary)" }}>emoji_events</span>
             )}
