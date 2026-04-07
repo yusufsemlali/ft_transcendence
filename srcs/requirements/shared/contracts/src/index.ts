@@ -7,7 +7,6 @@ import { handlesContract } from "./endpoints/handles";
 import { organizationsContract } from "./endpoints/organizations";
 import { adminContract } from "./endpoints/admin";
 import { sportsContract } from "./endpoints/sports";
-import { friendsContract } from "./endpoints/friends";
 import { ORG_ROLES } from "./constants/roles";
 import { 
     TOURNAMENT_PHASES, 
@@ -26,7 +25,6 @@ export const contract = c.router({
     organizations: organizationsContract,
     admin: adminContract,
     sports: sportsContract,
-    friends: friendsContract,
 });
 
 export const COMPATIBILITY_CHECK = 1;
@@ -48,6 +46,5 @@ export * from "./schemas/organizations";
 export * from "./endpoints/sports";
 export * from "./constants/tournament_rules";
 export { defaultSettings } from "./schemas/settings";
-export * from "./schemas/friends";
 export { ORG_ROLES } from "./constants/roles";
 export type { OrgRole } from "./constants/roles";

@@ -8,21 +8,6 @@ import AppError from "@/utils/error";
 const s = initServer();
 
 export const usersController = s.router(contract.users, {
-    searchUsers: async ({ query, req }: { query: any; req: any }) => {
-        const contextReq = req as unknown as RequestWithContext;
-        const userId = contextReq.ctx.decodedToken?.id;
-
-        if (!userId) {
-            throw new AppError(401, "Unauthorized");
-        }
-
-        const result = await UserService.searchUsers(query.q, query.limit || 10);
-
-        return {
-            status: 200 as const,
-            body: (result.data || []) as any,
-        };
-    },
     getMe: async ({ req }: { req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx.decodedToken?.id;

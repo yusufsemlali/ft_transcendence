@@ -5,19 +5,6 @@ import { z } from "zod";
 const c = initContract();
 
 export const usersContract = c.router({
-    searchUsers: {
-        method: "GET",
-        path: "/users/search",
-        query: z.object({
-            q: z.string().min(1).max(50),
-            limit: z.coerce.number().min(1).max(20).optional(),
-        }),
-        responses: {
-            200: z.array(UserSchema),
-            401: z.object({ message: z.string() }),
-        },
-        summary: "Search users by username or display name",
-    },
     getMe: {
         method: "GET",
         path: "/users/me",

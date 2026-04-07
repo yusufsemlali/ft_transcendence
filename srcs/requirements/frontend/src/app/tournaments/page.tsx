@@ -1,188 +1,329 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import api from "@/lib/api/api";
-import { PublicTournament } from "@ft-transcendence/contracts";
-
-import { toast } from "@/components/ui/sonner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Page } from "@/components/layout/Page";
-import { Section } from "@/components/layout/Section";
-import { Stack } from "@/components/layout/Stack";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: "outline",
-  registration: "success",
-  upcoming: "outline",
-  ongoing: "destructive",
-  completed: "default",
-  cancelled: "destructive",
-};
-
-type StatusFilter = "all" | "registration" | "upcoming" | "ongoing" | "completed";
+import type { PublicTournament } from "@ft-transcendence/contracts";
+import Link from "next/link";
 
 export default function TournamentsPage() {
+  const [activeFilter, setActiveFilter] = useState("All");
   const [tournaments, setTournaments] = useState<PublicTournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [error, setError] = useState<string | null>(null);
 
-  const loadTournaments = useCallback(async () => {
-    setLoading(true);
-    try {
-      const query: any = { page, pageSize: 12 };
-      if (search) query.search = search;
-      if (statusFilter !== "all") query.status = statusFilter;
-
-      const res = await api.tournaments.getTournaments({ query });
-      if (res.status === 200) {
-        setTournaments(res.body.tournaments);
-        setTotalPages(res.body.totalPages);
-        setTotal(res.body.total);
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const response = await api.tournaments.getTournaments({ query: { page: 1, pageSize: 50 } });
+        if (response.status === 200) {
+          setTournaments(response.body.tournaments);
+        } else {
+          setError("Failed to fetch tournaments");
+        }
+      } catch (err) {
+        setError("An error occurred");
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      toast.error("Failed to load tournaments");
-    } finally {
-      setLoading(false);
+    };
+    fetchTournaments();
+  }, []);
+
+  const filters = ["All", "draft", "registration", "upcoming", "ongoing", "completed", "cancelled"];
+
+  const filteredTournaments =
+    activeFilter === "All"
+      ? tournaments
+      : tournaments.filter((t) => t.status === activeFilter);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "ongoing":
+        return { bg: "color-mix(in srgb, var(--accent-error), transparent 90%)", color: "var(--accent-error)" };
+      case "registration":
+        return { bg: "color-mix(in srgb, var(--accent-success), transparent 90%)", color: "var(--accent-success)" };
+      case "upcoming":
+        return { bg: "color-mix(in srgb, var(--accent-warning), transparent 90%)", color: "var(--accent-warning)" };
+      default:
+        return { bg: "color-mix(in srgb, var(--text-muted), transparent 90%)", color: "var(--text-muted)" };
     }
-  }, [page, search, statusFilter]);
-
-  useEffect(() => { loadTournaments(); }, [loadTournaments]);
-
-  const statusFilters: { key: StatusFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "registration", label: "Open" },
-    { key: "upcoming", label: "Upcoming" },
-    { key: "ongoing", label: "Live" },
-    { key: "completed", label: "Ended" },
-  ];
+  };
 
   return (
-    <Page>
-      <Stack gap="xl">
-        <Section title="tournaments" icon="emoji_events">
-          <Card className="overflow-hidden">
-            {/* Search + Filters */}
-            <div className="px-5 pt-4 pb-3 space-y-3 border-b border-border/10">
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-base">search</span>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Search tournaments..."
-                  className="input h-11 pl-11 pr-4 w-full rounded-lg bg-muted/30 border border-border/30 focus:border-primary/50 focus:bg-muted/50 text-sm font-mono placeholder:text-muted-foreground/40 transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                {statusFilters.map((f) => (
-                  <button
-                    key={f.key}
-                    onClick={() => { setStatusFilter(f.key); setPage(1); }}
-                    className={`px-3.5 py-2 text-[10px] font-mono font-bold uppercase tracking-widest rounded-md transition-all ${
-                      statusFilter === f.key
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-                <span className="ml-auto text-[10px] font-mono text-muted-foreground/50 tabular-nums">{total} total</span>
-              </div>
-            </div>
+    <div className="page" style={{
+      minHeight: "100vh",
+      color: "var(--text-primary)",
+      fontFamily: "var(--font-sans)",
+      backgroundColor: "transparent",
+    }}>
+        {/* Header Row */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "32px",
+            flexWrap: "wrap",
+            gap: "20px",
+          }}
+        >
+          <h1 style={{ fontSize: "36px", fontWeight: "300", margin: 0 }}>
+            Browse Tournaments
+          </h1>
 
-            <CardContent className="p-6">
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Array(6).fill(0).map((_, i) => (
-                    <div key={i} className="space-y-3">
-                      <Skeleton className="h-40 w-full rounded-sm" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
+          <div
+            className="glass"
+            style={{
+              padding: "8px 16px",
+              borderRadius: "24px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              width: "min(320px, 100%)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ color: "var(--text-muted)", fontSize: "20px" }}
+            >
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search tournaments..."
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-primary)",
+                outline: "none",
+                fontSize: "14px",
+                width: "100%",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            marginBottom: "32px",
+            overflowX: "auto",
+            paddingBottom: "10px",
+            scrollbarWidth: "none",
+          }}
+        >
+          {filters.map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={
+                activeFilter === filter
+                  ? "btn btn-primary"
+                  : "btn btn-secondary"
+              }
+              style={{
+                borderRadius: "20px",
+                padding: "6px 18px",
+                fontSize: "13px",
+                whiteSpace: "nowrap",
+                display: "flex",
+                alignItems: "center",
+                textTransform: "capitalize",
+              }}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
+        {/* Loading / Error States */}
+        {loading && <div style={{ textAlign: "center", opacity: 0.5 }}>Loading tournaments...</div>}
+        {error && <div style={{ color: "var(--accent-error)", textAlign: "center" }}>{error}</div>}
+
+        {/* Grid */}
+        {!loading && !error && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))",
+              gap: "24px",
+            }}
+          >
+            {filteredTournaments.map((t) => {
+              const statusStyles = getStatusColor(t.status);
+              
+              return (
+                <div
+                  key={t.id}
+                  className="glass-card"
+                  style={{
+                    padding: "20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    border: "1px solid var(--border-color)",
+                    transition: "transform 0.2s ease, border-color 0.2s ease",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "160px",
+                      background: "var(--bg-tertiary)",
+                      borderRadius: "8px",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={t.bannerUrl || "/images/leage.jpeg"}
+                      alt={t.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        opacity: 0.8,
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: "60%",
+                        background:
+                          "linear-gradient(to top, var(--bg-primary), transparent)",
+                      }}
+                    />
+
+                    <div
+                      style={{ position: "absolute", top: "10px", right: "10px" }}
+                    >
+                      <span
+                        className="badge"
+                        style={{
+                          backgroundColor: statusStyles.bg,
+                          color: statusStyles.color,
+                          borderColor: statusStyles.color,
+                          border: "1px solid",
+                          backdropFilter: "blur(4px)",
+                          textTransform: "uppercase",
+                          fontSize: "10px",
+                          letterSpacing: "1px"
+                        }}
+                      >
+                        {t.status}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              ) : tournaments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-20 opacity-20">
-                  <span className="material-symbols-outlined text-6xl">emoji_events</span>
-                  <span className="text-xs font-mono uppercase tracking-[0.4em]">No tournaments found</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {tournaments.map((t) => (
-                    <a key={t.id} href={`/tournaments/${t.id}`} className="block group">
-                      <Card className="overflow-hidden hover:border-primary/30 transition-all h-full">
-                        {/* Banner */}
-                        <div className="h-36 bg-muted relative overflow-hidden">
-                          {t.bannerUrl ? (
-                            <img src={t.bannerUrl} alt={t.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="material-symbols-outlined text-4xl text-muted-foreground/30">emoji_events</span>
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2">
-                            <Badge variant={(STATUS_COLORS[t.status] || "default") as any}>{t.status}</Badge>
-                          </div>
-                        </div>
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-mono text-primary uppercase tracking-widest">{t.mode}</span>
-                            <span className="text-[10px] font-mono text-muted-foreground/50">·</span>
-                            <span className="text-[10px] font-mono text-muted-foreground/50 uppercase">{t.bracketType.replace(/_/g, " ")}</span>
-                          </div>
-                          <h3 className="font-bold text-foreground text-sm mb-2 group-hover:text-primary transition-colors truncate">{t.name}</h3>
-                          {t.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{t.description}</p>
-                          )}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-[10px] font-mono text-muted-foreground/50 uppercase">Prize</div>
-                              <div className="text-sm font-mono font-bold text-green-400">{t.prizePool || "—"}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-[10px] font-mono text-muted-foreground/50 uppercase">Teams</div>
-                              <div className="text-sm font-mono font-bold">{t.minTeamSize}v{t.maxTeamSize}</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </a>
-                  ))}
-                </div>
-              )}
+                  </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 mt-8 pt-4 border-t border-border/10">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-widest rounded-md bg-muted/30 border border-border/20 hover:bg-muted/60 disabled:opacity-20 transition-all"
+                  <div>
+                    <div
+                      style={{ display: "flex", gap: "8px", marginBottom: "8px" }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          color: "var(--accent-info)",
+                          fontWeight: "600",
+                          textTransform: "uppercase"
+                        }}
+                      >
+                        {t.mode}
+                      </span>
+                      <span
+                        style={{ fontSize: "10px", color: "var(--text-muted)" }}
+                      >
+                        {t.minTeamSize === t.maxTeamSize ? `${t.minTeamSize}v${t.maxTeamSize}` : `${t.minTeamSize}-${t.maxTeamSize} Players`}
+                      </span>
+                    </div>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "18px",
+                        fontWeight: "600",
+                        color: "var(--text-primary)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
+                      {t.name}
+                    </h3>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                      marginTop: "auto",
+                    }}
                   >
-                    prev
-                  </button>
-                  <span className="text-[10px] font-mono text-muted-foreground/60 tabular-nums px-2">{page} / {totalPages}</span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-widest rounded-md bg-muted/30 border border-border/20 hover:bg-muted/60 disabled:opacity-20 transition-all"
-                  >
-                    next
-                  </button>
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "var(--text-muted)",
+                          letterSpacing: "1px",
+                        }}
+                      >
+                        PRIZE
+                      </div>
+                      <div
+                        style={{
+                          color: "var(--accent-success)",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "16px",
+                        }}
+                      >
+                        {t.prizePool || "None"}
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: "4px 12px", fontSize: "12px" }}
+                    >
+                      View
+                    </button>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </Section>
-      </Stack>
-    </Page>
+              );
+            })}
+
+            <Link href="/tournaments/create" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  border: "1px dashed var(--border-color)",
+                  borderRadius: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  minHeight: "300px",
+                  color: "var(--text-muted)",
+                  gap: "10px",
+                  cursor: "pointer",
+                  transition: "border-color 0.2s ease, color 0.2s ease",
+                }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "32px" }}
+                >
+                  add_circle
+                </span>
+                <span style={{ fontSize: "14px" }}>Create Tournament</span>
+              </div>
+            </Link>
+          </div>
+        )}
+    </div>
   );
 }

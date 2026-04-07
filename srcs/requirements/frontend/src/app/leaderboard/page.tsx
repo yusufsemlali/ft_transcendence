@@ -1,194 +1,192 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect } from "react";
-import api from "@/lib/api/api";
-import { User } from "@ft-transcendence/contracts";
-
-import { toast } from "@/components/ui/sonner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Page } from "@/components/layout/Page";
-import { Section } from "@/components/layout/Section";
-import { Stack } from "@/components/layout/Stack";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-
-type SortBy = "eloRating" | "level" | "xp";
+import { useState } from "react";
 
 export default function LeaderboardPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<SortBy>("eloRating");
+  const topPlayers = [
+    { rank: 2, name: "NeonStriker", points: "15,420", avatar: "/images/val.jpeg", elo: 2450 },
+    { rank: 1, name: "PrismMaster", points: "18,910", avatar: "/images/leage.jpeg", elo: 2800 },
+    { rank: 3, name: "ShadowWalker", points: "14,200", avatar: "/images/cs2.jpeg", elo: 2310 },
+  ];
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await api.admin.getUsers({ query: { page: 1, pageSize: 50 } });
-        if (res.status === 200) {
-          setUsers(res.body.users);
-        } else {
-          const res2 = await api.users.searchUsers({ query: { q: "a", limit: 20 } });
-          if (res2.status === 200) setUsers(res2.body);
-        }
-      } catch {
-        try {
-          const res = await api.users.searchUsers({ query: { q: "a", limit: 20 } });
-          if (res.status === 200) setUsers(res.body);
-        } catch {
-          toast.error("Failed to load leaderboard");
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const sorted = [...users].sort((a, b) => {
-    if (sortBy === "eloRating") return b.eloRating - a.eloRating;
-    if (sortBy === "level") return b.level - a.level;
-    return b.xp - a.xp;
-  });
-
-  const top3 = sorted.slice(0, 3);
-  const rest = sorted.slice(3);
-
-  const sortOptions: { key: SortBy; label: string }[] = [
-    { key: "eloRating", label: "ELO" },
-    { key: "level", label: "Level" },
-    { key: "xp", label: "XP" },
+  const ranks = [
+    { rank: 4, name: "Zenith", game: "League", elo: 2100, wins: 142, ratio: "68%" },
+    { rank: 5, name: "Quantum", game: "Valorant", elo: 2050, wins: 128, ratio: "64%" },
+    { rank: 6, name: "Nova", game: "CS2", elo: 1980, wins: 115, ratio: "61%" },
+    { rank: 7, name: "Apex", game: "Dota 2", elo: 1920, wins: 98, ratio: "59%" },
+    { rank: 8, name: "Vortex", game: "Overwatch", elo: 1850, wins: 85, ratio: "57%" },
   ];
 
   return (
-    <Page>
-      <Stack gap="xl">
-        <Section title="global rankings" icon="leaderboard"
-          actions={
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mr-1">Sort:</span>
-              {sortOptions.map((o) => (
-                <button
-                  key={o.key}
-                  onClick={() => setSortBy(o.key)}
-                  className={`px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest rounded-sm transition-all ${
-                    sortBy === o.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          }
-        >
-          {/* Podium */}
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Array(3).fill(0).map((_, i) => (
-                <Card key={i} className="p-8">
-                  <div className="flex flex-col items-center gap-3">
-                    <Skeleton className="w-20 h-20 rounded-full" />
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : top3.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              {[1, 0, 2].map((idx) => {
-                const player = top3[idx];
-                if (!player) return null;
-                const rank = idx === 0 ? 2 : idx === 1 ? 1 : 3;
-                const isChamp = rank === 1;
-                return (
-                  <Card
-                    key={player.id}
-                    className={`p-6 text-center relative overflow-hidden ${isChamp ? "border-primary/50 md:scale-105" : ""}`}
-                  >
-                    {isChamp && (
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="destructive">CHAMPION</Badge>
-                      </div>
-                    )}
-                    <div className="flex flex-col items-center">
-                      <div className={`${isChamp ? "w-20 h-20" : "w-14 h-14"} rounded-full bg-muted overflow-hidden ring-2 ${isChamp ? "ring-primary" : "ring-border/50"} mb-3`}>
-                        <img src={player.avatar || "/default-avatar.png"} alt={player.username} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
-                        RANK #{rank}
-                      </div>
-                      <div className={`font-bold ${isChamp ? "text-lg" : "text-sm"} text-foreground mb-3`}>
-                        {player.displayName || player.username}
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <div className="text-[10px] font-mono text-muted-foreground/50 uppercase">ELO</div>
-                          <div className="text-lg font-black font-mono text-green-400">{player.eloRating}</div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-mono text-muted-foreground/50 uppercase">LVL</div>
-                          <div className="text-lg font-black font-mono text-foreground">{player.level}</div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-mono text-muted-foreground/50 uppercase">XP</div>
-                          <div className="text-lg font-black font-mono text-primary">{player.xp.toLocaleString()}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <Card className="p-12">
-              <div className="flex flex-col items-center justify-center gap-4 opacity-30">
-                <span className="material-symbols-outlined text-6xl">leaderboard</span>
-                <span className="text-xs font-mono uppercase tracking-[0.4em]">No players yet</span>
-              </div>
-            </Card>
-          )}
-        </Section>
+    <div className="page" style={{
+      minHeight: "100vh",
+      color: "var(--text-primary)",
+      fontFamily: "var(--font-sans)",
+      backgroundColor: "transparent",
+    }}>
+        <header style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginBottom: "48px",
+          flexWrap: "wrap",
+          gap: "20px"
+        }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 36px)", fontWeight: "300", margin: 0 }}>
+            Global Rankings
+          </h1>
+          <div className="glass" style={{
+            padding: "8px 16px",
+            borderRadius: "24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            border: "1px solid var(--border-color)",
+          }}>
+            <span className="material-symbols-outlined" style={{ color: "var(--text-muted)", fontSize: "20px" }}>leaderboard</span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Season 4 • Live Updates</span>
+          </div>
+        </header>
 
-        {/* Full Rankings Table */}
-        {rest.length > 0 && (
-          <Section title="full rankings" icon="format_list_numbered">
-            <Card className="overflow-hidden">
-              {/* Header */}
-              <div className="grid grid-cols-[60px_1fr_100px_80px_100px] gap-4 px-6 py-3 border-b border-border/10">
-                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Rank</span>
-                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Player</span>
-                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest text-right">ELO</span>
-                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest text-right">Level</span>
-                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest text-right">XP</span>
+        {/* Podium Section */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+          gap: "24px",
+          marginBottom: "64px",
+          alignItems: "end"
+        }}>
+          {topPlayers.map((player) => (
+            <div
+              key={player.rank}
+              className="glass-card"
+              style={{
+                padding: player.rank === 1 ? "clamp(32px, 4vw, 48px)" : "clamp(24px, 3vw, 32px)",
+                textAlign: "center",
+                border: player.rank === 1 ? "2px solid var(--primary)" : "1px solid var(--border-color)",
+                position: "relative",
+                overflow: "hidden",
+                order: player.rank === 1 ? -1 : player.rank,
+              }}
+            >
+              {player.rank === 1 && (
+                <div style={{
+                  position: "absolute",
+                  top: "12px",
+                  right: "12px"
+                }}>
+                   <span className="badge" style={{ backgroundColor: "var(--accent-secondary)", color: "white" }}>CHAMPION</span>
+                </div>
+              )}
+
+              <div style={{
+                width: player.rank === 1 ? "clamp(80px, 12vw, 120px)" : "clamp(60px, 10vw, 80px)",
+                height: player.rank === 1 ? "clamp(80px, 12vw, 120px)" : "clamp(60px, 10vw, 80px)",
+                borderRadius: "50%",
+                margin: "0 auto 20px auto",
+                border: `3px solid ${player.rank === 1 ? "var(--primary)" : "var(--border-color)"}`,
+                background: `url(${player.avatar}) center/cover no-repeat`,
+                boxShadow: "var(--shadow-glass)"
+              }} />
+
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", letterSpacing: "2px", fontWeight: "600" }}>RANK #{player.rank}</div>
+              <h2 className={player.rank === 1 ? "text-gradient" : ""} style={{ fontSize: player.rank === 1 ? "clamp(24px, 4vw, 32px)" : "clamp(18px, 3vw, 24px)", fontWeight: "700", margin: "8px 0" }}>
+                {player.name}
+              </h2>
+
+              <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "16px", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px" }}>POINTS</div>
+                  <div style={{ fontSize: "18px", color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>{player.points}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px" }}>ELO RATING</div>
+                  <div style={{ fontSize: "18px", color: "var(--accent-success)", fontFamily: "var(--font-mono)" }}>{player.elo}</div>
+                </div>
               </div>
-              <CardContent className="p-0">
-                {rest.map((player, i) => (
-                  <div key={player.id} className="grid grid-cols-[60px_1fr_100px_80px_100px] gap-4 items-center px-6 py-3 border-b border-border/10 last:border-0 hover:bg-muted/30 transition-all">
-                    <span className="text-sm font-mono font-bold text-muted-foreground/50">#{i + 4}</span>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative flex-shrink-0">
-                        <div className="w-8 h-8 rounded-sm bg-muted overflow-hidden ring-1 ring-border/50">
-                          <img src={player.avatar || "/default-avatar.png"} alt={player.username} className="w-full h-full object-cover" />
-                        </div>
-                        {player.isOnline && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-background" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-foreground text-sm truncate">{player.displayName || player.username}</div>
-                        <div className="text-[10px] font-mono text-muted-foreground/60">@{player.username}</div>
-                      </div>
-                    </div>
-                    <span className="text-sm font-mono font-bold text-green-400 text-right">{player.eloRating}</span>
-                    <span className="text-sm font-mono text-foreground text-right">{player.level}</span>
-                    <span className="text-sm font-mono text-muted-foreground text-right">{player.xp.toLocaleString()}</span>
+
+              {player.rank === 1 && (
+                <div style={{ 
+                  position: "absolute", 
+                  bottom: "-20%", 
+                  left: "-10%", 
+                  width: "150px", height: "150px", 
+                  background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)", 
+                  opacity: 0.1 
+                }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Tiers List Section — Mobile-responsive card layout */}
+        <div className="stack-md">
+          {/* Desktop table header - hidden on mobile */}
+          <div className="hide-mobile" style={{ 
+            display: "grid", 
+            gridTemplateColumns: "80px 1fr 120px 120px 100px 100px", 
+            padding: "0 24px", 
+            marginBottom: "12px",
+            color: "var(--text-muted)",
+            fontSize: "10px",
+            letterSpacing: "1px",
+            fontWeight: "700"
+          }}>
+            <div>RANK</div>
+            <div>PLAYER ALIAS</div>
+            <div>MAIN GAME</div>
+            <div style={{ textAlign: "right" }}>ELO RATING</div>
+            <div style={{ textAlign: "right" }}>WINS</div>
+            <div style={{ textAlign: "right" }}>WIN RATE</div>
+          </div>
+
+          {ranks.map((r) => (
+            <div
+              key={r.rank}
+              className="glass-card leaderboard-row"
+              style={{
+                padding: "20px 24px",
+                border: "1px solid var(--border-color)",
+                transition: "transform 0.2s ease"
+              }}
+            >
+              {/* Desktop: 6-column grid row */}
+              <div className="hide-mobile" style={{
+                display: "grid",
+                gridTemplateColumns: "80px 1fr 120px 120px 100px 100px",
+                alignItems: "center",
+              }}>
+                <div style={{ fontSize: "18px", fontWeight: "700", opacity: 0.5 }}>#{r.rank}</div>
+                <div style={{ fontWeight: "600", fontSize: "16px" }}>{r.name}</div>
+                <div style={{ fontSize: "12px", color: "var(--accent-info)", fontWeight: "600" }}>{r.game}</div>
+                <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", color: "var(--accent-success)" }}>{r.elo}</div>
+                <div style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{r.wins}</div>
+                <div style={{ textAlign: "right", color: "var(--text-secondary)" }}>{r.ratio}</div>
+              </div>
+
+              {/* Mobile: stacked card layout */}
+              <div className="show-mobile" style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                flexWrap: "wrap"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ fontSize: "18px", fontWeight: "700", opacity: 0.5 }}>#{r.rank}</div>
+                  <div>
+                    <div style={{ fontWeight: "600", fontSize: "16px" }}>{r.name}</div>
+                    <div style={{ fontSize: "11px", color: "var(--accent-info)", fontWeight: "600" }}>{r.game}</div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          </Section>
-        )}
-      </Stack>
-    </Page>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "var(--font-mono)", color: "var(--accent-success)", fontSize: "16px" }}>{r.elo}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{r.wins}W · {r.ratio}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+    </div>
   );
 }

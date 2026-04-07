@@ -7,7 +7,6 @@ import {
   User,
   Sport,
   Handle,
-  LinkedAccount,
 } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -156,7 +155,6 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [handles, setHandles] = useState<Handle[]>([]);
   const [sports, setSports] = useState<Sport[]>([]);
-  const [identities, setIdentities] = useState<LinkedAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedSportId, setSelectedSportId] = useState<string>("");
@@ -167,11 +165,10 @@ export default function ProfilePage() {
     let isMounted = true;
     const loadData = async () => {
       try {
-        const [userRes, handlesRes, sportsRes, identitiesRes] = await Promise.all([
+        const [userRes, handlesRes, sportsRes] = await Promise.all([
           api.users.getMe(),
           api.handles.getMyHandles({}),
           api.sports.getSports({}),
-          api.handles.getIdentities({}),
         ]);
 
         if (!isMounted) return;
@@ -182,7 +179,6 @@ export default function ProfilePage() {
           setSports(sportsRes.body);
           if (sportsRes.body.length > 0) setSelectedSportId(sportsRes.body[0].id);
         }
-        if (identitiesRes.status === 200) setIdentities(identitiesRes.body);
 
       } catch (err) {
         if (!isMounted) return;
@@ -416,58 +412,6 @@ export default function ProfilePage() {
             </Section>
           </div>
         </div>
-
-        {/* --- Section 2.5: Linked Social Accounts --- */}
-        <Section title="linked accounts" icon="account_circle">
-          <Card>
-            <CardContent className="pt-2">
-              {loading ? (
-                <div className="flex gap-4">
-                  {Array(2).fill(0).map((_, i) => <Skeleton key={i} className="h-16 flex-1" />)}
-                </div>
-              ) : identities.length === 0 ? (
-                <div className="py-8 flex flex-col items-center justify-center gap-3 opacity-30">
-                  <span className="material-symbols-outlined text-3xl">link_off</span>
-                  <span className="text-[10px] font-mono uppercase tracking-widest">No linked social accounts</span>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {identities.map((identity: LinkedAccount) => (
-                    <div key={identity.id} className="flex items-center gap-4 px-4 py-3 rounded-md border border-border/50 hover:border-primary/30 transition-all group">
-                      <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-muted-foreground">
-                          {identity.provider === "42" ? "school" : identity.provider === "discord" ? "chat" : identity.provider === "google" ? "mail" : "link"}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-foreground capitalize">{identity.provider}</div>
-                        <div className="text-[10px] font-mono text-muted-foreground/60">
-                          ID: {identity.providerId} · Linked {new Date(identity.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`Unlink ${identity.provider} account?`)) return;
-                          try {
-                            const res = await api.handles.deleteIdentity({ params: { id: identity.id } });
-                            if (res.status === 204) {
-                              setIdentities(identities.filter((i) => i.id !== identity.id));
-                              toast.success(`Unlinked ${identity.provider}`);
-                            }
-                          } catch { toast.error("Failed to unlink"); }
-                        }}
-                        className="p-1.5 rounded-sm hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                        title="Unlink"
-                      >
-                        <span className="material-symbols-outlined text-sm">link_off</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </Section>
 
         {/* --- Section 3: History --- */}
         <Section title="archived operations" icon="history">

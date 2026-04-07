@@ -174,54 +174,6 @@ For all other requests, go to the **Auth** tab, select **Bearer Token**, and use
 
 ---
 
-### 👥 Friends
-
-| Method | Path | Summary |
-| :--- | :--- | :--- |
-| `GET` | `/friends` | Get your friends list (with optional status filter) |
-| `GET` | `/friends/:userId` | Get friendship status with a specific user |
-
-#### Query Parameters (GET `/friends`):
-- `status` (optional): Filter by `pending`, `accepted`, or `blocked`
-
-#### Example Requests:
-
-**Get all friends:**
-```
-GET /api/friends
-Authorization: Bearer {{accessToken}}
-```
-
-**Get accepted friends only:**
-```
-GET /api/friends?status=accepted
-Authorization: Bearer {{accessToken}}
-```
-
-**Get friendship with specific user:**
-```
-GET /api/friends/PASTE_USER_UUID_HERE
-Authorization: Bearer {{accessToken}}
-```
-
-#### Example Response:
-```json
-[
-  {
-    "id": "user-uuid",
-    "username": "player42",
-    "displayName": "Player 42",
-    "avatar": "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-    "isOnline": true,
-    "status": "accepted",
-    "friendshipId": "friendship-uuid",
-    "since": "2025-03-15T10:30:00.000Z"
-  }
-]
-```
-
----
-
 ## 💡 Pro Tips
 
 1. **Validation Errors**: If you get a 400 error, check the response body for detailed Zod validation issues.

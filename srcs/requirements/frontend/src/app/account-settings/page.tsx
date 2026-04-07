@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
-import { UpdateUser, User, Session } from "@ft-transcendence/contracts";
+import { UpdateUser, User } from "@ft-transcendence/contracts";
 
 function AccountSettingsContent() {
   const { refreshUser } = useAuth();
@@ -32,23 +32,9 @@ function AccountSettingsContent() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(true);
-
   const currentPasswordRef = useRef<HTMLInputElement>(null);
   const newPasswordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
-
-  const loadSessions = async () => {
-    setSessionsLoading(true);
-    try {
-      const res = await api.auth.sessions({});
-      if (res.status === 200) {
-        setSessions((res.body as any).sessions || []);
-      }
-    } catch { /* ignore */ }
-    finally { setSessionsLoading(false); }
-  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -71,21 +57,7 @@ function AccountSettingsContent() {
       }
     };
     fetchUser();
-    loadSessions();
   }, []);
-
-  const handleLogoutAll = async () => {
-    if (!confirm("Logout from all devices? You will need to login again.")) return;
-    try {
-      const res = await api.auth.logoutAll({ body: {} });
-      if (res.status === 200) {
-        toast.success("All sessions revoked");
-        loadSessions();
-      } else {
-        toast.error("Failed to logout all sessions");
-      }
-    } catch { toast.error("Failed to logout all sessions"); }
-  };
 
   const clearValidity = (ref: React.RefObject<any>) => {
     ref.current?.setCustomValidity("");
@@ -447,82 +419,6 @@ function AccountSettingsContent() {
                 </button>
               </div>
             </form>
-          </section>
-
-          {/* Active Sessions Card */}
-          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)", marginTop: "24px" }}>
-            <div style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "color-mix(in srgb, var(--accent-info, #60a5fa), transparent 88%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--accent-info, #60a5fa)" }}>devices</span>
-                </div>
-                <div>
-                  <span className="section-title">ACTIVE SESSIONS</span>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{sessions.length} device{sessions.length !== 1 ? "s" : ""} connected</div>
-                </div>
-              </div>
-              {sessions.length > 0 && (
-                <button onClick={handleLogoutAll} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.5px", background: "color-mix(in srgb, var(--accent-error, #ef4444), transparent 88%)", color: "var(--accent-error, #ef4444)", border: "1px solid color-mix(in srgb, var(--accent-error, #ef4444), transparent 70%)", borderRadius: "8px", cursor: "pointer", transition: "all 0.15s" }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>logout</span>
-                  REVOKE ALL
-                </button>
-              )}
-            </div>
-
-            {sessionsLoading ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {[1, 2].map((i) => (
-                  <div key={i} style={{ padding: "16px 20px", borderRadius: "10px", border: "1px solid var(--border-color)", display: "flex", gap: "16px", alignItems: "center" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "var(--border-color)" }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ height: "14px", width: "50%", background: "var(--border-color)", borderRadius: "4px", marginBottom: "8px" }} />
-                      <div style={{ height: "10px", width: "70%", background: "var(--border-color)", borderRadius: "3px" }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : sessions.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 0" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "var(--text-muted)", opacity: 0.15 }}>devices</span>
-                <p style={{ fontSize: "12px", color: "var(--text-muted)", fontFamily: "var(--font-mono)", marginTop: "12px", letterSpacing: "1px", textTransform: "uppercase" }}>No active sessions</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {sessions.map((s: Session, idx: number) => {
-                  const isActive = s.expiresAt && new Date(s.expiresAt) > new Date();
-                  const deviceIcon = s.deviceType === "mobile" ? "smartphone" : s.deviceType === "tablet" ? "tablet" : "computer";
-                  return (
-                    <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px 20px", borderRadius: "10px", border: `1px solid ${idx === 0 ? "color-mix(in srgb, var(--accent-success, #4ade80), transparent 70%)" : "var(--border-color)"}`, background: idx === 0 ? "color-mix(in srgb, var(--accent-success, #4ade80), transparent 96%)" : "var(--bg-secondary, rgba(255,255,255,0.02))", transition: "all 0.15s" }}>
-                      <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: idx === 0 ? "color-mix(in srgb, var(--accent-success, #4ade80), transparent 85%)" : "var(--bg-secondary, rgba(255,255,255,0.03))", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border-color)", flexShrink: 0 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: "20px", color: idx === 0 ? "var(--accent-success, #4ade80)" : "var(--text-muted)" }}>{deviceIcon}</span>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
-                            {s.browserName || "Unknown Browser"} {s.browserVersion ? `v${s.browserVersion}` : ""}
-                          </span>
-                          {idx === 0 && (
-                            <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 8px", borderRadius: "10px", background: "var(--accent-success, #4ade80)", color: "white", letterSpacing: "0.5px" }}>THIS DEVICE</span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "var(--font-mono)", marginTop: "3px", display: "flex", flexWrap: "wrap" as const, gap: "6px", alignItems: "center" }}>
-                          <span>{s.osName || "Unknown OS"} {s.osVersion || ""}</span>
-                          <span style={{ opacity: 0.3 }}>·</span>
-                          <span>{s.ipAddress || "Unknown IP"}</span>
-                          <span style={{ opacity: 0.3 }}>·</span>
-                          <span>{new Date(s.createdAt).toLocaleDateString()} {new Date(s.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                        </div>
-                      </div>
-                      {isActive && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                          <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent-success, #4ade80)", boxShadow: "0 0 8px var(--accent-success, #4ade80)" }} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </section>
         </div>
       </div>
