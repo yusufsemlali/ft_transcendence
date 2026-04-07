@@ -9,7 +9,27 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const Select = SelectPrimitive.Root;
+function Select({
+  children,
+  value,
+  onValueChange,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & {
+  value?: string;
+  onValueChange?: (value: string) => void;
+}) {
+  return (
+    <SelectPrimitive.Root
+      value={value}
+      onValueChange={(val: any) => {
+        if (typeof val === "string" && onValueChange) onValueChange(val);
+      }}
+      {...props}
+    >
+      {children}
+    </SelectPrimitive.Root>
+  );
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
