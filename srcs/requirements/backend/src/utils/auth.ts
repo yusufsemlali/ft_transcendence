@@ -5,7 +5,6 @@ import { users } from "@/dal/db/schemas/users";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-    // Fail-fast architecture: Crash the container immediately on boot
     throw new Error("FATAL EXCEPTION: JWT_SECRET environment variable is missing.");
 }
 

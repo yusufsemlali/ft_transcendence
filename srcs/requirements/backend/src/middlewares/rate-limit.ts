@@ -22,6 +22,13 @@ export const rootRateLimiter = rateLimit({
   handler: customHandler,
 });
 
+// Upload rate limiter
+export const uploadRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 5, // 5 uploads per minute
+  handler: customHandler,
+});
+
 // Bad authentication limiter
 const badAuthRateLimiter = new RateLimiterMemory({
   points: 30 * REQUEST_MULTIPLIER,

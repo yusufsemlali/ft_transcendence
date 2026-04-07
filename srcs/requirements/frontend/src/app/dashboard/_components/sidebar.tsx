@@ -1,7 +1,7 @@
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import { SidebarItem } from "./sidebar-item";
 
-type OrgSection = "overview" | "tournaments" | "admin" | "config";
+type OrgSection = "overview" | "tournaments" | "admin" | "config" | "tools";
 type TournamentPage = "overview" | "brackets" | "matches" | "standings" | "schedule" | "settings";
 
 export function Sidebar({ org, section, page, navigateOrg, activeTournament, tournamentPage, navigateTournament, backToOrg, open, onClose, onBack }: {
@@ -136,6 +136,13 @@ export function Sidebar({ org, section, page, navigateOrg, activeTournament, tou
             <SidebarItem icon="tune"    label="Org Settings"  active={section === "config" && page === "org-settings"}  onClick={() => goOrg("config", "org-settings")} />
             <SidebarItem icon="sports"  label="Sport Modes"   active={section === "config" && page === "sport-modes"}   onClick={() => goOrg("config", "sport-modes")} />
             <SidebarItem icon="webhook" label="Integrations"  active={section === "config" && page === "integrations"} onClick={() => goOrg("config", "integrations")} />
+          </div>
+
+          {/* Tools */}
+          <div className="dashboard-sidebar-divider" />
+          <div className="dashboard-sidebar-section-title"><span>Tools</span></div>
+          <div className="dashboard-sidebar-section">
+            <SidebarItem icon="build" label="Media Test" active={section === "tools" && page === "upload-test"} onClick={() => goOrg("tools", "upload-test")} />
           </div>
         </>
       )}

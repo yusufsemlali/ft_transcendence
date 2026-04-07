@@ -11,6 +11,7 @@ export const files = pgTable('files', {
     savedName: varchar('saved_name', { length: 255 }).notNull().unique(),
     mimeType: varchar('mime_type', { length: 100 }).notNull(), // e.g., 'image/png', 'application/pdf'
     sizeBytes: integer('size_bytes').notNull(),
+    contentHash: varchar('content_hash', { length: 64 }).notNull(),
     
     // The path where it is stored (e.g., '/uploads/avatars/123.png')
     url: varchar('url', { length: 500 }).notNull(), 

@@ -65,7 +65,7 @@ function buildApp(): express.Application {
     app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
     // Static file serving for uploads (before auth/rate-limit)
-    app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
+    app.use("/api/uploads", express.static("/app/uploads"));
 
     // API Routes via ts-rest contract
     addApiRoutes(app);

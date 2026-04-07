@@ -6,7 +6,7 @@ import AppError from "../utils/error";
 // Configure local storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(process.cwd(), 'uploads')); // Point to the mapped volume
+        cb(null, '/app/uploads'); // Point to the mapped volume
     },
     filename: (req, file, cb) => {
         // Create a secure, random filename to prevent collisions and path traversal

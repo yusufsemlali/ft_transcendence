@@ -1,7 +1,6 @@
 "use client";
-
 import { useState, useEffect, useRef, Suspense } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
 import { UpdateUser, User } from "@ft-transcendence/contracts";

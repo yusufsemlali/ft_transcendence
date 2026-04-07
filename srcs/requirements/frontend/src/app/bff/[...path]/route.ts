@@ -51,7 +51,7 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
             method: request.method,
             headers: forwardHeaders,
             body: request.method !== "GET" && request.method !== "HEAD"
-                ? await request.text()
+                ? request.body
                 : undefined,
             // @ts-expect-error - Next.js fetch extension
             duplex: "half",

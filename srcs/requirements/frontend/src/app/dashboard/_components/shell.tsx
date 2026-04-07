@@ -23,12 +23,13 @@ import { ActivityTab } from "../_tabs/activity";
 import { SettingsTab } from "../_tabs/settings";
 import { TournamentSettingsTab } from "../_tabs/tournament-settings";
 import { TournamentOverviewTab } from "../_tabs/tournament-overview";
+import { TestUploadTab } from "../_tabs/test-upload";
 
 /* ═══════════════════════════════════════
    SECTION / PAGE DEFINITIONS
    ═══════════════════════════════════════ */
 
-type OrgSection = "overview" | "tournaments" | "admin" | "config";
+type OrgSection = "overview" | "tournaments" | "admin" | "config" | "tools";
 type TournamentPage = "overview" | "brackets" | "matches" | "standings" | "schedule" | "settings";
 
 interface TabDef { id: string; label: string; icon: string }
@@ -53,6 +54,9 @@ const ORG_TABS: Record<OrgSection, TabDef[]> = {
     { id: "sport-modes",  label: "Sport Modes",   icon: "sports" },
     { id: "integrations", label: "Integrations",  icon: "webhook" },
   ],
+  tools: [
+    { id: "upload-test", label: "Media Test", icon: "upload_file" },
+  ],
 };
 
 const TOURNAMENT_TABS: TabDef[] = [
@@ -69,9 +73,10 @@ const ORG_SECTION_META: Record<OrgSection, { title: string; icon: string }> = {
   tournaments: { title: "Tournaments",    icon: "emoji_events" },
   admin:       { title: "Administration", icon: "admin_panel_settings" },
   config:      { title: "Configuration",  icon: "settings" },
+  tools:       { title: "Developer Tools", icon: "build" },
 };
 
-const VALID_SECTIONS: OrgSection[] = ["overview", "tournaments", "admin", "config"];
+const VALID_SECTIONS: OrgSection[] = ["overview", "tournaments", "admin", "config", "tools"];
 const VALID_TPAGES: TournamentPage[] = ["overview", "brackets", "matches", "standings", "schedule", "settings"];
 
 /* ═══════════════════════════════════════
@@ -343,6 +348,8 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {section === "config" && page === "org-settings" && <OrgSettingsTab org={org} />}
               {section === "config" && page === "sport-modes"  && <SportModesTab />}
               {section === "config" && page === "integrations" && <IntegrationsTab />}
+
+              {section === "tools" && page === "upload-test" && <TestUploadTab />}
             </>
           )}
         </div>

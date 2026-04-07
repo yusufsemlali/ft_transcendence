@@ -2,7 +2,7 @@
 
 import { useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
 

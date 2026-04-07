@@ -1,4 +1,6 @@
 import fs from "fs/promises";
+import { createReadStream } from "fs";
+import crypto from "crypto";
 import path from "path";
 import { eq, and } from "drizzle-orm";
 import { db } from "../dal/db";
@@ -6,9 +8,32 @@ import { files } from "../dal/db/schemas/files";
 import AppError from "../utils/error";
 
 export class FileService {
+    private static async calculateHash(filePath: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const hash = crypto.createHash('sha256');
+            const stream = createReadStream(filePath);
+            stream.on('data', data => hash.update(data));
+            stream.on('end', () => resolve(hash.digest('hex')));
+            stream.on('error', err => reject(err));
+        });
+    }
+
     static async saveFileRecord(uploaderId: string, file: Express.Multer.File) {
+        const filePath = file.path; // Absolute path from Multer (e.g. /app/uploads/...)
+        const hash = await this.calculateHash(filePath);
+
+        // Check for duplicate content from the same user
+        const [existing] = await db.select().from(files).where(
+            and(eq(files.contentHash, hash), eq(files.uploaderId, uploaderId))
+        );
+
+        if (existing) {
+            // Content already exists for this user — delete the new physical file and return existing record
+            try { await fs.unlink(filePath); } catch {}
+            return existing;
+        }
+
         // Public URL must match app.ts static mount: app.use("/api/uploads", ...)
-        // NEXT_PUBLIC_API_URL is shared via .env (e.g. https://localhost:8080/api)
         const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api").replace(/\/$/, "");
         const fileUrl = `${apiBase}/uploads/${file.filename}`;
         
@@ -18,6 +43,7 @@ export class FileService {
             savedName: file.filename,
             mimeType: file.mimetype,
             sizeBytes: file.size,
+            contentHash: hash,
             url: fileUrl,
             visibility: 'public'
         }).returning();
@@ -39,7 +65,7 @@ export class FileService {
         await db.delete(files).where(eq(files.id, fileId));
 
         // 3. Purge the actual binary from the file system
-        const filePath = path.join(process.cwd(), 'uploads', file.savedName);
+        const filePath = path.join('/app/uploads', file.savedName);
         try {
             await fs.unlink(filePath);
         } catch (error: any) {
