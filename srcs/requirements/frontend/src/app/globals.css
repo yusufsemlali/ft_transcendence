@@ -1589,6 +1589,10 @@ a {
 .dashboard-stat-widget {
   padding: 20px;
   border: 1px solid var(--border-color);
+  background: oklch(100% 0 0 / calc(var(--glass-opacity) / 2));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius);
 }
 
 .dashboard-stat-label {
@@ -1627,6 +1631,10 @@ a {
 .dashboard-widget {
   padding: 0;
   border: 1px solid var(--border-color);
+  background: oklch(100% 0 0 / calc(var(--glass-opacity) / 2));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius);
   display: flex;
   flex-direction: column;
 }
@@ -1847,20 +1855,24 @@ a {
 }
 
 .dashboard-input {
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
   border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  background: oklch(100% 0 0 / var(--glass-opacity));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   color: var(--text-primary);
   font-size: 13px;
   font-family: var(--font-sans);
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.2s ease;
   width: 100%;
 }
 
 .dashboard-input:focus {
   border-color: var(--primary);
+  background: oklch(100% 0 0 / calc(var(--glass-opacity) * 1.5));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .dashboard-input::placeholder {

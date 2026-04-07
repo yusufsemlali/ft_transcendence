@@ -84,6 +84,9 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     minParticipants: 2,
     maxParticipants: 16,
     isPrivate: false,
+    prizePool: "",
+    entryFee: 0,
+    bannerUrl: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +117,8 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         params: { organizationId: org.id },
         body: {
           ...form,
+          prizePool: form.prizePool || null,
+          bannerUrl: form.bannerUrl || null,
           customSettings: {},
         },
       });
@@ -150,7 +155,12 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <span className="dashboard-field-label">Sport *</span>
           <Select value={form.sportId} onValueChange={handleSportChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a sport..." />
+              <SelectValue placeholder="Select a sport...">
+                {form.sportId && (() => {
+                  const s = sports.find(sp => sp.id === form.sportId);
+                  return s ? `${s.name} (${s.category})` : null;
+                })()}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {sports.map(s => (
@@ -168,6 +178,18 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
             value={form.name}
             onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
             placeholder="e.g. Spring Championship 2025"
+            className="dashboard-input"
+          />
+        </label>
+
+        {/* Banner URL */}
+        <label className="dashboard-field">
+          <span className="dashboard-field-label">Banner Image URL</span>
+          <input
+            type="text"
+            value={form.bannerUrl}
+            onChange={e => setForm(prev => ({ ...prev, bannerUrl: e.target.value }))}
+            placeholder="https://example.com/banner.jpg"
             className="dashboard-input"
           />
         </label>
@@ -204,6 +226,16 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           </Select>
         </label>
 
+        {/* Financials */}
+        <label className="dashboard-field">
+          <span className="dashboard-field-label">Entry Fee</span>
+          <input type="number" min={0} value={form.entryFee} onChange={e => setForm(prev => ({ ...prev, entryFee: +e.target.value }))} className="dashboard-input" />
+        </label>
+        <label className="dashboard-field">
+          <span className="dashboard-field-label">Prize Pool</span>
+          <input type="text" value={form.prizePool} onChange={e => setForm(prev => ({ ...prev, prizePool: e.target.value }))} placeholder="$500 or Hardware" className="dashboard-input" />
+        </label>
+
         {/* Participants */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Min Participants</span>
@@ -227,6 +259,18 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
             </label>
           </>
         )}
+
+        {/* Privacy Toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 0" }}>
+           <input 
+            type="checkbox" 
+            id="isPrivate"
+            checked={form.isPrivate} 
+            onChange={e => setForm(prev => ({ ...prev, isPrivate: e.target.checked }))}
+            style={{ width: "16px", height: "16px", cursor: "pointer" }}
+           />
+           <label htmlFor="isPrivate" style={{ fontSize: "13px", color: "var(--text-primary)", cursor: "pointer" }}>Private Tournament (Invite Only)</label>
+        </div>
 
         {/* Description — full width */}
         <label className="dashboard-field" style={{ gridColumn: "1 / -1" }}>

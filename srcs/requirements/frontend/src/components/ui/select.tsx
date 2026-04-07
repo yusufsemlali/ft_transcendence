@@ -109,7 +109,8 @@ function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "relative isolate z-[9999] max-h-[300px] w-(--anchor-width) min-w-[var(--anchor-width)] origin-(--transform-origin) overflow-y-auto rounded-md shadow-md p-1",
+            "relative isolate z-[9999] max-h-[300px] w-(--anchor-width) min-w-[var(--anchor-width)] origin-(--transform-origin) overflow-y-auto shadow-md p-1",
+            "rounded-(--radius)",
             "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
             className
           )}
@@ -153,7 +154,8 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-sm outline-none transition-all duration-150 select-none",
+        "relative flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm outline-none transition-all duration-150 select-none",
+        "rounded-(--radius-sm)",
         "text-[oklch(0.8_0_0)] hover:bg-white/10 hover:text-white",
         "data-[highlighted]:bg-white/10 data-[highlighted]:text-white", // Base UI highlighted state
         "data-[selected]:bg-[var(--primary)] data-[selected]:text-white data-[selected]:font-semibold data-[selected]:shadow-sm", // Selected state

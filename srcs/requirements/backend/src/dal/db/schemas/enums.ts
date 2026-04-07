@@ -15,7 +15,7 @@ export const tournamentStatusEnum = pgEnum('tournament_status', ['draft', 'regis
 
 // --- Modes (Blueprint Archetypes) ---
 export const sportModeEnum = pgEnum('sport_mode', ['1v1', 'team', 'ffa']);
-export const sportCategoryEnum = pgEnum('sport_category', ['esports', 'physical', 'tabletop']);
+export const sportCategoryEnum = pgEnum('sport_category', ['esports', 'physical', 'tabletop', 'custom']);
 
 // --- Bracket Structure ---
 export const bracketTypeEnum = pgEnum('bracket_type', [
