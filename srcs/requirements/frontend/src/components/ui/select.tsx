@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -9,236 +9,213 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// --- Context for state management ---
-interface SelectContextProps {
-  value: string;
-  onValueChange: (value: string) => void;
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  selectedLabel: React.ReactNode;
-  setSelectedLabel: (label: React.ReactNode) => void;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
-}
+const Select = SelectPrimitive.Root;
 
-const SelectContext = React.createContext<SelectContextProps | undefined>(undefined);
-
-function useSelect() {
-  const context = React.useContext(SelectContext);
-  if (!context) {
-    throw new Error("Select components must be used within a <Select />");
-  }
-  return context;
-}
-
-// --- Root Component ---
-export function Select({
-  children,
-  value,
-  onValueChange,
-  disabled = false,
-}: {
-  children: React.ReactNode;
-  value: string;
-  onValueChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [selectedLabel, setSelectedLabel] = React.useState<React.ReactNode>(null);
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  // Close when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
+function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
-    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen, selectedLabel, setSelectedLabel, triggerRef }}>
-      <div ref={containerRef} className={cn("relative w-full", disabled && "opacity-50 pointer-events-none")}>
-        {children}
-      </div>
-    </SelectContext.Provider>
+    <SelectPrimitive.Group
+      data-slot="select-group"
+      className={cn("scroll-my-1 p-1", className)}
+      {...props}
+    />
   );
 }
 
-// --- Trigger ---
-export function SelectTrigger({
+function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+  return (
+    <SelectPrimitive.Value
+      data-slot="select-value"
+      className={cn("flex flex-1 text-left truncate", className)}
+      {...props}
+    />
+  );
+}
+
+function SelectTrigger({
+  className,
+  size = "default",
   children,
+  ...props
+}: SelectPrimitive.Trigger.Props & {
+  size?: "sm" | "default";
+}) {
+  return (
+    <SelectPrimitive.Trigger
+      data-slot="select-trigger"
+      data-size={size}
+      className={cn(
+        "dashboard-input flex items-center justify-between gap-2 w-full text-left transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+        "data-[open=true]:border-[var(--primary)] data-[open=true]:ring-1 data-[open=true]:ring-[var(--primary)]/20 data-[open=true]:shadow-[0_0_15px_rgba(var(--theme-color-rgb,var(--primary)),0.15)]",
+        className
+      )}
+      style={{ padding: "8px 12px", minHeight: "36px" }}
+      {...props}
+    >
+      {children}
+      <SelectPrimitive.Icon
+        render={
+          <span className="material-symbols-outlined shrink-0 text-[18px] opacity-40 transition-transform duration-300 data-[state=open]:rotate-180 pointer-events-none">
+            expand_more
+          </span>
+        }
+      />
+    </SelectPrimitive.Trigger>
+  );
+}
+
+function SelectContent({
+  className,
+  children,
+  side = "bottom",
+  sideOffset = 4,
+  align = "start",
+  alignOffset = 0,
+  alignItemWithTrigger = false, // Set to false to behave like typical dropdown dropdowns
+  ...props
+}: SelectPrimitive.Popup.Props &
+  Pick<
+    SelectPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
+  >) {
+  return (
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Positioner
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        alignOffset={alignOffset}
+        alignItemWithTrigger={alignItemWithTrigger}
+        className="isolate z-[9999]"
+      >
+        <SelectPrimitive.Popup
+          data-slot="select-content"
+          data-align-trigger={alignItemWithTrigger}
+          className={cn(
+            "relative isolate z-[9999] max-h-[300px] w-(--anchor-width) min-w-[var(--anchor-width)] origin-(--transform-origin) overflow-y-auto rounded-md shadow-md p-1",
+            "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+            className
+          )}
+          style={{
+            background: "oklch(0.15 0 0 / 0.97)",
+            backdropFilter: "blur(24px) saturate(1.2)",
+            WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+            border: "1px solid oklch(1 0 0 / 0.1)",
+            boxShadow: "0 16px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.2)",
+          }}
+          {...props}
+        >
+          <SelectScrollUpButton />
+          <SelectPrimitive.List className="space-y-0.5">{children}</SelectPrimitive.List>
+          <SelectScrollDownButton />
+        </SelectPrimitive.Popup>
+      </SelectPrimitive.Positioner>
+    </SelectPrimitive.Portal>
+  );
+}
+
+function SelectLabel({
   className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const { isOpen, setIsOpen, triggerRef } = useSelect();
-
+}: SelectPrimitive.GroupLabel.Props) {
   return (
-    <button
-      ref={triggerRef}
-      type="button"
-      onClick={() => setIsOpen(!isOpen)}
+    <SelectPrimitive.GroupLabel
+      data-slot="select-label"
+      className={cn("px-2 py-1.5 text-xs font-semibold text-[oklch(0.8_0_0)]", className)}
+      {...props}
+    />
+  );
+}
+
+function SelectItem({
+  className,
+  children,
+  ...props
+}: SelectPrimitive.Item.Props) {
+  return (
+    <SelectPrimitive.Item
+      data-slot="select-item"
       className={cn(
-        "dashboard-input flex items-center justify-between gap-2 px-3 py-2 w-full text-left transition-all duration-200",
-        isOpen && "border-[var(--primary)] ring-1 ring-[var(--primary)]/20 shadow-[0_0_15px_rgba(var(--theme-color-rgb,var(--primary)),0.15)]",
+        "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-sm outline-none transition-all duration-150 select-none",
+        "text-[oklch(0.8_0_0)] hover:bg-white/10 hover:text-white",
+        "data-[highlighted]:bg-white/10 data-[highlighted]:text-white", // Base UI highlighted state
+        "data-[selected]:bg-[var(--primary)] data-[selected]:text-white data-[selected]:font-semibold data-[selected]:shadow-sm", // Selected state
+        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className
       )}
       {...props}
     >
-      <div className="flex items-center gap-2 flex-1 truncate">
+      <SelectPrimitive.ItemText className="flex-1 truncate">
         {children}
-      </div>
-      <span
-        className={cn(
-          "material-symbols-outlined transform transition-transform duration-300 opacity-40 text-[18px] shrink-0",
-          isOpen ? "rotate-180" : ""
-        )}
-      >
-        expand_more
-      </span>
-    </button>
+      </SelectPrimitive.ItemText>
+      <SelectPrimitive.ItemIndicator
+        render={
+          <span className="material-symbols-outlined text-[16px] shrink-0 pointer-events-none">
+            check
+          </span>
+        }
+      />
+    </SelectPrimitive.Item>
   );
 }
 
-// --- Value ---
-export function SelectValue({
-  placeholder,
+function SelectSeparator({
   className,
-}: {
-  placeholder?: string;
-  className?: string;
-}) {
-  const { selectedLabel } = useSelect();
+  ...props
+}: SelectPrimitive.Separator.Props) {
   return (
-    <span className={cn("truncate block", !selectedLabel && "opacity-50", className)}>
-      {selectedLabel || placeholder}
-    </span>
+    <SelectPrimitive.Separator
+      data-slot="select-separator"
+      className={cn("pointer-events-none -mx-1 my-1 h-px bg-[oklch(1_0_0/0.1)]", className)}
+      {...props}
+    />
   );
 }
 
-// --- Content ---
-export function SelectContent({
-  children,
+function SelectScrollUpButton({
   className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const { isOpen, triggerRef } = useSelect();
-  const [pos, setPos] = React.useState<{ top: number; left: number; width: number } | null>(null);
-
-  React.useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 6, left: rect.left, width: rect.width });
-    }
-  }, [isOpen, triggerRef]);
-
-  if (!isOpen || !pos) return null;
-
-  return ReactDOM.createPortal(
-    <div
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
+  return (
+    <SelectPrimitive.ScrollUpArrow
+      data-slot="select-scroll-up-button"
       className={cn(
-        "animate-in fade-in-0 zoom-in-95",
+        "flex cursor-default items-center justify-center py-1 bg-[oklch(0.15_0_0/0.97)] text-[var(--text-muted)] hover:text-white transition-colors",
         className
       )}
-      style={{
-        position: "fixed",
-        top: pos.top,
-        left: pos.left,
-        width: pos.width,
-        zIndex: 9999,
-        maxHeight: "300px",
-        overflowY: "auto",
-        background: "oklch(0.15 0 0 / 0.97)",
-        backdropFilter: "blur(24px) saturate(1.2)",
-        WebkitBackdropFilter: "blur(24px) saturate(1.2)",
-        border: "1px solid oklch(1 0 0 / 0.1)",
-        borderRadius: "var(--radius)",
-        boxShadow: "0 16px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.2)",
-        padding: "4px",
-      }}
+      {...props}
     >
-      <div className="space-y-0.5">
-        {children}
-      </div>
-    </div>,
-    document.body
+      <span className="material-symbols-outlined text-[16px]">expand_less</span>
+    </SelectPrimitive.ScrollUpArrow>
   );
 }
 
-// --- Item ---
-export function SelectItem({
-  children,
-  value,
+function SelectScrollDownButton({
   className,
-}: {
-  children: React.ReactNode;
-  value: string;
-  className?: string;
-}) {
-  const { value: selectedValue, onValueChange, setIsOpen, setSelectedLabel } = useSelect();
-  const isSelected = selectedValue === value;
-
-  // Sync label to trigger
-  React.useEffect(() => {
-    if (isSelected) {
-      setSelectedLabel(children);
-    }
-  }, [isSelected, children, setSelectedLabel]);
-
-  const handleSelect = () => {
-    onValueChange(value);
-    setIsOpen(false);
-  };
-
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
   return (
-    <div
-      onClick={handleSelect}
+    <SelectPrimitive.ScrollDownArrow
+      data-slot="select-scroll-down-button"
       className={cn(
-        "flex items-center justify-between gap-2 px-3 py-2 cursor-pointer transition-all duration-150 rounded-md text-sm",
-        isSelected 
-          ? "font-semibold shadow-sm" 
-          : "hover:bg-white/10",
+        "flex cursor-default items-center justify-center py-1 bg-[oklch(0.15_0_0/0.97)] text-[var(--text-muted)] hover:text-white transition-colors",
         className
       )}
-      style={isSelected ? {
-        backgroundColor: "var(--primary)",
-        color: "#fff",
-      } : {
-        color: "oklch(0.8 0 0)",
-      }}
+      {...props}
     >
-      <span className="truncate">{children}</span>
-      {isSelected && (
-        <span className="material-symbols-outlined text-[16px] shrink-0">check</span>
-      )}
-    </div>
+      <span className="material-symbols-outlined text-[16px]">expand_more</span>
+    </SelectPrimitive.ScrollDownArrow>
   );
 }
 
-// --- Group & Label ---
-export function SelectGroup({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("py-1", className)}>{children}</div>;
-}
-
-export function SelectLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-40", className)}>
-      {children}
-    </div>
-  );
-}
-
-// --- Separator ---
-export function SelectSeparator({ className }: { className?: string }) {
-  return <div className={cn("-mx-1 my-1 h-px bg-border/20", className)} />;
-}
-
-// --- Scroll Buttons (Static placeholders for our custom implementation) ---
-export function SelectScrollUpButton() { return null; }
-export function SelectScrollDownButton() { return null; }
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+};
