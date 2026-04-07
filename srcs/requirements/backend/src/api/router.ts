@@ -9,6 +9,7 @@ import { organizationsController } from "./controllers/organizations.controller"
 import { adminController } from "./controllers/admin.controller";
 import { sportsController } from "./controllers/sports.controller";
 import { friendsController } from "./controllers/friends.controller";
+import { filesController } from "./controllers/files.controller";
 import { Router, Express, Request, Response, NextFunction } from "express";
 import { authenticateTsRestRequest } from "@/middlewares/auth";
 
@@ -33,6 +34,7 @@ export const addApiRoutes = (app: Express) => {
         admin: adminController,
         sports: sportsController,
         friends: friendsController,
+        files: filesController,
     }, apiRouter, {
         globalMiddleware: [
             authenticateTsRestRequest()

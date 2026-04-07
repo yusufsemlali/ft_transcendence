@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -62,6 +63,9 @@ function buildApp(): express.Application {
 
     // Mount Swagger UI
     app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
+
+    // Static file serving for uploads (before auth/rate-limit)
+    app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 
     // API Routes via ts-rest contract
     addApiRoutes(app);
