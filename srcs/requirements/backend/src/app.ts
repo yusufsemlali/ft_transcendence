@@ -21,14 +21,12 @@ function buildApp(): express.Application {
             version: "1.0.0",
             description: "Interactive documentation for the Tournify backend API.",
         },
-        // 🚀 THE FIX: Tell Swagger that all endpoints are prefixed with /api
         servers: [
             {
                 url: "/api",
                 description: "Default API Gateway",
             },
         ],
-        // --- ADDED: Allow testing with JWT in Swagger UI ---
         options: {
             components: {
                 securitySchemes: {
@@ -42,7 +40,9 @@ function buildApp(): express.Application {
         }
     });
 
-    // Standard Middlewares
+    console.log("[INFO] Regenerated OpenAPI documentation from contracts.");
+
+    // Standard Middlewares ... [rest of middlewares]
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
@@ -59,6 +59,8 @@ function buildApp(): express.Application {
     app.use(compatibilityCheckMiddleware);
     app.use(contextMiddleware);
     app.use(rootRateLimiter);
+
+    // Mount Swagger UI
     app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
     // API Routes via ts-rest contract

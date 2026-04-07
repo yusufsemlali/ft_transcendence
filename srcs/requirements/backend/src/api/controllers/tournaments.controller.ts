@@ -1,6 +1,7 @@
 import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import * as TournamentService from "@/services/tournament.service";
+import * as LobbyService from "@/services/lobby.service";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 import { requireOrgRole } from "@/utils/rbac";
@@ -8,7 +9,7 @@ import { requireOrgRole } from "@/utils/rbac";
 const s = initServer();
 
 export const tournamentsController = s.router(contract.tournaments, {
-    createTournament: async ({ params, body, req }) => {
+    createTournament: async ({ params, body, req }: any) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
 
@@ -27,7 +28,7 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
-    listOrgTournaments: async ({ params, req }) => {
+    listOrgTournaments: async ({ params, req }: any) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
 
@@ -42,7 +43,7 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
-    updateTournament: async ({ params, body, req }) => {
+    updateTournament: async ({ params, body, req }: any) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
 
@@ -68,7 +69,7 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
-    deleteTournament: async ({ params, req }) => {
+    deleteTournament: async ({ params, req }: any) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
 
@@ -96,7 +97,7 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
-    getTournamentById: async ({ params }) => {
+    getTournamentById: async ({ params }: any) => {
         const response = await TournamentService.discoverTournamentById(params.id);
         return {
             status: 200,
@@ -104,11 +105,127 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
-    getTournaments: async ({ query }) => {
+    getTournaments: async ({ query }: any) => {
         const response = await TournamentService.getTournaments(query);
         return {
             status: 200,
             body: response as any,
         };
+    },
+
+    joinLobby: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) return { status: 401, body: { message: "Unauthorized" } };
+
+        try {
+            const result = await LobbyService.joinLobby({
+                tournamentId: params.id,
+                userId,
+            });
+            return {
+                status: 201,
+                body: { message: "Joined successfully", state: result.state as any },
+            };
+        } catch (error) {
+            console.error("[LOBBY ERROR] joinLobby:", error);
+            if (error instanceof AppError) {
+                return { status: error.status as any, body: { message: error.message } };
+            }
+            return { status: 400, body: { message: "Failed to join lobby" } };
+        }
+    },
+
+    createLobbyTeam: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) return { status: 401, body: { message: "Unauthorized" } };
+
+        try {
+            const result = await LobbyService.createLobbyTeam({
+                tournamentId: params.id,
+                userId,
+                name: body.name
+            });
+            return {
+                status: 201,
+                body: { message: "Team created successfully", teamId: result.teamId },
+            };
+        } catch (error) {
+            console.error("[LOBBY ERROR] createLobbyTeam:", error);
+            if (error instanceof AppError) {
+                return { status: error.status as any, body: { message: error.message } };
+            }
+            return { status: 400, body: { message: "Failed to create team" } };
+        }
+    },
+
+    getLobbyState: async ({ params }: any) => {
+        try {
+            const result = await LobbyService.getLobbyState(params.id);
+            return {
+                status: 200,
+                body: result as any,
+            };
+        } catch (error) {
+            console.error("[LOBBY ERROR] getLobbyState:", error);
+            if (error instanceof AppError) {
+                return { status: error.status as any, body: { message: error.message } };
+            }
+            return { status: 404, body: { message: "Lobby not found" } };
+        }
+    },
+
+    inviteToTeam: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) return { status: 401, body: { message: "Unauthorized" } };
+
+        try {
+            await LobbyService.inviteToTeam({
+                tournamentId: params.id,
+                teamId: params.teamId,
+                captainId: userId,
+                targetUserId: body.targetUserId,
+            });
+            return {
+                status: 201,
+                body: { message: "Invitation sent" },
+            };
+        } catch (error) {
+            console.error("[LOBBY ERROR] inviteToTeam:", error);
+            if (error instanceof AppError) {
+                return { status: error.status as any, body: { message: error.message } };
+            }
+            return { status: 400, body: { message: "Failed to send invitation" } };
+        }
+    },
+
+    joinTeam: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) return { status: 401, body: { message: "Unauthorized" } };
+
+        try {
+            await LobbyService.joinTeam({
+                tournamentId: params.id,
+                teamId: params.teamId,
+                userId,
+            });
+            return {
+                status: 200,
+                body: { message: "Successfully joined team" },
+            };
+        } catch (error) {
+            console.error("[LOBBY ERROR] joinTeam:", error);
+            if (error instanceof AppError) {
+                return { status: error.status as any, body: { message: error.message } };
+            }
+            return { status: 400, body: { message: "Failed to join team" } };
+        }
     },
 });
