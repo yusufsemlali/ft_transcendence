@@ -5,10 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavLink } from "./NavLink";
 import { UserArea } from "./UserArea";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "moderator";
 
   // Hide the header entirely on dashboard routes (it has its own sidebar)
   if (pathname.startsWith("/dashboard")) return null;
@@ -42,7 +45,15 @@ export function Header() {
               <NavLink href="/tournaments" icon="sports_esports" title="tournaments" />
               <NavLink href="/leaderboard" icon="social_leaderboard" title="leaderboard" />
               <NavLink href="/about" icon="info" title="about" />
-              <NavLink href="/settings" icon="settings" title="settings" />
+              {user && (
+                <>
+                  <NavLink href="/profile" icon="person" title="profile" />
+                  <NavLink href="/account-settings" icon="manage_accounts" title="account" />
+                  <NavLink href="/settings" icon="tune" title="settings" />
+                  {isAdmin && <NavLink href="/admin" icon="admin_panel_settings" title="admin" />}
+                </>
+              )}
+              {!user && <NavLink href="/settings" icon="settings" title="settings" />}
             </div>
           </div>
     
@@ -95,10 +106,34 @@ export function Header() {
             <span className="material-symbols-outlined">info</span>
             <span className="nav-link-text">about</span>
           </Link>
-          <Link href="/settings" className="nav-link" onClick={() => setMobileOpen(false)}>
-            <span className="material-symbols-outlined">settings</span>
-            <span className="nav-link-text">settings</span>
-          </Link>
+          {user && (
+            <>
+              <Link href="/profile" className="nav-link" onClick={() => setMobileOpen(false)}>
+                <span className="material-symbols-outlined">person</span>
+                <span className="nav-link-text">profile</span>
+              </Link>
+              <Link href="/account-settings" className="nav-link" onClick={() => setMobileOpen(false)}>
+                <span className="material-symbols-outlined">manage_accounts</span>
+                <span className="nav-link-text">account</span>
+              </Link>
+              <Link href="/settings" className="nav-link" onClick={() => setMobileOpen(false)}>
+                <span className="material-symbols-outlined">tune</span>
+                <span className="nav-link-text">settings</span>
+              </Link>
+              {isAdmin && (
+                <Link href="/admin" className="nav-link" onClick={() => setMobileOpen(false)}>
+                  <span className="material-symbols-outlined">admin_panel_settings</span>
+                  <span className="nav-link-text">admin</span>
+                </Link>
+              )}
+            </>
+          )}
+          {!user && (
+            <Link href="/settings" className="nav-link" onClick={() => setMobileOpen(false)}>
+              <span className="material-symbols-outlined">settings</span>
+              <span className="nav-link-text">settings</span>
+            </Link>
+          )}
         </div>
       )}
     </>

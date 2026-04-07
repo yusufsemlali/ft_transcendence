@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
-import { UpdateUser, User } from "@ft-transcendence/contracts";
+import { UpdateUser, User, Session, LinkedAccount, Handle, Sport } from "@ft-transcendence/contracts";
 
 function AccountSettingsContent() {
   const { refreshUser } = useAuth();
@@ -19,6 +19,11 @@ function AccountSettingsContent() {
   });
 
   const [fullUser, setFullUser] = useState<User | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
+  const [handles, setHandles] = useState<Handle[]>([]);
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
   // Refs for native validation tooltips
   const usernameRef = useRef<HTMLInputElement>(null);
@@ -37,11 +42,17 @@ function AccountSettingsContent() {
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.users.getMe({});
-        if (res.status === 200) {
-          const userData = res.body;
+        const [userRes, sessionsRes, identitiesRes, handlesRes, sportsRes] = await Promise.all([
+          api.users.getMe({}),
+          api.auth.sessions(),
+          api.handles.getIdentities(),
+          api.handles.getMyHandles(),
+          api.sports.getSports(),
+        ]);
+        if (userRes.status === 200) {
+          const userData = userRes.body;
           setFullUser(userData);
           setProfile({
             username: userData.username,
@@ -52,11 +63,15 @@ function AccountSettingsContent() {
             banner: userData.banner || "",
           });
         }
-      } catch (err) {
+        if (sessionsRes.status === 200) setSessions(sessionsRes.body.sessions);
+        if (identitiesRes.status === 200) setLinkedAccounts(identitiesRes.body);
+        if (handlesRes.status === 200) setHandles(handlesRes.body);
+        if (sportsRes.status === 200) setSports(sportsRes.body);
+      } catch {
         // Silently handle error
       }
     };
-    fetchUser();
+    fetchData();
   }, []);
 
   const clearValidity = (ref: React.RefObject<any>) => {
@@ -421,6 +436,195 @@ function AccountSettingsContent() {
             </form>
           </section>
         </div>
+
+        {/* Active Sessions Card */}
+        <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "color-mix(in srgb, var(--accent-info), transparent 88%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--accent-info)" }}>devices</span>
+              </div>
+              <div>
+                <span className="section-title">ACTIVE SESSIONS</span>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{sessions.length} device{sessions.length !== 1 ? "s" : ""} connected</div>
+              </div>
+            </div>
+            {sessions.length > 0 && (
+              <button 
+                onClick={async () => {
+                  try {
+                    const res = await api.auth.logoutAll({});
+                    if (res.status === 200) {
+                      toast.success(`Logged out from ${res.body.sessionsRevoked} session${res.body.sessionsRevoked !== 1 ? "s" : ""}`);
+                      const sessionsRes = await api.auth.sessions();
+                      if (sessionsRes.status === 200) setSessions(sessionsRes.body.sessions);
+                    }
+                  } catch {
+                    toast.error("Failed to logout from all sessions");
+                  }
+                }}
+                style={{ 
+                  background: "color-mix(in srgb, var(--accent-error), transparent 88%)", 
+                  color: "var(--accent-error)", 
+                  border: "1px solid color-mix(in srgb, var(--accent-error), transparent 70%)", 
+                  borderRadius: "8px", 
+                  padding: "6px 14px", 
+                  cursor: "pointer", 
+                  fontSize: "11px", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "4px" 
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>logout</span>
+                REVOKE ALL
+              </button>
+            )}
+          </div>
+          {sessions.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "36px", color: "var(--text-muted)", opacity: 0.15 }}>devices_off</span>
+              <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "8px" }}>No active sessions</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {sessions.map((session) => (
+                <div key={session.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "10px", background: "var(--bg-secondary)", border: "1px solid var(--border-color)" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--text-muted)" }}>
+                    {session.deviceType === "mobile" ? "smartphone" : "computer"}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 500 }}>
+                      {session.browserName || "Unknown Browser"} {session.browserVersion || ""}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      {session.osName || ""} · {session.ipAddress || ""}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await api.auth.logout({});
+                        if (res.status === 200) {
+                          toast.success("Session logged out");
+                          const sessionsRes = await api.auth.sessions();
+                          if (sessionsRes.status === 200) setSessions(sessionsRes.body.sessions);
+                        }
+                      } catch {
+                        toast.error("Failed to logout session");
+                      }
+                    }}
+                    style={{ fontSize: "10px", color: "var(--accent-error)", background: "transparent", border: "none", cursor: "pointer" }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>close</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Linked Accounts Card */}
+        <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
+          <div className="section-header" style={{ marginBottom: "24px" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--text-muted)" }}>link</span>
+            <span className="section-title">LINKED ACCOUNTS</span>
+          </div>
+          {linkedAccounts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "36px", color: "var(--text-muted)", opacity: 0.15 }}>link_off</span>
+              <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "8px" }}>No linked accounts</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {linkedAccounts.map((account) => (
+                <div key={account.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "10px", background: "var(--bg-secondary)", border: "1px solid var(--border-color)" }}>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "color-mix(in srgb, var(--accent-primary), transparent 88%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--accent-primary)" }}>
+                      {account.provider === "42" ? "school" : "link"}
+                    </span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 500, textTransform: "capitalize" }}>
+                      {account.provider}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      Connected {new Date(account.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Unlink ${account.provider} account?`)) return;
+                      try {
+                        const res = await api.handles.deleteIdentity({ params: { id: account.id } });
+                        if (res.status === 204) {
+                          toast.success("Account unlinked");
+                          const identitiesRes = await api.handles.getIdentities();
+                          if (identitiesRes.status === 200) setLinkedAccounts(identitiesRes.body);
+                        }
+                      } catch {
+                        toast.error("Failed to unlink account");
+                      }
+                    }}
+                    style={{ fontSize: "10px", color: "var(--accent-error)", background: "transparent", border: "none", cursor: "pointer" }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>close</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Game Handles Card */}
+        <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
+          <div className="section-header" style={{ marginBottom: "24px" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--text-muted)" }}>sports_esports</span>
+            <span className="section-title">GAME HANDLES</span>
+          </div>
+          {handles.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "36px", color: "var(--text-muted)", opacity: 0.15 }}>sports_esports</span>
+              <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "8px" }}>No game handles linked</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {handles.map((handle) => (
+                <div key={handle.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "10px", background: "var(--bg-secondary)", border: "1px solid var(--border-color)" }}>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "color-mix(in srgb, var(--accent-primary), transparent 88%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--accent-primary)" }}>sports_esports</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 500 }}>
+                      {handle.handle}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      {sports.find(s => s.id === handle.sportId)?.name || "Unknown Sport"}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Remove handle "${handle.handle}"?`)) return;
+                      try {
+                        const res = await api.handles.delete({ params: { id: handle.id } });
+                        if (res.status === 204) {
+                          toast.success("Handle removed");
+                          const handlesRes = await api.handles.getMyHandles();
+                          if (handlesRes.status === 200) setHandles(handlesRes.body);
+                        }
+                      } catch {
+                        toast.error("Failed to remove handle");
+                      }
+                    }}
+                    style={{ fontSize: "10px", color: "var(--accent-error)", background: "transparent", border: "none", cursor: "pointer" }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>close</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
