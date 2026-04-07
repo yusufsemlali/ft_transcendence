@@ -4,6 +4,7 @@ import { AuthenticatedSocketUser } from '../types/chatUser';
 
 class SocketController {
   private socketService: SocketService;
+  private readonly maxMessageLength = 500;
 
   constructor(io: SocketIOServer) {
     this.socketService = new SocketService(io);
@@ -20,7 +21,7 @@ class SocketController {
 
   async handleUserJoin(socket: Socket, data: { room: string }): Promise<void> {
     try {
-      const room = data?.room;
+      const room = data?.room?.trim().toLowerCase();
       const user = socket.data.user as AuthenticatedSocketUser | undefined;
 
       if (!user || !user.id || !room) {
@@ -38,12 +39,21 @@ class SocketController {
 
   async handleMessage(socket: Socket, data: { content: string }): Promise<void> {
     try {
-      if (!data.content || typeof data.content !== 'string') {
+      const content = typeof data.content === 'string'
+        ? data.content.trim()
+        : '';
+
+      if (!content) {
         socket.emit('error', 'Invalid message content');
         return;
       }
 
-      await this.socketService.broadcastMessage(socket, data.content.trim());
+      if (content.length > this.maxMessageLength) {
+        socket.emit('error', `Message exceeds ${this.maxMessageLength} characters`);
+        return;
+      }
+
+      await this.socketService.broadcastMessage(socket, content);
     } catch (error) {
       console.error('Error sending message:', error);
       socket.emit('error', 'Failed to send message');
@@ -60,7 +70,13 @@ class SocketController {
 
   async handleGetRoomInfo(socket: Socket, data: { room: string }): Promise<void> {
     try {
-      const roomInfo = await this.socketService.getRoomInfo(data.room);
+      const room = data?.room?.trim().toLowerCase();
+      if (!room) {
+        socket.emit('error', 'Invalid room data');
+        return;
+      }
+
+      const roomInfo = await this.socketService.getRoomInfo(room);
       socket.emit('room:info', roomInfo);
     } catch (error) {
       console.error('Error getting room info:', error);

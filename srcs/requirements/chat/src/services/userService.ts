@@ -9,14 +9,19 @@ interface UserWithSocket extends ChatUser {
 }
 
 class UserService {
-  private users: Map<string, UserWithSocket> = new Map();
-  private usersBySocket: Map<string, string> = new Map();
+  private usersBySocket: Map<string, UserWithSocket> = new Map();
+  private socketsByUser: Map<string, Set<string>> = new Map();
 
   addUser(
     socketId: string,
     user: ChatUser & { sessionId?: string },
     room?: string
   ): UserWithSocket {
+    const existingUser = this.usersBySocket.get(socketId);
+    if (existingUser) {
+      this.removeSocket(socketId);
+    }
+
     const userWithSocket: UserWithSocket = {
       ...user,
       socketId,
@@ -25,32 +30,47 @@ class UserService {
       lastSeen: new Date(),
     };
 
-    this.users.set(user.id, userWithSocket);
-    this.usersBySocket.set(socketId, user.id);
+    this.usersBySocket.set(socketId, userWithSocket);
+
+    const sockets = this.socketsByUser.get(user.id) ?? new Set<string>();
+    sockets.add(socketId);
+    this.socketsByUser.set(user.id, sockets);
 
     return userWithSocket;
   }
 
-  removeUser(userId: string): UserWithSocket | undefined {
-    const user = this.users.get(userId);
+  removeSocket(socketId: string): UserWithSocket | undefined {
+    const user = this.usersBySocket.get(socketId);
     if (user) {
-      this.usersBySocket.delete(user.socketId);
-      this.users.delete(userId);
+      this.usersBySocket.delete(socketId);
+
+      const sockets = this.socketsByUser.get(user.id);
+      if (sockets) {
+        sockets.delete(socketId);
+        if (sockets.size === 0) {
+          this.socketsByUser.delete(user.id);
+        }
+      }
     }
     return user;
   }
 
   getUserBySocketId(socketId: string): UserWithSocket | undefined {
-    const userId = this.usersBySocket.get(socketId);
-    return userId ? this.users.get(userId) : undefined;
+    return this.usersBySocket.get(socketId);
   }
 
   getUserById(userId: string): UserWithSocket | undefined {
-    return this.users.get(userId);
+    const sockets = this.socketsByUser.get(userId);
+    if (!sockets || sockets.size === 0) {
+      return undefined;
+    }
+
+    const socketId = Array.from(sockets)[0];
+    return this.usersBySocket.get(socketId);
   }
 
-  updateUserRoom(userId: string, room: string): void {
-    const user = this.users.get(userId);
+  updateUserRoom(socketId: string, room: string): void {
+    const user = this.usersBySocket.get(socketId);
     if (user) {
       user.room = room;
       user.lastSeen = new Date();
@@ -58,18 +78,56 @@ class UserService {
   }
 
   getUsersInRoom(room: string): UserWithSocket[] {
-    return Array.from(this.users.values()).filter((user) => user.room === room);
+    const uniqueUsers = new Map<string, UserWithSocket>();
+
+    for (const user of this.usersBySocket.values()) {
+      if (user.room === room && !uniqueUsers.has(user.id)) {
+        uniqueUsers.set(user.id, user);
+      }
+    }
+
+    return Array.from(uniqueUsers.values());
   }
 
   getAllUsers(): UserWithSocket[] {
-    return Array.from(this.users.values());
+    const uniqueUsers = new Map<string, UserWithSocket>();
+
+    for (const user of this.usersBySocket.values()) {
+      if (!uniqueUsers.has(user.id)) {
+        uniqueUsers.set(user.id, user);
+      }
+    }
+
+    return Array.from(uniqueUsers.values());
   }
 
-  updateLastSeen(userId: string): void {
-    const user = this.users.get(userId);
+  getOccupiedRooms(): string[] {
+    return Array.from(
+      new Set(
+        Array.from(this.usersBySocket.values())
+          .map((user) => user.room)
+          .filter((room): room is string => Boolean(room))
+      )
+    );
+  }
+
+  updateLastSeen(socketId: string): void {
+    const user = this.usersBySocket.get(socketId);
     if (user) {
       user.lastSeen = new Date();
     }
+  }
+
+  isUserInRoom(userId: string, room: string): boolean {
+    const sockets = this.socketsByUser.get(userId);
+    if (!sockets) {
+      return false;
+    }
+
+    return Array.from(sockets).some((socketId) => {
+      const user = this.usersBySocket.get(socketId);
+      return user?.room === room;
+    });
   }
 }
 

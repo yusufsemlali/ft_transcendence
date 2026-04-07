@@ -8,19 +8,19 @@ import userService from '../services/userService';
 const s = initServer();
 
 export const chatController = s.router(contract.chat, {
-// export const chatController: RouterImplementation<typeof contract.chat> = s.router(contract.chat, {
   getStats: async () => {
     return {
       status: 200 as const,
       body: {
         connectedUsers: userService.getAllUsers().length,
-        activeRooms: await roomService.getRoomCount(),
+        activeRooms: userService.getOccupiedRooms().length,
         totalMessages: await messageService.getTotalMessageCount(),
       },
     };
   },
   getRoomInfo: async ({ params }) => {
-    const room = await roomService.getRoom(params.roomId);
+    const roomId = params.roomId.trim().toLowerCase();
+    const room = await roomService.getRoom(roomId);
 
     if (!room) {
       return {
@@ -36,7 +36,7 @@ export const chatController = s.router(contract.chat, {
         room: room.id,
         userCount: userService.getUsersInRoom(room.id).length,
         messageCount: roomDatabaseId
-          ? (await messageService.getMessagesByRoom(roomDatabaseId)).length
+          ? await messageService.getRoomMessageCount(roomDatabaseId)
           : 0,
         createdAt: room.createdAt,
       },
@@ -49,7 +49,8 @@ export const chatController = s.router(contract.chat, {
     };
   },
   getRoomMessages: async ({ params, query }) => {
-    const room = await roomService.getRoom(params.roomId);
+    const roomId = params.roomId.trim().toLowerCase();
+    const room = await roomService.getRoom(roomId);
 
     if (!room) {
       return {

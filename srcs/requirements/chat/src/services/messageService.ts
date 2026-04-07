@@ -76,6 +76,10 @@ class MessageService {
   async getTotalMessageCount(): Promise<number> {
     return db.$count(chatMessages);
   }
+
+  async getRoomMessageCount(roomId: string): Promise<number> {
+    return db.$count(chatMessages, eq(chatMessages.roomId, roomId));
+  }
 }
 
 export default new MessageService();

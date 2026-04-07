@@ -12,19 +12,37 @@ class SocketService {
   }
 
   async userJoinRoom(socket: Socket, user: ChatUser & { sessionId?: string }, room: string): Promise<void> {
+    const existingUser = userService.getUserBySocketId(socket.id);
+    const previousRoom = existingUser?.room;
+    const userWasAlreadyInTargetRoom = userService.isUserInRoom(user.id, room);
+
     // Add user to service
     userService.addUser(socket.id, user, room);
     const persistedRoom = await roomService.ensureRoom(room, user.id);
+
+    if (previousRoom && previousRoom !== room) {
+      socket.leave(previousRoom);
+
+      if (!userService.isUserInRoom(user.id, previousRoom)) {
+        this.io.to(previousRoom).emit('user:left', {
+          userId: user.id,
+          username: user.username,
+          message: `${user.username} left the room`,
+        });
+      }
+    }
 
     // Join socket to room
     socket.join(room);
 
     // Notify others in the room
-    this.io.to(room).emit('user:joined', {
-      userId: user.id,
-      username: user.username,
-      message: `${user.username} joined the room`,
-    });
+    if (!userWasAlreadyInTargetRoom) {
+      this.io.to(room).emit('user:joined', {
+        userId: user.id,
+        username: user.username,
+        message: `${user.username} joined the room`,
+      });
+    }
 
     // Send previous messages to the new user
     const roomDatabaseId = await roomService.getRoomDatabaseId(persistedRoom.id);
@@ -37,6 +55,11 @@ class SocketService {
     const usersInRoom = userService.getUsersInRoom(room);
     this.io.to(room).emit('users:list', usersInRoom);
 
+    if (previousRoom && previousRoom !== room) {
+      const previousRoomUsers = userService.getUsersInRoom(previousRoom);
+      this.io.to(previousRoom).emit('users:list', previousRoomUsers);
+    }
+
     console.log(`User ${user.username} joined room: ${room}`);
   }
 
@@ -45,20 +68,20 @@ class SocketService {
 
     if (user) {
       const room = user.room;
-      
-      // Remove user
-      userService.removeUser(user.id);
+
+      userService.removeSocket(socket.id);
 
       // Leave socket from room
       if (room) {
         socket.leave(room);
 
-        // Notify others
-        this.io.to(room).emit('user:left', {
-          userId: user.id,
-          username: user.username,
-          message: `${user.username} left the room`,
-        });
+        if (!userService.isUserInRoom(user.id, room)) {
+          this.io.to(room).emit('user:left', {
+            userId: user.id,
+            username: user.username,
+            message: `${user.username} left the room`,
+          });
+        }
 
         // Send updated user list
         const usersInRoom = userService.getUsersInRoom(room);
@@ -128,7 +151,7 @@ class SocketService {
     return {
       totalUsers: userService.getAllUsers().length,
       totalMessages: await messageService.getTotalMessageCount(),
-      totalRooms: await roomService.getRoomCount(),
+      totalRooms: userService.getOccupiedRooms().length,
     };
   }
 }

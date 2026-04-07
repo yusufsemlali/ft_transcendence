@@ -4,20 +4,26 @@ import { db } from '../db';
 import { chatRooms } from '../db/schema';
 
 class RoomService {
-  async ensureRoom(roomSlug: string, createdByUserId?: string): Promise<Room> {
-    const existingRoom = await this.getRoom(roomSlug);
+  private normalizeRoomSlug(roomSlug: string): string {
+    return roomSlug.trim().toLowerCase();
+  }
 
-    if (existingRoom) {
-      await this.touchRoom(roomSlug);
-      return existingRoom;
-    }
+  async ensureRoom(roomSlug: string, createdByUserId?: string): Promise<Room> {
+    const normalizedRoomSlug = this.normalizeRoomSlug(roomSlug);
 
     const [createdRoom] = await db
       .insert(chatRooms)
       .values({
-        slug: roomSlug,
-        name: roomSlug,
+        slug: normalizedRoomSlug,
+        name: normalizedRoomSlug,
         createdByUserId,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: chatRooms.slug,
+        set: {
+          updatedAt: new Date(),
+        },
       })
       .returning();
 
@@ -30,8 +36,9 @@ class RoomService {
   }
 
   async getRoom(roomSlug: string): Promise<Room | undefined> {
+    const normalizedRoomSlug = this.normalizeRoomSlug(roomSlug);
     const row = await db.query.chatRooms.findFirst({
-      where: eq(chatRooms.slug, roomSlug),
+      where: eq(chatRooms.slug, normalizedRoomSlug),
     });
 
     if (!row) {
@@ -60,14 +67,16 @@ class RoomService {
   }
 
   async touchRoom(roomSlug: string): Promise<void> {
+    const normalizedRoomSlug = this.normalizeRoomSlug(roomSlug);
     await db
       .update(chatRooms)
       .set({ updatedAt: new Date() })
-      .where(eq(chatRooms.slug, roomSlug));
+      .where(eq(chatRooms.slug, normalizedRoomSlug));
   }
 
   async removeRoom(roomSlug: string): Promise<void> {
-    await db.delete(chatRooms).where(eq(chatRooms.slug, roomSlug));
+    const normalizedRoomSlug = this.normalizeRoomSlug(roomSlug);
+    await db.delete(chatRooms).where(eq(chatRooms.slug, normalizedRoomSlug));
   }
 
   async getRoomCount(): Promise<number> {
@@ -75,8 +84,9 @@ class RoomService {
   }
 
   async getRoomDatabaseId(roomSlug: string): Promise<string | null> {
+    const normalizedRoomSlug = this.normalizeRoomSlug(roomSlug);
     const row = await db.query.chatRooms.findFirst({
-      where: eq(chatRooms.slug, roomSlug),
+      where: eq(chatRooms.slug, normalizedRoomSlug),
       columns: { id: true },
     });
 
