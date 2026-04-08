@@ -1,6 +1,7 @@
 import { db } from "@/dal/db";
 import { tournaments } from "@/dal/db/schemas/tournaments";
 import { sports } from "@/dal/db/schemas/sports";
+import { organizationMembers } from "@/dal/db/schemas/organizations";
 import AppError from "@/utils/error";
 import { 
     CreateTournament, 
@@ -11,6 +12,7 @@ import {
 import { eq, and, or, sql, desc, ilike } from "drizzle-orm";
 import { generateUniqueSlug } from "@/utils/slug";
 import { TournamentPolicy } from "@/policies/tournament.policy";
+import * as LobbyService from "@/services/lobby.service";
 
 export const createTournament = async (organizationId: string, data: Omit<CreateTournament, 'organizationId'>) => {
     const [sportBlueprint] = await db
@@ -79,6 +81,7 @@ export const updateTournament = async (id: string, data: any) => {
 
     TournamentPolicy.enforceUpdateRules(current.status, validatedData);
     
+    // TODO: Real registration count
     const mockRegistrationCount = 0; 
     TournamentPolicy.enforceCapacityRules(validatedData.maxParticipants, mockRegistrationCount);
 
@@ -91,6 +94,11 @@ export const updateTournament = async (id: string, data: any) => {
             })
             .where(eq(tournaments.id, id))
             .returning();
+
+        // POLICY: If transitioning to 'ongoing', purge the lobby
+        if (validatedData.status === 'ongoing' && current.status !== 'ongoing') {
+            await LobbyService.purgeLobby(id);
+        }
 
         return { data: updated };
     } catch (error: any) {
@@ -139,6 +147,15 @@ export const getTournamentById = async (id: string) => {
     if (!tournament) throw new AppError(404, "Tournament not found");
 
     return { data: tournament };
+};
+
+export const isTournamentAdmin = async (userId: string, organizationId: string) => {
+    const [membership] = await db
+        .select({ role: organizationMembers.role })
+        .from(organizationMembers)
+        .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.organizationId, organizationId)));
+    
+    return membership && (membership.role === 'owner' || membership.role === 'admin');
 };
 
 export const discoverTournamentById = async (id: string) => {
@@ -211,3 +228,4 @@ export const getTournaments = async (query: {
         totalPages: Math.ceil(total / pageSize),
     };
 };
+
