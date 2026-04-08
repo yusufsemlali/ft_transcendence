@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
 
 export function TournamentSettingsTab({ tournament, org, onUpdate }: {
   tournament: Tournament;
@@ -31,23 +32,18 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
     try {
-      // Parse JSON fields
       let customSettings = {};
       let matchConfigSchema = {};
       try {
           customSettings = JSON.parse(form.customSettings);
           matchConfigSchema = JSON.parse(form.matchConfigSchema);
-      } catch (e) {
-          setError("Invalid JSON in Custom Settings or Match Config");
+      } catch {
+          toast.error("Invalid JSON in Custom Settings or Match Config");
           setSubmitting(false);
           return;
       }
@@ -66,13 +62,13 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
       });
 
       if (res.status === 200) {
-        setSuccess(true);
+        toast.success("Changes saved successfully");
         onUpdate(res.body.data);
       } else {
-        setError((res.body as any)?.message || "Failed to update tournament");
+        toast.error((res.body as any)?.message || "Failed to update tournament");
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+    } catch {
+      toast.error("An unexpected error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -83,20 +79,6 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
       <div className="glass-card" style={{ padding: "32px" }}>
         <h3 style={{ fontSize: "18px", fontWeight: "600", color: "var(--text-primary)", marginBottom: "8px" }}>General Settings</h3>
         <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "24px" }}>Manage your tournament profile, rules, and visibility.</p>
-
-        {error && (
-            <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(var(--destructive-rgb), 0.1)", color: "var(--destructive)", fontSize: "13px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>error</span>
-                {error}
-            </div>
-        )}
-
-        {success && (
-            <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(var(--accent-success-rgb), 0.1)", color: "var(--accent-success)", fontSize: "13px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
-                Changes saved successfully!
-            </div>
-        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
           {/* Tournament Name */}

@@ -29,10 +29,13 @@ export function AuthEffects() {
       if (now - lastLogoutAt < 5000) return;
       lastLogoutAt = now;
 
+      const wasLoggedIn = localStorage.getItem("isLoggedIn") === "true";
       dispatch(setUser(null));
       localStorage.removeItem("isLoggedIn");
 
-      toast.info("Session expired, please login again");
+      if (wasLoggedIn) {
+        toast.info("Session expired, please login again");
+      }
 
       const currentPath = window.location.pathname;
       const isProtected = PROTECTED_ROUTES.some((r) =>

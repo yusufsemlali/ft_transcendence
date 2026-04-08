@@ -7,6 +7,7 @@ import type { OrgRole } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { EmptyPanel } from "../_components/empty-panel";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
 
 /* ── Types ── */
 interface Member {
@@ -178,27 +179,26 @@ function AddMemberForm({ org, onAdded, onCancel }: {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>("member");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
-      setError("Email is required");
+      toast.error("Email is required");
       return;
     }
     setSubmitting(true);
-    setError(null);
     try {
       const res = await api.organizations.addMember({
         params: { id: org.id },
         body: { email: email.trim(), role: role as OrgRole },
       });
       if (res.status === 201) {
+        toast.success("Invitation sent");
         onAdded();
       } else {
-        setError((res.body as { message: string })?.message || "Failed to add member");
+        toast.error((res.body as { message: string })?.message || "Failed to add member");
       }
     } catch {
-      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -212,12 +212,6 @@ function AddMemberForm({ org, onAdded, onCancel }: {
           <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
         </button>
       </div>
-
-      {error && (
-        <div style={{ padding: "8px 12px", borderRadius: "6px", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)", fontSize: "12px", marginBottom: "12px" }}>
-          {error}
-        </div>
-      )}
 
       <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", flexWrap: "wrap" }}>
         <label className="dashboard-field" style={{ flex: 1, minWidth: "200px" }}>

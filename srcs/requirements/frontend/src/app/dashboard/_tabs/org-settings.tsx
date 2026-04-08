@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { Organization } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
+import { toast } from "@/components/ui/sonner";
 
 export function OrgSettingsTab({ org }: { org: Organization }) {
   const [form, setForm] = useState({
@@ -13,7 +14,6 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
     visibility: org.visibility || "public",
   });
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteSlug, setDeleteSlug] = useState("");
 
@@ -30,7 +30,6 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
 
   const handleSave = async () => {
     setSaving(true);
-    setMessage(null);
     try {
       const res = await api.organizations.updateOrganization({
         params: { id: org.id },
@@ -43,12 +42,12 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
         },
       });
       if (res.status === 200) {
-        setMessage({ type: "success", text: "Settings saved successfully!" });
+        toast.success("Settings saved successfully");
       } else {
-        setMessage({ type: "error", text: (res.body as any)?.message || "Failed to save" });
+        toast.error((res.body as any)?.message || "Failed to save");
       }
     } catch {
-      setMessage({ type: "error", text: "An unexpected error occurred" });
+      toast.error("An unexpected error occurred");
     } finally {
       setSaving(false);
     }
@@ -79,22 +78,6 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
         <h2 style={{ fontSize: "16px", fontWeight: "600", color: "var(--text-primary)", margin: "0 0 4px" }}>Organization Settings</h2>
         <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>Manage your organization&apos;s profile and configuration.</p>
       </div>
-
-      {/* Status message */}
-      {message && (
-        <div style={{
-          padding: "10px 14px", borderRadius: "8px", marginBottom: "16px",
-          fontSize: "12px",
-          background: message.type === "success"
-            ? "color-mix(in srgb, var(--accent-success, #22c55e) 10%, transparent)"
-            : "color-mix(in srgb, var(--destructive) 10%, transparent)",
-          color: message.type === "success" ? "var(--accent-success, #22c55e)" : "var(--destructive)",
-          display: "flex", alignItems: "center", gap: "8px",
-        }}>
-          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>{message.type === "success" ? "check_circle" : "error"}</span>
-          {message.text}
-        </div>
-      )}
 
       {/* General settings */}
       <div className="glass-card" style={{ padding: "24px", marginBottom: "20px" }}>

@@ -60,7 +60,7 @@ const ORG_TABS: Record<OrgSection, TabDef[]> = {
   ],
 };
 
-const TOURNAMENT_TABS: TabDef[] = [
+const ALL_TOURNAMENT_TABS: TabDef[] = [
   { id: "overview",  label: "Overview",  icon: "dashboard" },
   { id: "lobby",     label: "Lobby",     icon: "groups" },
   { id: "brackets",  label: "Brackets",  icon: "account_tree" },
@@ -69,6 +69,11 @@ const TOURNAMENT_TABS: TabDef[] = [
   { id: "schedule",  label: "Schedule",   icon: "calendar_month" },
   { id: "settings",  label: "Settings",  icon: "settings" },
 ];
+
+function getTournamentTabs(status: string): TabDef[] {
+  if (status === "draft") return ALL_TOURNAMENT_TABS.filter(t => t.id !== "lobby");
+  return ALL_TOURNAMENT_TABS;
+}
 
 const ORG_SECTION_META: Record<OrgSection, { title: string; icon: string }> = {
   overview:    { title: "Overview",       icon: "dashboard" },
@@ -180,7 +185,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
 
   /* ── Which tabs/content to render ── */
   const inTournament = activeTournament !== null;
-  const tabs = inTournament ? TOURNAMENT_TABS : (ORG_TABS[section] ?? []);
+  const tabs = inTournament ? getTournamentTabs(activeTournament.status) : (ORG_TABS[section] ?? []);
   const activePageId = inTournament ? tournamentPage : page;
 
   return (
@@ -316,10 +321,12 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {tournamentPage === "overview"  && (
                 <TournamentOverviewTab 
                     tournament={activeTournament} 
-                    org={org} 
+                    org={org}
+                    onStatusChange={(updated) => setActiveTournament(updated)}
+                    onNavigate={(p) => navigateTournament(p as TournamentPage)}
                 />
               )}
-              {tournamentPage === "lobby" && (
+              {tournamentPage === "lobby" && activeTournament.status !== "draft" && (
                 <LobbyTab
                     tournament={activeTournament}
                     org={org}

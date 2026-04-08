@@ -5,12 +5,12 @@ import { useState, useEffect } from "react";
 import api from "@/lib/api/api";
 import type { PublicTournament } from "@ft-transcendence/contracts";
 import Link from "next/link";
+import { toast } from "@/components/ui/sonner";
 
 export default function TournamentsPage() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [tournaments, setTournaments] = useState<PublicTournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -19,10 +19,10 @@ export default function TournamentsPage() {
         if (response.status === 200) {
           setTournaments(response.body.tournaments);
         } else {
-          setError("Failed to fetch tournaments");
+          toast.error("Failed to fetch tournaments");
         }
-      } catch (err) {
-        setError("An error occurred");
+      } catch {
+        toast.error("An error occurred while loading tournaments");
       } finally {
         setLoading(false);
       }
@@ -140,12 +140,9 @@ export default function TournamentsPage() {
           ))}
         </div>
 
-        {/* Loading / Error States */}
         {loading && <div style={{ textAlign: "center", opacity: 0.5 }}>Loading tournaments...</div>}
-        {error && <div style={{ color: "var(--accent-error)", textAlign: "center" }}>{error}</div>}
 
-        {/* Grid */}
-        {!loading && !error && (
+        {!loading && (
           <div
             style={{
               display: "grid",

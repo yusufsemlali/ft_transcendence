@@ -119,12 +119,15 @@ export const tournamentsController = s.router(contract.tournaments, {
         if (!userId) throw new AppError(401, "Unauthorized");
 
         const tournament = await TournamentService.getTournamentById(params.id);
-        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        if (await TournamentService.isOrgMember(userId, tournament.data.organizationId)) {
+            throw new AppError(403, "Organization staff cannot participate in their own tournaments.");
+        }
 
         const result = await LobbyService.joinLobby({
             tournamentId: params.id,
             userId,
-            isTO
+            isTO: false,
         });
         return {
             status: 201,

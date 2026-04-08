@@ -339,6 +339,27 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
   const registrationOpen = tournament.status === "registration";
   const queryKey = ["lobby", tournament.id];
 
+  // ── Resolve org role ──
+  // Any org member is "staff" and cannot participate — only manage.
+  // owner/admin get elevated TO controls (force-ready, assign).
+  const { data: orgMembers } = useQuery({
+    queryKey: ["org-members", org.id],
+    queryFn: async () => {
+      const res = await api.organizations.getOrganizationMembers({ params: { id: org.id } });
+      if (res.status === 200) return res.body.data as Array<{ id: string; orgRole: string }>;
+      return [];
+    },
+    staleTime: 60_000,
+  });
+
+  const myOrgRole = useMemo(() => {
+    if (!orgMembers || !userId) return null;
+    return orgMembers.find(m => m.id === userId)?.orgRole ?? null;
+  }, [orgMembers, userId]);
+
+  const isStaff = myOrgRole !== null;
+  const isTO = myOrgRole === "owner" || myOrgRole === "admin";
+
   // ── Poll lobby state ──
   const { data: lobby, isLoading } = useQuery<LobbyState>({
     queryKey,
@@ -378,7 +399,6 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
   }, [lobby, userId]);
 
   const { myStatus, myCompetitor, isCaptain } = derived;
-  const isTO = user?.role === "admin" || user?.role === "owner";
   const readyCount = lobby?.competitors.filter(c => c.status === "ready").length ?? 0;
 
   // ── Mutations ──
@@ -490,118 +510,168 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
 
       {/* ── Action Bar ── */}
       <div className="glass-card" style={{ padding: "16px 20px", marginBottom: "16px" }}>
-        {myStatus === "outside" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
-                {registrationOpen ? "Join the Tournament Lobby" : "Registration Closed"}
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                {registrationOpen
-                  ? is1v1
-                    ? "Enter to register as a participant."
-                    : "Enter the lobby to find or create a team."
-                  : "This tournament is no longer accepting new participants."}
-              </div>
-            </div>
-            {registrationOpen && (
-              <button
-                className="btn btn-primary"
-                style={{ padding: "10px 24px", fontSize: "12px", whiteSpace: "nowrap" }}
-                onClick={() => joinMutation.mutate()}
-                disabled={joinMutation.isPending}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>login</span>
-                {joinMutation.isPending ? "Joining..." : is1v1 ? "Register" : "Enter Lobby"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {myStatus === "solo" && (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: showCreateTeam ? "12px" : 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--accent-info)" }}>explore</span>
-                <div>
-                  <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>Looking for a Team</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Create your own team or wait for an invite from a captain.</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "6px" }}>
-                {!showCreateTeam && (
-                  <button
-                    className="btn btn-primary"
-                    style={{ fontSize: "11px", padding: "8px 16px", whiteSpace: "nowrap" }}
-                    onClick={() => setShowCreateTeam(true)}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>add</span>
-                    Create Team
-                  </button>
-                )}
-                <button
-                  className="btn btn-secondary"
-                  style={{ fontSize: "11px", padding: "8px 12px", whiteSpace: "nowrap" }}
-                  onClick={() => leaveLobbyMutation.mutate()}
-                  disabled={leaveLobbyMutation.isPending}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>logout</span>
-                  Leave
-                </button>
-              </div>
-            </div>
-            {showCreateTeam && (
-              <CreateTeamInline
-                onSubmit={(name) => createCompetitorMutation.mutate(name)}
-                submitting={createCompetitorMutation.isPending}
-              />
-            )}
-          </div>
-        )}
-
-        {myStatus === "spectator" && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--text-muted)" }}>visibility</span>
-            <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>Spectating</div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Registration has closed. You are watching as a spectator.</div>
-            </div>
-          </div>
-        )}
-
-        {myStatus === "rostered" && myCompetitor && (
+        {isStaff ? (
+          /* ── Staff view: management header, never a join button ── */
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--primary)" }}>shield</span>
+              <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--accent-warning)" }}>
+                admin_panel_settings
+              </span>
               <div>
                 <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
-                  {myCompetitor.name}
+                  Staff View
                   <span className="dashboard-status-badge" style={{
                     marginLeft: "8px",
-                    background: myCompetitor.status === "ready"
-                      ? "color-mix(in srgb, var(--accent-success) 15%, transparent)"
-                      : "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
-                    color: myCompetitor.status === "ready" ? "var(--accent-success)" : "var(--accent-warning)",
+                    background: "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
+                    color: "var(--accent-warning)",
+                    fontSize: "9px",
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "1px",
                   }}>
-                    {myCompetitor.status === "ready" ? "Ready" : "Incomplete"}
+                    {myOrgRole}
                   </span>
                 </div>
                 <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {myCompetitor.roster.length} member{myCompetitor.roster.length !== 1 ? "s" : ""}
-                  {isCaptain && " · You are the captain"}
+                  {isTO
+                    ? "You have full lobby controls. Use force-ready and player assignment below."
+                    : "You are viewing as organization staff. Staff cannot participate in their own tournaments."}
                 </div>
               </div>
             </div>
-            <button
-              className="btn btn-secondary"
-              style={{ fontSize: "11px", padding: "8px 12px", whiteSpace: "nowrap" }}
-              onClick={() => leaveCompetitorMutation.mutate()}
-              disabled={leaveCompetitorMutation.isPending}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>logout</span>
-              {leaveCompetitorMutation.isPending ? "Leaving..." : "Leave Team"}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.5px" }}>SOLO</div>
+                <div style={{ fontSize: "16px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+                  {lobby?.soloPlayers.length ?? 0}
+                </div>
+              </div>
+              {!is1v1 && (
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "0.5px" }}>TEAMS</div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+                    {lobby?.competitors.length ?? 0}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+        ) : (
+          /* ── Player view: contextual actions based on lobby status ── */
+          <>
+            {myStatus === "outside" && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+                    {registrationOpen ? "Join the Tournament Lobby" : "Registration Closed"}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    {registrationOpen
+                      ? is1v1
+                        ? "Enter to register as a participant."
+                        : "Enter the lobby to find or create a team."
+                      : "This tournament is no longer accepting new participants."}
+                  </div>
+                </div>
+                {registrationOpen && (
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: "10px 24px", fontSize: "12px", whiteSpace: "nowrap" }}
+                    onClick={() => joinMutation.mutate()}
+                    disabled={joinMutation.isPending}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>login</span>
+                    {joinMutation.isPending ? "Joining..." : is1v1 ? "Register" : "Enter Lobby"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {myStatus === "solo" && (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: showCreateTeam ? "12px" : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--accent-info)" }}>explore</span>
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>Looking for a Team</div>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Create your own team or wait for an invite from a captain.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {!showCreateTeam && (
+                      <button
+                        className="btn btn-primary"
+                        style={{ fontSize: "11px", padding: "8px 16px", whiteSpace: "nowrap" }}
+                        onClick={() => setShowCreateTeam(true)}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>add</span>
+                        Create Team
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-secondary"
+                      style={{ fontSize: "11px", padding: "8px 12px", whiteSpace: "nowrap" }}
+                      onClick={() => leaveLobbyMutation.mutate()}
+                      disabled={leaveLobbyMutation.isPending}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>logout</span>
+                      Leave
+                    </button>
+                  </div>
+                </div>
+                {showCreateTeam && (
+                  <CreateTeamInline
+                    onSubmit={(name) => createCompetitorMutation.mutate(name)}
+                    submitting={createCompetitorMutation.isPending}
+                  />
+                )}
+              </div>
+            )}
+
+            {myStatus === "spectator" && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--text-muted)" }}>visibility</span>
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>Spectating</div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Registration has closed. You are watching as a spectator.</div>
+                </div>
+              </div>
+            )}
+
+            {myStatus === "rostered" && myCompetitor && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "var(--primary)" }}>shield</span>
+                  <div>
+                    <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+                      {myCompetitor.name}
+                      <span className="dashboard-status-badge" style={{
+                        marginLeft: "8px",
+                        background: myCompetitor.status === "ready"
+                          ? "color-mix(in srgb, var(--accent-success) 15%, transparent)"
+                          : "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
+                        color: myCompetitor.status === "ready" ? "var(--accent-success)" : "var(--accent-warning)",
+                      }}>
+                        {myCompetitor.status === "ready" ? "Ready" : "Incomplete"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                      {myCompetitor.roster.length} member{myCompetitor.roster.length !== 1 ? "s" : ""}
+                      {isCaptain && " · You are the captain"}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  className="btn btn-secondary"
+                  style={{ fontSize: "11px", padding: "8px 12px", whiteSpace: "nowrap" }}
+                  onClick={() => leaveCompetitorMutation.mutate()}
+                  disabled={leaveCompetitorMutation.isPending}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>logout</span>
+                  {leaveCompetitorMutation.isPending ? "Leaving..." : "Leave Team"}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

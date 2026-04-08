@@ -38,6 +38,24 @@ export class TournamentPolicy {
         return 'CANCEL';
     }
 
+    // registration -> draft is allowed in tournament.service only when lobby/competitors/invites are empty
+    private static readonly VALID_TRANSITIONS: Record<string, string[]> = {
+        draft:        ['registration'],
+        registration: ['upcoming', 'cancelled'],
+        upcoming:     ['ongoing', 'cancelled'],
+        ongoing:      ['completed', 'cancelled'],
+    };
+
+    static enforceStatusTransition(currentStatus: string, newStatus: string) {
+        const allowed = this.VALID_TRANSITIONS[currentStatus];
+        if (!allowed || !allowed.includes(newStatus)) {
+            throw new AppError(
+                403,
+                `Invalid status transition: cannot go from "${currentStatus}" to "${newStatus}".`
+            );
+        }
+    }
+
     static enforceCapacityRules(newMaxParticipants: number | undefined, currentRegistrationCount: number) {
         if (newMaxParticipants !== undefined) {
             if (newMaxParticipants < 2) {

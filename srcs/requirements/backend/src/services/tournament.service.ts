@@ -9,7 +9,8 @@ import {
     UpdateTournamentSchema,
     PublicTournamentSchema 
 } from "@ft-transcendence/contracts";
-import { eq, and, or, sql, desc, ilike } from "drizzle-orm";
+import { eq, ne, and, or, sql, desc, ilike, count } from "drizzle-orm";
+import { lobby as lobbyTable, competitors, invites } from "@/dal/db/schemas/lobby";
 import { generateUniqueSlug } from "@/utils/slug";
 import { TournamentPolicy } from "@/policies/tournament.policy";
 import * as LobbyService from "@/services/lobby.service";
@@ -69,6 +70,32 @@ export const createTournament = async (organizationId: string, data: Omit<Create
     }
 };
 
+async function assertLobbyEmptyForDraftRevert(tournamentId: string) {
+    const [lobbyRow] = await db
+        .select({ n: count() })
+        .from(lobbyTable)
+        .where(eq(lobbyTable.tournamentId, tournamentId));
+    const [compRow] = await db
+        .select({ n: count() })
+        .from(competitors)
+        .where(eq(competitors.tournamentId, tournamentId));
+    const [inviteRow] = await db
+        .select({ n: count() })
+        .from(invites)
+        .where(eq(invites.tournamentId, tournamentId));
+
+    const lobbyCount = Number(lobbyRow?.n ?? 0);
+    const compCount = Number(compRow?.n ?? 0);
+    const inviteCount = Number(inviteRow?.n ?? 0);
+
+    if (lobbyCount > 0 || compCount > 0 || inviteCount > 0) {
+        throw new AppError(
+            409,
+            "Cannot revert to draft while the lobby has players, teams, or invites. Clear the lobby first."
+        );
+    }
+}
+
 export const updateTournament = async (id: string, data: any) => {
     const validatedData = UpdateTournamentSchema.parse(data);
 
@@ -80,6 +107,15 @@ export const updateTournament = async (id: string, data: any) => {
     if (!current) throw new AppError(404, "Tournament not found");
 
     TournamentPolicy.enforceUpdateRules(current.status, validatedData);
+
+    const newStatus = validatedData.status;
+    if (newStatus !== undefined && newStatus !== current.status) {
+        if (newStatus === "draft" && current.status === "registration") {
+            await assertLobbyEmptyForDraftRevert(id);
+        } else {
+            TournamentPolicy.enforceStatusTransition(current.status, newStatus);
+        }
+    }
     
     // TODO: Real registration count
     const mockRegistrationCount = 0; 
@@ -158,10 +194,23 @@ export const isTournamentAdmin = async (userId: string, organizationId: string) 
     return membership && (membership.role === 'owner' || membership.role === 'admin');
 };
 
+export const isOrgMember = async (userId: string, organizationId: string) => {
+    const [membership] = await db
+        .select({ role: organizationMembers.role })
+        .from(organizationMembers)
+        .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.organizationId, organizationId)));
+    
+    return !!membership;
+};
+
 export const discoverTournamentById = async (id: string) => {
     const response = await getTournamentById(id);
     
     if (response.data.isPrivate) {
+        throw new AppError(404, "Tournament not found");
+    }
+
+    if (response.data.status === 'draft') {
         throw new AppError(404, "Tournament not found");
     }
 
@@ -189,6 +238,7 @@ export const getTournaments = async (query: {
 
     const filters = [];
     filters.push(eq(tournaments.isPrivate, false));
+    filters.push(ne(tournaments.status, 'draft'));
 
     if (search) {
         filters.push(
