@@ -43,6 +43,7 @@ services:
     volumes:
       - ./requirements/backend:/app/backend
       - ./requirements/shared:/app/shared
+      - ./requirements/backend/uploads:/app/uploads
       - /app/backend/node_modules
       - /app/shared/contracts/node_modules
     depends_on:

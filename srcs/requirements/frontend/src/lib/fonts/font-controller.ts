@@ -18,7 +18,7 @@ let fontStyleElement: HTMLStyleElement | null = null;
  */
 function getFontStyleElement(): HTMLStyleElement {
     if (typeof document === "undefined") {
-        throw new Error("Cannot access document in SSR context");
+        return;
     }
 
     if (!fontStyleElement) {

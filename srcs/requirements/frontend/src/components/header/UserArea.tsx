@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { UserMenu } from "./UserMenu";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 
 export function UserArea() {
   const { user, logout, isLoading } = useAuth();

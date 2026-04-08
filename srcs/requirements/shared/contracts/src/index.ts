@@ -10,6 +10,7 @@ import { adminContract } from "./endpoints/admin";
 import { sportsContract } from "./endpoints/sports";
 import { friendsContract } from "./endpoints/friends";
 import { matchesContract } from "./endpoints/matches";
+import { filesContract } from "./endpoints/files";
 import { ORG_ROLES } from "./constants/roles";
 import { 
     TOURNAMENT_PHASES, 
@@ -31,6 +32,7 @@ export const contract = c.router({
     sports: sportsContract,
     friends: friendsContract,
     matches: matchesContract,
+    files: filesContract,
 });
 
 export const COMPATIBILITY_CHECK = 1;
@@ -53,6 +55,7 @@ export * from "./schemas/chat";
 export * from "./schemas/friends";
 export * from "./schemas/matches";
 export * from "./endpoints/sports";
+export * from "./endpoints/files";
 export * from "./constants/tournament_rules";
 export { defaultSettings } from "./schemas/settings";
 export { ORG_ROLES } from "./constants/roles";

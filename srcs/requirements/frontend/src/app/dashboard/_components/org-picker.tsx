@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
 import type { Organization } from "@ft-transcendence/contracts";
 

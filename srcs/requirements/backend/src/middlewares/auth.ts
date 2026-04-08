@@ -2,7 +2,11 @@ import { NextFunction, Response } from "express";
 import { TsRestRequestHandler } from "@ts-rest/express";
 import { AppRoute, AppRouter } from "@ts-rest/core";
 import { verifyAccessToken } from "../utils/auth";
-import AppError from "../utils/error";
+import { db } from "../dal/db";
+import { sessions } from "../dal/db/schemas/sessions";
+import { eq } from "drizzle-orm";
+
+const GUEST_TOKEN = { type: "None" as const, id: "", sessionId: "", username: "guest", role: "guest" };
 
 export function authenticateTsRestRequest<
     T extends AppRouter | AppRoute,
@@ -12,10 +16,8 @@ export function authenticateTsRestRequest<
         res: Response,
         next: NextFunction,
     ): Promise<void> => {
-        // 1. Look for the token in the Bearer header first
         let token = req.headers.authorization?.split(" ")[1];
 
-        // 2. If not in the header, look for it in the cookies
         if (!token && req.cookies && req.cookies.access_token) {
             token = req.cookies.access_token;
         }
@@ -25,6 +27,20 @@ export function authenticateTsRestRequest<
                 try {
                     const decoded = verifyAccessToken(token);
 
+                    // Verify the session still exists in the DB (covers logout-all / ban)
+                    if (decoded.sessionId) {
+                        const [session] = await db
+                            .select({ id: sessions.id })
+                            .from(sessions)
+                            .where(eq(sessions.id, decoded.sessionId));
+
+                        if (!session) {
+                            req.ctx = { ...req.ctx, decodedToken: GUEST_TOKEN };
+                            next();
+                            return;
+                        }
+                    }
+
                     req.ctx = {
                         ...req.ctx,
                         decodedToken: {
@@ -32,19 +48,11 @@ export function authenticateTsRestRequest<
                             type: "Bearer"
                         }
                     };
-                } catch (err) {
-                    // Silently fail authentication and treat as Guest
-                    // This allows public endpoints (login/register) to work even with expired tokens
-                    req.ctx = {
-                        ...req.ctx,
-                        decodedToken: { type: "None", id: "", sessionId: "", username: "guest", role: "guest" }
-                    } as any;
+                } catch {
+                    req.ctx = { ...req.ctx, decodedToken: GUEST_TOKEN };
                 }
             } else {
-                req.ctx = {
-                    ...req.ctx,
-                    decodedToken: { type: "None", id: "", sessionId: "", username: "guest", role: "guest" }
-                } as any;
+                req.ctx = { ...req.ctx, decodedToken: GUEST_TOKEN };
             }
             next();
         } catch (error) {

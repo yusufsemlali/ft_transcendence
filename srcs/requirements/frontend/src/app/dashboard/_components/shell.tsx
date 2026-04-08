@@ -23,12 +23,13 @@ import { ActivityTab } from "../_tabs/activity";
 import { SettingsTab } from "../_tabs/settings";
 import { TournamentSettingsTab } from "../_tabs/tournament-settings";
 import { TournamentOverviewTab } from "../_tabs/tournament-overview";
+import { TestUploadTab } from "../_tabs/test-upload";
 
 /* ═══════════════════════════════════════
    SECTION / PAGE DEFINITIONS
    ═══════════════════════════════════════ */
 
-type OrgSection = "overview" | "tournaments" | "admin" | "config";
+type OrgSection = "overview" | "tournaments" | "admin" | "config" | "tools";
 type TournamentPage = "overview" | "brackets" | "matches" | "standings" | "schedule" | "settings";
 
 interface TabDef { id: string; label: string; icon: string }
@@ -53,6 +54,9 @@ const ORG_TABS: Record<OrgSection, TabDef[]> = {
     { id: "sport-modes",  label: "Sport Modes",   icon: "sports" },
     { id: "integrations", label: "Integrations",  icon: "webhook" },
   ],
+  tools: [
+    { id: "upload-test", label: "Media Test", icon: "upload_file" },
+  ],
 };
 
 const TOURNAMENT_TABS: TabDef[] = [
@@ -69,9 +73,10 @@ const ORG_SECTION_META: Record<OrgSection, { title: string; icon: string }> = {
   tournaments: { title: "Tournaments",    icon: "emoji_events" },
   admin:       { title: "Administration", icon: "admin_panel_settings" },
   config:      { title: "Configuration",  icon: "settings" },
+  tools:       { title: "Developer Tools", icon: "build" },
 };
 
-const VALID_SECTIONS: OrgSection[] = ["overview", "tournaments", "admin", "config"];
+const VALID_SECTIONS: OrgSection[] = ["overview", "tournaments", "admin", "config", "tools"];
 const VALID_TPAGES: TournamentPage[] = ["overview", "brackets", "matches", "standings", "schedule", "settings"];
 
 /* ═══════════════════════════════════════
@@ -196,21 +201,46 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
         <TopBar onMenuClick={() => setSidebarOpen(true)} />
 
         {/* ── Title Bar ── */}
-        <div className="dashboard-title-bar">
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div className="dashboard-title-bar" style={{
+            backgroundImage: inTournament && activeTournament.bannerUrl ? `url(${activeTournament.bannerUrl})` : "none",
+            backgroundSize: "cover",
+            backgroundPosition: "center top",
+            borderBottom: inTournament ? "1px solid rgba(255,255,255,0.05)" : "1px solid var(--border-color)"
+        }}>
+          {/* Subtle Overlay to ensure text readability against the banner */}
+          {inTournament && activeTournament.bannerUrl && (
+            <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.85) 100%)",
+                zIndex: 0
+            }} />
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "relative", zIndex: 1 }}>
             {inTournament ? (
               /* Tournament-level title */
               <>
-                {activeTournament.bannerUrl ? (
-                  <div className="dashboard-org-avatar" style={{ backgroundImage: `url(${activeTournament.bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-                ) : (
-                  <div className="dashboard-org-avatar" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)" }}>emoji_events</span>
-                  </div>
-                )}
+                <div style={{ 
+                    width: "40px", 
+                    height: "40px", 
+                    borderRadius: "8px", 
+                    overflow: "hidden", 
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "var(--background)",
+                    flexShrink: 0
+                }}>
+                    {activeTournament.bannerUrl ? (
+                        <img src={activeTournament.bannerUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)" }}>emoji_events</span>
+                        </div>
+                    )}
+                </div>
                 <div>
-                  <h1 className="dashboard-title">{activeTournament.name}</h1>
-                  <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "2px" }}>{org.name}</p>
+                  <h1 className="dashboard-title" style={{ fontSize: "18px" }}>{activeTournament.name}</h1>
+                  <p style={{ color: "var(--text-muted)", fontSize: "11px", marginTop: "0px" }}>{org.name}</p>
                 </div>
               </>
             ) : section === "overview" ? (
@@ -243,7 +273,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
           </div>
 
           {/* Title bar actions */}
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
             {section === "overview" && !inTournament && (
               <>
                 <button className="btn btn-secondary" style={{ fontSize: "11px", padding: "6px 14px" }}>
@@ -318,6 +348,8 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {section === "config" && page === "org-settings" && <OrgSettingsTab org={org} />}
               {section === "config" && page === "sport-modes"  && <SportModesTab />}
               {section === "config" && page === "integrations" && <IntegrationsTab />}
+
+              {section === "tools" && page === "upload-test" && <TestUploadTab />}
             </>
           )}
         </div>

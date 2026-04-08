@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
 
 export default function RegisterForm() {

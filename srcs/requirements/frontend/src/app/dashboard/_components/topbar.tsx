@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 
 export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const { user } = useAuth();

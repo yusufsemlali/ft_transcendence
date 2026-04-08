@@ -1,10 +1,13 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, ReactNode } from "react";
+import { useMemo, useState, ReactNode } from "react";
+import { Provider } from "react-redux";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
-import { AuthProvider, UserInfo } from "@/contexts/AuthContext";
+import { AuthEffects } from "@/components/AuthEffects";
+import { makeStore } from "@/lib/store/store";
+import type { UserInfo } from "@/lib/types/user";
 
 interface ClientProvidersProps {
     children: ReactNode;
@@ -12,6 +15,8 @@ interface ClientProvidersProps {
 }
 
 export default function ClientProviders({ children, initialUser }: ClientProvidersProps) {
+    const store = useMemo(() => makeStore(initialUser), [initialUser]);
+
     const [queryClient] = useState(
         () =>
             new QueryClient({
@@ -24,12 +29,13 @@ export default function ClientProviders({ children, initialUser }: ClientProvide
     );
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <AuthProvider initialUser={initialUser}>
+        <Provider store={store}>
+            <QueryClientProvider client={queryClient}>
+                <AuthEffects />
                 <ThemeInitializer />
                 {children}
                 <Toaster />
-            </AuthProvider>
-        </QueryClientProvider>
+            </QueryClientProvider>
+        </Provider>
     );
 }

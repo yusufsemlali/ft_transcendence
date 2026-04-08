@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -42,7 +43,7 @@ function buildApp(): express.Application {
 
     console.log("[INFO] Regenerated OpenAPI documentation from contracts.");
 
-    // Standard Middlewares ... [rest of middlewares]
+    // Body parsing, cookies, CORS, and security headers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
@@ -62,6 +63,9 @@ function buildApp(): express.Application {
 
     // Mount Swagger UI
     app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
+
+    // Static file serving for uploads (before auth/rate-limit)
+    app.use("/api/uploads", express.static("/app/uploads"));
 
     // API Routes via ts-rest contract
     addApiRoutes(app);

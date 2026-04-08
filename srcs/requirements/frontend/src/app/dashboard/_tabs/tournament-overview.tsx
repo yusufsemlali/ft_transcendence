@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { StatWidget } from "../_components/stat-widget";
-import Head from "next/head";
 
 export function TournamentOverviewTab({ tournament, org }: { tournament: Tournament; org: Organization }) {
   const [stats, setStats] = useState({
@@ -32,83 +31,89 @@ export function TournamentOverviewTab({ tournament, org }: { tournament: Tournam
 
   return (
     <div className="animate-fade-in" style={{ width: "100%" }}>
-      {/* Preload the banner image with correct 'as' value to fix browser warning */}
-      <link rel="preload" href={bannerUrl} as="image" />
-
       {/* Hero Header */}
       <div className="glass-card" style={{ 
-          height: "280px", 
-          marginBottom: "24px", 
+          height: "220px", 
+          marginBottom: "20px", 
           position: "relative", 
           overflow: "hidden", 
           padding: 0,
           border: "none",
           background: "var(--background-secondary)"
       }}>
-        {/* Background Blur Overlay */}
+        {/* Banner Section (Top 60%) */}
         <div style={{ 
             position: "absolute", 
-            inset: 0, 
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "100%",
             backgroundImage: `url(${bannerUrl})`, 
             backgroundSize: "cover", 
             backgroundPosition: "center",
-            filter: "blur(40px) brightness(0.4)",
-            transform: "scale(1.1)",
             zIndex: 0
         }} />
+        
+        {/* Banner Fade & Overlay */}
+        <div style={{ 
+            position: "absolute", 
+            inset: 0, 
+            background: "linear-gradient(to top, var(--background) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)",
+            zIndex: 1
+        }} />
 
-        {/* Content */}
+        {/* Content Box */}
         <div style={{ 
             position: "relative", 
-            zIndex: 1, 
+            zIndex: 2, 
             height: "100%", 
             display: "flex", 
             flexDirection: "column", 
             justifyContent: "flex-end", 
-            padding: "40px",
-            background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)"
+            padding: "24px 32px",
         }}>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", width: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                     <div style={{ 
-                        width: "120px", 
-                        height: "120px", 
-                        borderRadius: "16px", 
+                        width: "100px", 
+                        height: "100px", 
+                        borderRadius: "12px", 
                         overflow: "hidden", 
                         border: "1px solid rgba(255,255,255,0.1)",
-                        boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                        flexShrink: 0
                     }}>
                         <img src={bannerUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     </div>
                     <div>
                         <span style={{ 
-                            fontSize: "11px", 
+                            fontSize: "10px", 
                             fontWeight: 700, 
                             color: "var(--primary)", 
                             letterSpacing: "2px", 
                             textTransform: "uppercase",
-                            marginBottom: "8px",
+                            marginBottom: "4px",
                             display: "block"
                         }}>
                              {tournament.bracketType.replace('_', ' ')} • {tournament.mode}
                         </span>
-                        <h2 style={{ fontSize: "32px", fontWeight: 800, color: "white", margin: 0, textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                        <h2 style={{ fontSize: "28px", fontWeight: 800, color: "white", margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
                             {tournament.name}
                         </h2>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "rgba(255,255,255,0.7)", fontSize: "13px" }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>calendar_today</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "8px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "rgba(255,255,255,0.8)", fontSize: "12px" }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>calendar_today</span>
                                 <span>{new Date(tournament.createdAt).toLocaleDateString()}</span>
                             </div>
-                            <div style={{ padding: "4px 12px", borderRadius: "100px", background: "rgba(255,255,255,0.1)", color: "white", fontSize: "11px", fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)" }}>
+                            <div style={{ padding: "3px 10px", borderRadius: "100px", background: "var(--primary)", color: "white", fontSize: "10px", fontWeight: 700 }}>
                                 {tournament.status.toUpperCase()}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: "flex", gap: "12px" }}>
-                    <button className="btn btn-primary" style={{ padding: "12px 32px" }}>
+                <div style={{ display: "flex", gap: "10px" }}>
+                    <button className="btn btn-primary" style={{ padding: "10px 24px" }}>
                         Launch Lobby
                     </button>
                 </div>

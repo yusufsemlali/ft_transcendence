@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 
 function ConsentPageContent() {
   const router = useRouter();
@@ -49,7 +49,8 @@ function ConsentPageContent() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to complete registration");
+        toast.error(error.message || "Failed to complete registration");
+
       }
 
       toast.success("Welcome aboard, " + username + "!");

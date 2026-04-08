@@ -1,19 +1,9 @@
 "use server";
 
 import { cookies } from "next/headers";
+import type { UserInfo } from "@/lib/types/user";
 
-export interface UserInfo {
-    id: string;
-    username: string;
-    email: string;
-    displayName: string;
-    bio: string;
-    tagline: string;
-    avatar: string;
-    banner: string;
-    level: number;
-    role: string;
-}
+export type { UserInfo };
 
 const BACKEND_URL = process.env.INTERNAL_BACKEND_API_URL || "http://ft_backend:3000/api";
 
