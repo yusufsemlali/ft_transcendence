@@ -23,6 +23,7 @@ import { ActivityTab } from "../_tabs/activity";
 import { SettingsTab } from "../_tabs/settings";
 import { TournamentSettingsTab } from "../_tabs/tournament-settings";
 import { TournamentOverviewTab } from "../_tabs/tournament-overview";
+import { LobbyTab } from "../_tabs/lobby";
 import { TestUploadTab } from "../_tabs/test-upload";
 
 /* ═══════════════════════════════════════
@@ -30,7 +31,7 @@ import { TestUploadTab } from "../_tabs/test-upload";
    ═══════════════════════════════════════ */
 
 type OrgSection = "overview" | "tournaments" | "admin" | "config" | "tools";
-type TournamentPage = "overview" | "brackets" | "matches" | "standings" | "schedule" | "settings";
+type TournamentPage = "overview" | "lobby" | "brackets" | "matches" | "standings" | "schedule" | "settings";
 
 interface TabDef { id: string; label: string; icon: string }
 
@@ -61,6 +62,7 @@ const ORG_TABS: Record<OrgSection, TabDef[]> = {
 
 const TOURNAMENT_TABS: TabDef[] = [
   { id: "overview",  label: "Overview",  icon: "dashboard" },
+  { id: "lobby",     label: "Lobby",     icon: "groups" },
   { id: "brackets",  label: "Brackets",  icon: "account_tree" },
   { id: "matches",   label: "Matches",   icon: "scoreboard" },
   { id: "standings", label: "Standings",  icon: "leaderboard" },
@@ -77,7 +79,7 @@ const ORG_SECTION_META: Record<OrgSection, { title: string; icon: string }> = {
 };
 
 const VALID_SECTIONS: OrgSection[] = ["overview", "tournaments", "admin", "config", "tools"];
-const VALID_TPAGES: TournamentPage[] = ["overview", "brackets", "matches", "standings", "schedule", "settings"];
+const VALID_TPAGES: TournamentPage[] = ["overview", "lobby", "brackets", "matches", "standings", "schedule", "settings"];
 
 /* ═══════════════════════════════════════
    SHELL
@@ -315,6 +317,12 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
                 <TournamentOverviewTab 
                     tournament={activeTournament} 
                     org={org} 
+                />
+              )}
+              {tournamentPage === "lobby" && (
+                <LobbyTab
+                    tournament={activeTournament}
+                    org={org}
                 />
               )}
               {tournamentPage === "brackets"  && <EmptyPanel icon="account_tree"  title="Brackets"             subtitle="View and manage the tournament bracket tree. Drag to rearrange seedings." />}
