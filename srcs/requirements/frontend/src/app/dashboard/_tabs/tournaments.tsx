@@ -7,6 +7,7 @@ import api from "@/lib/api/api";
 import { EmptyPanel } from "../_components/empty-panel";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
 
 /* ── Status badge colors ── */
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -125,7 +126,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         toast.success("Tournament created");
         onCreated();
       } else {
-        toast.error((res.body as any)?.message || "Failed to create tournament");
+        toastApiError(res.body, "Failed to create tournament");
       }
     } catch {
       toast.error("An unexpected error occurred");

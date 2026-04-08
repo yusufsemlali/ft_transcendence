@@ -2,9 +2,10 @@ import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { 
     TournamentSchema, 
-    PublicTournamentSchema, 
+    PublicTournamentDiscoverySchema, 
     CreateTournamentSchema, 
-    UpdateTournamentSchema 
+    UpdateTournamentSchema,
+    TournamentDiscoveryStatusSchema,
 } from "../schemas/tournaments";
 
 const c = initContract();
@@ -75,7 +76,7 @@ export const tournamentsContract = c.router({
         path: "/tournaments/:id",
         pathParams: z.object({ id: z.string().uuid() }),
         responses: {
-            200: z.object({ data: PublicTournamentSchema }),
+            200: z.object({ data: PublicTournamentDiscoverySchema }),
             404: z.object({ message: z.string() }),
         },
         summary: "Public Discovery Details (Sanitized)",
@@ -88,11 +89,11 @@ export const tournamentsContract = c.router({
             pageSize: z.coerce.number().default(20),
             search: z.string().optional(),
             sportId: z.string().uuid().optional(),
-            status: z.string().optional(),
+            status: TournamentDiscoveryStatusSchema.optional(),
         }),
         responses: {
             200: z.object({
-                tournaments: z.array(PublicTournamentSchema), 
+                tournaments: z.array(PublicTournamentDiscoverySchema), 
                 total: z.number(),
                 page: z.number(),
                 pageSize: z.number(),
@@ -220,6 +221,36 @@ export const tournamentsContract = c.router({
             404: z.object({ message: z.string() }),
         },
         summary: "Leave a competitor roster and return to solo lobby status",
+    },
+
+    ejectFromLobby: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/eject",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({ targetUserId: z.string().uuid() }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Remove a user from the tournament lobby entirely (TO only)",
+    },
+
+    removeCompetitorMember: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/remove-member",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({ targetUserId: z.string().uuid() }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Remove a user from a competitor roster back to solo lobby (TO only)",
     },
 
     forceReadyCompetitor: {

@@ -333,4 +333,129 @@ export const leaveCompetitor = async ({ tournamentId, competitorId, userId, isTO
     });
 };
 
+/**
+ * TO: remove a user from a roster; they remain in the lobby as solo.
+ */
+export const removeUserFromCompetitor = async ({
+    tournamentId,
+    competitorId,
+    targetUserId,
+    isTO,
+}: {
+    tournamentId: string;
+    competitorId: string;
+    targetUserId: string;
+    isTO: boolean;
+}) => {
+    LobbyPolicy.canAssignDirectly(isTO);
+
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) throw new AppError(404, "Tournament not found");
+
+    LobbyPolicy.enforcePhaseLock(tournament.status, isTO);
+
+    const [comp] = await db
+        .select()
+        .from(competitors)
+        .where(and(eq(competitors.id, competitorId), eq(competitors.tournamentId, tournamentId)));
+
+    if (!comp) throw new AppError(404, "Competitor not found");
+
+    return await db.transaction(async (tx: any) => {
+        const [userRoster] = await tx
+            .select()
+            .from(rosters)
+            .where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, targetUserId)));
+
+        if (!userRoster) throw new AppError(404, "User not on this roster");
+
+        await tx.delete(rosters).where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, targetUserId)));
+        await tx
+            .update(lobby)
+            .set({ status: "solo" })
+            .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, targetUserId)));
+
+        const remaining = await tx.select().from(rosters).where(eq(rosters.competitorId, competitorId));
+
+        if (remaining.length === 0) {
+            await tx.delete(competitors).where(eq(competitors.id, competitorId));
+        } else {
+            if (userRoster.role === "captain") {
+                await tx.update(rosters).set({ role: "captain" }).where(eq(rosters.id, remaining[0].id));
+            }
+            if (remaining.length < (tournament.minTeamSize || 1)) {
+                await tx.update(competitors).set({ status: "incomplete" }).where(eq(competitors.id, competitorId));
+            }
+        }
+
+        return { message: "Removed from team" };
+    });
+};
+
+/**
+ * TO: fully remove a user from the tournament lobby (and roster if any).
+ */
+export const ejectUserFromLobby = async ({
+    tournamentId,
+    targetUserId,
+    isTO,
+}: {
+    tournamentId: string;
+    targetUserId: string;
+    isTO: boolean;
+}) => {
+    LobbyPolicy.canEjectUser(isTO);
+
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) throw new AppError(404, "Tournament not found");
+
+    LobbyPolicy.enforcePhaseLock(tournament.status, isTO);
+
+    const [player] = await db
+        .select()
+        .from(lobby)
+        .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, targetUserId)));
+    if (!player) throw new AppError(404, "Player not in lobby");
+
+    return await db.transaction(async (tx: any) => {
+        const rosterRows = await tx
+            .select()
+            .from(rosters)
+            .innerJoin(competitors, eq(rosters.competitorId, competitors.id))
+            .where(and(eq(competitors.tournamentId, tournamentId), eq(rosters.userId, targetUserId)));
+
+        const userRoster = rosterRows[0];
+
+        if (userRoster) {
+            const comp = userRoster.competitors;
+            const rosterRow = userRoster.rosters;
+
+            if (rosterRow.role === "captain" && comp.status === "incomplete") {
+                await tx.delete(competitors).where(eq(competitors.id, comp.id));
+            } else {
+                await tx
+                    .delete(rosters)
+                    .where(and(eq(rosters.competitorId, comp.id), eq(rosters.userId, targetUserId)));
+
+                const remaining = await tx.select().from(rosters).where(eq(rosters.competitorId, comp.id));
+                if (remaining.length === 0) {
+                    await tx.delete(competitors).where(eq(competitors.id, comp.id));
+                } else {
+                    if (rosterRow.role === "captain") {
+                        await tx.update(rosters).set({ role: "captain" }).where(eq(rosters.id, remaining[0].id));
+                    }
+                    if (remaining.length < (tournament.minTeamSize || 1)) {
+                        await tx.update(competitors).set({ status: "incomplete" }).where(eq(competitors.id, comp.id));
+                    }
+                }
+            }
+        }
+
+        await tx.delete(invites).where(eq(invites.targetUserId, targetUserId));
+        await tx.delete(lobby).where(eq(lobby.id, player.id));
+
+        return { message: "Player removed from lobby" };
+    });
+};
+
 

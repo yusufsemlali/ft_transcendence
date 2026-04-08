@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
 import type { Organization } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
 
 /* ── Create Org Form Fields ── */
 function OrgFormFields({ 
@@ -57,7 +58,7 @@ function OrgFormFields({
         toast.success("Organization created");
         onCreated(res.body.data);
       } else {
-        toast.error((res.body as any)?.message || "Failed to create organization");
+        toastApiError(res.body, "Failed to create organization");
       }
     } catch {
       toast.error("An unexpected error occurred");

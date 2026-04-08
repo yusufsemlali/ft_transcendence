@@ -1,6 +1,7 @@
 import { UserSettings, defaultSettings } from "@ft-transcendence/contracts";
 import { getLocalBackground } from "./file-storage";
 import { applyFont } from "./fonts";
+import api from "@/lib/api/api";
 
 const SETTINGS_KEY = "tournify_settings";
 
@@ -246,5 +247,20 @@ export async function applyAllSettings(settings: UserSettings): Promise<void> {
     
     if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent(SETTINGS_UPDATED_EVENT, { detail: settings }));
+    }
+}
+
+/** Load theme, fonts, and background from the API and apply (after password login, OAuth, or SSR hydration). */
+export async function syncUserSettingsFromServer(): Promise<void> {
+    if (typeof window === "undefined") return;
+    try {
+        const response = await api.settings.getSettings({});
+        if (response.status === 200) {
+            const settings = response.body;
+            setLocalSettings(settings);
+            await applyAllSettings(settings);
+        }
+    } catch {
+        /* non-critical */
     }
 }

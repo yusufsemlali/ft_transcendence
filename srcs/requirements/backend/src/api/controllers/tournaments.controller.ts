@@ -273,5 +273,44 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
+    ejectFromLobby: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.ejectUserFromLobby({
+            tournamentId: params.id,
+            targetUserId: body.targetUserId,
+            isTO,
+        });
+        return {
+            status: 200,
+            body: result as any,
+        };
+    },
+
+    removeCompetitorMember: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.removeUserFromCompetitor({
+            tournamentId: params.id,
+            competitorId: params.competitorId,
+            targetUserId: body.targetUserId,
+            isTO,
+        });
+        return {
+            status: 200,
+            body: result as any,
+        };
+    },
+
 });
 

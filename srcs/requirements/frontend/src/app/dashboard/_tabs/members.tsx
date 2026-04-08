@@ -8,6 +8,7 @@ import api from "@/lib/api/api";
 import { EmptyPanel } from "../_components/empty-panel";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
 
 /* ── Types ── */
 interface Member {
@@ -195,7 +196,7 @@ function AddMemberForm({ org, onAdded, onCancel }: {
         toast.success("Invitation sent");
         onAdded();
       } else {
-        toast.error((res.body as { message: string })?.message || "Failed to add member");
+        toastApiError(res.body, "Failed to add member");
       }
     } catch {
       toast.error("An unexpected error occurred");

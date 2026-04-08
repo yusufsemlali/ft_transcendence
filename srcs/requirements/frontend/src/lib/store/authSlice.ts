@@ -3,7 +3,7 @@ import type { UserInfo } from "@/lib/types/user";
 import type { User } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { logoutAction } from "@/lib/auth";
-import { setLocalSettings, applyAllSettings } from "@/lib/settings";
+import { syncUserSettingsFromServer } from "@/lib/settings";
 
 export type { UserInfo };
 
@@ -37,17 +37,7 @@ export const loginThunk = createAsyncThunk<
       const { user: userData } = response.body;
       localStorage.setItem("isLoggedIn", "true");
       dispatch(setUser(extractUserInfo(userData)));
-
-      try {
-        const settingsResponse = await api.settings.getSettings({});
-        if (settingsResponse.status === 200) {
-          const settings = settingsResponse.body;
-          setLocalSettings(settings);
-          await applyAllSettings(settings);
-        }
-      } catch {
-        // non-critical
-      }
+      await syncUserSettingsFromServer();
 
       return { success: true as const };
     }

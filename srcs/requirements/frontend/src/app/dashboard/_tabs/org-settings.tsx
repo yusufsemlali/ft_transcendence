@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { Organization } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
 
 export function OrgSettingsTab({ org }: { org: Organization }) {
   const [form, setForm] = useState({
@@ -44,7 +45,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
       if (res.status === 200) {
         toast.success("Settings saved successfully");
       } else {
-        toast.error((res.body as any)?.message || "Failed to save");
+        toastApiError(res.body, "Failed to save");
       }
     } catch {
       toast.error("An unexpected error occurred");

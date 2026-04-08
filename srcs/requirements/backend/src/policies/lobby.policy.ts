@@ -48,4 +48,13 @@ export class LobbyPolicy {
             );
         }
     }
+
+    static canEjectUser(isTO: boolean) {
+        if (!isTO) {
+            throw new AppError(
+                403,
+                "God Mode Required: Only Tournament Organizers can remove players from the lobby."
+            );
+        }
+    }
 }

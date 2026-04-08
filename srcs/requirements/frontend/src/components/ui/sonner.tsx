@@ -142,6 +142,7 @@ const toastStyles = `
         color: var(--text-secondary);
         margin-top: 0.15rem;
         line-height: 1rem;
+        white-space: pre-line;
     }
 
     .toast-close {

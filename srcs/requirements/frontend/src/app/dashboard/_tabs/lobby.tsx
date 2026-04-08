@@ -1,11 +1,21 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
+import { formatApiErrorBody } from "@/lib/api-error";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /* ═══════════════════════════════════════
    TYPES  (mirrors the new contracts)
@@ -38,6 +48,10 @@ interface LobbyState {
 }
 
 type MyStatus = "outside" | "solo" | "rostered" | "spectator";
+
+function staffMenuTriggerStyle(): CSSProperties {
+  return { padding: "4px 8px", minWidth: "32px", display: "inline-flex", alignItems: "center", justifyContent: "center" };
+}
 
 /* ═══════════════════════════════════════
    CAPACITY BAR
@@ -130,13 +144,18 @@ function CreateTeamInline({ onSubmit, submitting }: {
    SOLO PLAYER CARD
    ═══════════════════════════════════════ */
 
-function SoloPlayerCard({ player, canInvite, myCompetitorId, onInvite, inviting }: {
+function SoloPlayerCard({ player, canInvite, myCompetitorId, onInvite, inviting, isTO, onEject, ejecting }: {
   player: SoloPlayer;
   canInvite: boolean;
   myCompetitorId: string | null;
   onInvite: (userId: string) => void;
   inviting: boolean;
+  isTO: boolean;
+  onEject: (userId: string) => void;
+  ejecting: boolean;
 }) {
+  const showActions = isTO || (canInvite && !!myCompetitorId);
+
   return (
     <div style={{
       display: "flex",
@@ -167,16 +186,137 @@ function SoloPlayerCard({ player, canInvite, myCompetitorId, onInvite, inviting 
           <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>Looking for team</div>
         </div>
       </div>
-      {canInvite && myCompetitorId && (
-        <button
-          className="btn btn-secondary"
-          style={{ fontSize: "10px", padding: "4px 10px" }}
-          onClick={() => onInvite(player.userId)}
-          disabled={inviting}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>person_add</span>
-          Invite
-        </button>
+      {showActions && (
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+          {canInvite && myCompetitorId && (
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: "10px", padding: "4px 10px" }}
+              onClick={() => onInvite(player.userId)}
+              disabled={inviting}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>person_add</span>
+              Invite
+            </button>
+          )}
+          {isTO && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                type="button"
+                className="btn btn-secondary"
+                style={staffMenuTriggerStyle()}
+                disabled={ejecting}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={4}>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={ejecting}
+                    onClick={() => {
+                      if (typeof window !== "undefined" && window.confirm(`Remove ${player.username} from the lobby entirely?`)) {
+                        onEject(player.userId);
+                      }
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+                    Remove from lobby
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   ROSTER ROW (team mode, staff actions)
+   ═══════════════════════════════════════ */
+
+function LobbyRosterRow({
+  member,
+  competitorId,
+  isTO,
+  onRemoveFromTeam,
+  onEjectFromLobby,
+  removeBusy,
+  ejectBusy,
+}: {
+  member: RosterMember;
+  competitorId: string;
+  isTO: boolean;
+  onRemoveFromTeam: (competitorId: string, userId: string) => void;
+  onEjectFromLobby: (userId: string) => void;
+  removeBusy: boolean;
+  ejectBusy: boolean;
+}) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "6px 10px",
+      borderRadius: "6px",
+      background: "rgba(255,255,255,0.02)",
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: "14px", color: "var(--text-muted)" }}>person</span>
+      <span style={{ fontSize: "12px", color: "var(--text-primary)", flex: 1 }}>{member.username}</span>
+      {member.role === "captain" && (
+        <span style={{
+          fontSize: "9px",
+          fontWeight: 700,
+          color: "var(--accent-warning)",
+          letterSpacing: "1px",
+          padding: "2px 6px",
+          borderRadius: "4px",
+          background: "color-mix(in srgb, var(--accent-warning) 10%, transparent)",
+        }}>
+          CPT
+        </span>
+      )}
+      {isTO && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: "2px 6px", minWidth: "28px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+            disabled={removeBusy || ejectBusy}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>more_vert</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={4}>
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                disabled={removeBusy}
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.confirm(`Remove ${member.username} from this team? They will return to free agents.`)) {
+                    onRemoveFromTeam(competitorId, member.userId);
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>group_remove</span>
+                Remove from team
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={ejectBusy}
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.confirm(`Remove ${member.username} from the lobby entirely?`)) {
+                    onEjectFromLobby(member.userId);
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+                Remove from lobby
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );
@@ -186,12 +326,26 @@ function SoloPlayerCard({ player, canInvite, myCompetitorId, onInvite, inviting 
    COMPETITOR CARD (Team mode)
    ═══════════════════════════════════════ */
 
-function CompetitorCard({ competitor, isMyTeam, isTO, onForceReady, forcing }: {
+function CompetitorCard({
+  competitor,
+  isMyTeam,
+  isTO,
+  onForceReady,
+  forcing,
+  onRemoveFromTeam,
+  onEjectFromLobby,
+  isRemoveMemberPending,
+  isEjectPending,
+}: {
   competitor: Competitor;
   isMyTeam: boolean;
   isTO: boolean;
   onForceReady: (id: string) => void;
   forcing: boolean;
+  onRemoveFromTeam: (competitorId: string, userId: string) => void;
+  onEjectFromLobby: (userId: string) => void;
+  isRemoveMemberPending: (competitorId: string, userId: string) => boolean;
+  isEjectPending: (userId: string) => boolean;
 }) {
   const isReady = competitor.status === "ready";
   const isDisqualified = competitor.status === "disqualified";
@@ -207,8 +361,8 @@ function CompetitorCard({ competitor, isMyTeam, isTO, onForceReady, forcing }: {
       background: isMyTeam ? "color-mix(in srgb, var(--primary) 3%, transparent)" : undefined,
       opacity: isDisqualified ? 0.6 : 1,
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
           <span className="material-symbols-outlined" style={{ fontSize: "18px", color: isMyTeam ? "var(--primary)" : "var(--text-muted)" }}>
             shield
           </span>
@@ -217,44 +371,55 @@ function CompetitorCard({ competitor, isMyTeam, isTO, onForceReady, forcing }: {
             <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--primary)", letterSpacing: "1px" }}>YOU</span>
           )}
         </div>
-        <span className="dashboard-status-badge" style={{
-          background: isReady
-            ? "color-mix(in srgb, var(--accent-success) 15%, transparent)"
-            : isDisqualified
-              ? "color-mix(in srgb, var(--destructive) 15%, transparent)"
-              : "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
-          color: isReady ? "var(--accent-success)" : isDisqualified ? "var(--destructive)" : "var(--accent-warning)",
-        }}>
-          {isReady ? "Ready" : isDisqualified ? "Disqualified" : "Incomplete"}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          <span className="dashboard-status-badge" style={{
+            background: isReady
+              ? "color-mix(in srgb, var(--accent-success) 15%, transparent)"
+              : isDisqualified
+                ? "color-mix(in srgb, var(--destructive) 15%, transparent)"
+                : "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
+            color: isReady ? "var(--accent-success)" : isDisqualified ? "var(--destructive)" : "var(--accent-warning)",
+          }}>
+            {isReady ? "Ready" : isDisqualified ? "Disqualified" : "Incomplete"}
+          </span>
+          {isTO && competitor.status === "incomplete" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                type="button"
+                className="btn btn-secondary"
+                style={staffMenuTriggerStyle()}
+                disabled={forcing}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={4}>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    disabled={forcing}
+                    onClick={() => onForceReady(competitor.id)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>bolt</span>
+                    Force ready
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {competitor.roster.map(member => (
-          <div key={member.userId} style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "6px 10px",
-            borderRadius: "6px",
-            background: "rgba(255,255,255,0.02)",
-          }}>
-            <span className="material-symbols-outlined" style={{ fontSize: "14px", color: "var(--text-muted)" }}>person</span>
-            <span style={{ fontSize: "12px", color: "var(--text-primary)", flex: 1 }}>{member.username}</span>
-            {member.role === "captain" && (
-              <span style={{
-                fontSize: "9px",
-                fontWeight: 700,
-                color: "var(--accent-warning)",
-                letterSpacing: "1px",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                background: "color-mix(in srgb, var(--accent-warning) 10%, transparent)",
-              }}>
-                CPT
-              </span>
-            )}
-          </div>
+          <LobbyRosterRow
+            key={member.userId}
+            member={member}
+            competitorId={competitor.id}
+            isTO={isTO}
+            onRemoveFromTeam={onRemoveFromTeam}
+            onEjectFromLobby={onEjectFromLobby}
+            removeBusy={isRemoveMemberPending(competitor.id, member.userId)}
+            ejectBusy={isEjectPending(member.userId)}
+          />
         ))}
         {competitor.roster.length === 0 && (
           <div style={{ fontSize: "12px", color: "var(--text-muted)", padding: "8px 0", textAlign: "center" }}>
@@ -262,18 +427,6 @@ function CompetitorCard({ competitor, isMyTeam, isTO, onForceReady, forcing }: {
           </div>
         )}
       </div>
-
-      {isTO && competitor.status === "incomplete" && (
-        <button
-          className="btn btn-secondary"
-          style={{ fontSize: "10px", padding: "6px 12px", marginTop: "12px", width: "100%" }}
-          onClick={() => onForceReady(competitor.id)}
-          disabled={forcing}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>bolt</span>
-          {forcing ? "Forcing..." : "Force Ready"}
-        </button>
-      )}
     </div>
   );
 }
@@ -282,9 +435,24 @@ function CompetitorCard({ competitor, isMyTeam, isTO, onForceReady, forcing }: {
    1v1 ENTRANT CARD
    ═══════════════════════════════════════ */
 
-function EntrantCard({ competitor }: { competitor: Competitor }) {
+function EntrantCard({
+  competitor,
+  isTO,
+  onForceReady,
+  onEject,
+  forcing,
+  ejecting,
+}: {
+  competitor: Competitor;
+  isTO: boolean;
+  onForceReady: (competitorId: string) => void;
+  onEject: (userId: string) => void;
+  forcing: boolean;
+  ejecting: boolean;
+}) {
   const player = competitor.roster[0];
   const isReady = competitor.status === "ready";
+  const targetUserId = player?.userId;
 
   return (
     <div style={{
@@ -293,8 +461,9 @@ function EntrantCard({ competitor }: { competitor: Competitor }) {
       justifyContent: "space-between",
       padding: "10px 14px",
       borderBottom: "1px solid var(--border-color)",
+      gap: "8px",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
         <div style={{
           width: "32px",
           height: "32px",
@@ -304,6 +473,7 @@ function EntrantCard({ competitor }: { competitor: Competitor }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          flexShrink: 0,
         }}>
           <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>
         </div>
@@ -311,15 +481,53 @@ function EntrantCard({ competitor }: { competitor: Competitor }) {
           {player?.username || competitor.name}
         </span>
       </div>
-      <span className="dashboard-status-badge" style={{
-        background: isReady
-          ? "color-mix(in srgb, var(--accent-success) 15%, transparent)"
-          : "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
-        color: isReady ? "var(--accent-success)" : "var(--accent-warning)",
-        fontSize: "10px",
-      }}>
-        {isReady ? "Registered" : "Pending"}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+        <span className="dashboard-status-badge" style={{
+          background: isReady
+            ? "color-mix(in srgb, var(--accent-success) 15%, transparent)"
+            : "color-mix(in srgb, var(--accent-warning) 15%, transparent)",
+          color: isReady ? "var(--accent-success)" : "var(--accent-warning)",
+          fontSize: "10px",
+        }}>
+          {isReady ? "Registered" : "Pending"}
+        </span>
+        {isTO && targetUserId && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              type="button"
+              className="btn btn-secondary"
+              style={staffMenuTriggerStyle()}
+              disabled={forcing || ejecting}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={4}>
+              <DropdownMenuGroup>
+                {!isReady && (
+                  <DropdownMenuItem disabled={forcing} onClick={() => onForceReady(competitor.id)}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>bolt</span>
+                    Force ready
+                  </DropdownMenuItem>
+                )}
+                {!isReady && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={ejecting}
+                  onClick={() => {
+                    const name = player?.username || "this player";
+                    if (typeof window !== "undefined" && window.confirm(`Remove ${name} from the lobby entirely?`)) {
+                      onEject(targetUserId);
+                    }
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+                  Remove from lobby
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
     </div>
   );
 }
@@ -407,7 +615,9 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
   const joinMutation = useMutation({
     mutationFn: async () => {
       const res = await api.tournaments.joinLobby({ params: { id: tournament.id }, body: {} });
-      if (res.status !== 201) throw new Error((res.body as any)?.message || "Failed to join");
+      if (res.status !== 201) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to join"));
+      }
       return res.body;
     },
     onSuccess: (data) => {
@@ -420,7 +630,9 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
   const createCompetitorMutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await api.tournaments.createCompetitor({ params: { id: tournament.id }, body: { name } });
-      if (res.status !== 201) throw new Error((res.body as any)?.message || "Failed to create team");
+      if (res.status !== 201) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to create team"));
+      }
       return res.body;
     },
     onSuccess: () => {
@@ -438,7 +650,9 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
         params: { id: tournament.id, competitorId: myCompetitor.id },
         body: { targetUserId },
       });
-      if (res.status !== 201) throw new Error((res.body as any)?.message || "Failed to invite");
+      if (res.status !== 201) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to invite"));
+      }
     },
     onSuccess: () => {
       toast.success("Invite sent!");
@@ -450,7 +664,9 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
   const leaveLobbyMutation = useMutation({
     mutationFn: async () => {
       const res = await api.tournaments.leaveLobby({ params: { id: tournament.id }, body: {} });
-      if (res.status !== 200) throw new Error((res.body as any)?.message || "Failed to leave");
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to leave"));
+      }
     },
     onSuccess: () => {
       toast.success("Left lobby");
@@ -466,7 +682,9 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
         params: { id: tournament.id, competitorId: myCompetitor.id },
         body: {},
       });
-      if (res.status !== 200) throw new Error((res.body as any)?.message || "Failed to leave team");
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to leave team"));
+      }
     },
     onSuccess: () => {
       toast.success("Left team");
@@ -481,10 +699,46 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
         params: { id: tournament.id, competitorId },
         body: {},
       });
-      if (res.status !== 200) throw new Error((res.body as any)?.message || "Failed to force ready");
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to force ready"));
+      }
     },
     onSuccess: () => {
       toast.success("Competitor set to ready");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const ejectFromLobbyMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const res = await api.tournaments.ejectFromLobby({
+        params: { id: tournament.id },
+        body: { targetUserId },
+      });
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to remove player"));
+      }
+    },
+    onSuccess: () => {
+      toast.success("Player removed from lobby");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (p: { competitorId: string; targetUserId: string }) => {
+      const res = await api.tournaments.removeCompetitorMember({
+        params: { id: tournament.id, competitorId: p.competitorId },
+        body: { targetUserId: p.targetUserId },
+      });
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to remove from team"));
+      }
+    },
+    onSuccess: () => {
+      toast.success("Removed from team");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -533,7 +787,7 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
                 </div>
                 <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                   {isTO
-                    ? "You have full lobby controls. Use force-ready and player assignment below."
+                    ? "You have full lobby controls. Use the ⋮ menus on free agents, teams, and roster rows to moderate."
                     : "You are viewing as organization staff. Staff cannot participate in their own tournaments."}
                 </div>
               </div>
@@ -693,7 +947,18 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
               <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>No participants yet. Be the first to register!</p>
             </div>
           ) : (
-            lobby?.competitors.map(comp => <EntrantCard key={comp.id} competitor={comp} />)
+            lobby?.competitors.map(comp => (
+              <EntrantCard
+                key={comp.id}
+                competitor={comp}
+                isTO={isTO}
+                onForceReady={(id) => forceReadyMutation.mutate(id)}
+                onEject={(uid) => ejectFromLobbyMutation.mutate(uid)}
+                forcing={forceReadyMutation.isPending && forceReadyMutation.variables === comp.id}
+                ejecting={ejectFromLobbyMutation.isPending
+                  && ejectFromLobbyMutation.variables === comp.roster[0]?.userId}
+              />
+            ))
           )}
         </div>
       ) : (
@@ -727,6 +992,9 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
                   myCompetitorId={myCompetitor?.id ?? null}
                   onInvite={(uid) => inviteMutation.mutate(uid)}
                   inviting={inviteMutation.isPending}
+                  isTO={isTO}
+                  onEject={(uid) => ejectFromLobbyMutation.mutate(uid)}
+                  ejecting={ejectFromLobbyMutation.isPending && ejectFromLobbyMutation.variables === player.userId}
                 />
               ))
             )}
@@ -753,7 +1021,16 @@ export function LobbyTab({ tournament, org }: { tournament: Tournament; org: Org
                   isMyTeam={myCompetitor?.id === comp.id}
                   isTO={isTO}
                   onForceReady={(id) => forceReadyMutation.mutate(id)}
-                  forcing={forceReadyMutation.isPending}
+                  forcing={forceReadyMutation.isPending && forceReadyMutation.variables === comp.id}
+                  onRemoveFromTeam={(competitorId, targetUserId) =>
+                    removeMemberMutation.mutate({ competitorId, targetUserId })}
+                  onEjectFromLobby={(uid) => ejectFromLobbyMutation.mutate(uid)}
+                  isRemoveMemberPending={(competitorId, targetUserId) =>
+                    removeMemberMutation.isPending
+                    && removeMemberMutation.variables?.competitorId === competitorId
+                    && removeMemberMutation.variables?.targetUserId === targetUserId}
+                  isEjectPending={(uid) =>
+                    ejectFromLobbyMutation.isPending && ejectFromLobbyMutation.variables === uid}
                 />
               ))
             )}

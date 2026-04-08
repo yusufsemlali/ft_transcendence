@@ -6,6 +6,8 @@ import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { StatWidget } from "../_components/stat-widget";
 import { toast } from "@/components/ui/sonner";
+import { formatApiErrorBody } from "@/lib/api-error";
+import { TournamentStatusActions } from "../_components/tournament-status-actions";
 
 export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavigate }: {
   tournament: Tournament;
@@ -45,7 +47,9 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
         params: { organizationId: org.id, id: tournament.id },
         body: { status: "registration" as any },
       });
-      if (res.status !== 200) throw new Error((res.body as any)?.message || "Failed to launch lobby");
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to launch lobby"));
+      }
       return (res.body as any).data as Tournament;
     },
     onSuccess: (updated) => {
@@ -148,7 +152,7 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
                 </div>
 
                 {/* Action buttons based on status */}
-                <div style={{ display: "flex", gap: "10px" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
                     {isDraft && !confirmLaunch && (
                       <button
                         className="btn btn-primary"
@@ -184,6 +188,14 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
                           </button>
                         </div>
                       </div>
+                    )}
+                    {!isDraft && (
+                      <TournamentStatusActions
+                        tournament={tournament}
+                        org={org}
+                        onUpdate={(t) => onStatusChange?.(t)}
+                        variant="overview"
+                      />
                     )}
                     {isRegistration && (
                       <button

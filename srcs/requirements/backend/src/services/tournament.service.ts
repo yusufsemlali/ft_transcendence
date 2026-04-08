@@ -7,10 +7,12 @@ import {
     CreateTournament, 
     UpdateTournament, 
     UpdateTournamentSchema,
-    PublicTournamentSchema 
+    PublicTournamentDiscoverySchema,
 } from "@ft-transcendence/contracts";
-import { eq, ne, and, or, sql, desc, ilike, count } from "drizzle-orm";
+import { eq, ne, and, or, sql, desc, ilike, count, isNull, getTableColumns } from "drizzle-orm";
+import { organizations } from "@/dal/db/schemas/organizations";
 import { lobby as lobbyTable, competitors, invites } from "@/dal/db/schemas/lobby";
+import { matches } from "@/dal/db/schemas/matches";
 import { generateUniqueSlug } from "@/utils/slug";
 import { TournamentPolicy } from "@/policies/tournament.policy";
 import * as LobbyService from "@/services/lobby.service";
@@ -70,6 +72,20 @@ export const createTournament = async (organizationId: string, data: Omit<Create
     }
 };
 
+async function assertNoMatches(tournamentId: string) {
+    const [row] = await db
+        .select({ n: count() })
+        .from(matches)
+        .where(eq(matches.tournamentId, tournamentId));
+    const n = Number(row?.n ?? 0);
+    if (n > 0) {
+        throw new AppError(
+            409,
+            "This action is only allowed before any matches exist for this tournament.",
+        );
+    }
+}
+
 async function assertLobbyEmptyForDraftRevert(tournamentId: string) {
     const [lobbyRow] = await db
         .select({ n: count() })
@@ -106,12 +122,28 @@ export const updateTournament = async (id: string, data: any) => {
 
     if (!current) throw new AppError(404, "Tournament not found");
 
-    TournamentPolicy.enforceUpdateRules(current.status, validatedData);
+    TournamentPolicy.enforceUpdateRules(current.status, validatedData, {
+        mode: current.mode,
+        minTeamSize: current.minTeamSize,
+        maxTeamSize: current.maxTeamSize,
+        allowDraws: current.allowDraws,
+        bracketType: current.bracketType,
+        matchConfigSchema: current.matchConfigSchema,
+    });
 
     const newStatus = validatedData.status;
     if (newStatus !== undefined && newStatus !== current.status) {
         if (newStatus === "draft" && current.status === "registration") {
             await assertLobbyEmptyForDraftRevert(id);
+        } else if (
+            current.status === "cancelled" &&
+            (newStatus === "draft" || newStatus === "registration")
+        ) {
+            await assertNoMatches(id);
+            if (newStatus === "draft") {
+                await assertLobbyEmptyForDraftRevert(id);
+            }
+            TournamentPolicy.enforceStatusTransition(current.status, newStatus);
         } else {
             TournamentPolicy.enforceStatusTransition(current.status, newStatus);
         }
@@ -204,17 +236,33 @@ export const isOrgMember = async (userId: string, organizationId: string) => {
 };
 
 export const discoverTournamentById = async (id: string) => {
-    const response = await getTournamentById(id);
-    
-    if (response.data.isPrivate) {
+    const [row] = await db
+        .select({
+            ...getTableColumns(tournaments),
+            sportName: sports.name,
+            organizationName: organizations.name,
+            organizationSlug: organizations.slug,
+        })
+        .from(tournaments)
+        .innerJoin(sports, eq(tournaments.sportId, sports.id))
+        .innerJoin(organizations, eq(tournaments.organizationId, organizations.id))
+        .where(
+            and(eq(tournaments.id, id), isNull(organizations.deletedAt)),
+        );
+
+    if (!row) {
         throw new AppError(404, "Tournament not found");
     }
 
-    if (response.data.status === 'draft') {
+    if (row.isPrivate) {
         throw new AppError(404, "Tournament not found");
     }
 
-    const sanitizedData = PublicTournamentSchema.parse(response.data);
+    if (row.status === "draft") {
+        throw new AppError(404, "Tournament not found");
+    }
+
+    const sanitizedData = PublicTournamentDiscoverySchema.parse(row);
     return { data: sanitizedData };
 };
 
@@ -254,19 +302,30 @@ export const getTournaments = async (query: {
     const whereClause = and(...filters);
 
     const tournamentList = await db
-        .select()
+        .select({
+            ...getTableColumns(tournaments),
+            sportName: sports.name,
+            organizationName: organizations.name,
+            organizationSlug: organizations.slug,
+        })
         .from(tournaments)
-        .where(whereClause)
+        .innerJoin(sports, eq(tournaments.sportId, sports.id))
+        .innerJoin(organizations, eq(tournaments.organizationId, organizations.id))
+        .where(and(whereClause, isNull(organizations.deletedAt)))
         .limit(pageSize)
         .offset(offset)
         .orderBy(desc(tournaments.createdAt));
 
-    const sanitizedTournaments = tournamentList.map(t => PublicTournamentSchema.parse(t));
+    const sanitizedTournaments = tournamentList.map((t) =>
+        PublicTournamentDiscoverySchema.parse(t),
+    );
 
     const [totalCount] = await db
         .select({ value: sql`count(*)`.mapWith(Number) })
         .from(tournaments)
-        .where(whereClause);
+        .innerJoin(sports, eq(tournaments.sportId, sports.id))
+        .innerJoin(organizations, eq(tournaments.organizationId, organizations.id))
+        .where(and(whereClause, isNull(organizations.deletedAt)));
 
     const total = totalCount?.value || 0;
 

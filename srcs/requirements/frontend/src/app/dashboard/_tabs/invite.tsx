@@ -5,6 +5,7 @@ import type { Organization } from "@ft-transcendence/contracts";
 import { ORG_ROLES } from "@ft-transcendence/contracts";
 import type { OrgRole } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
+import { formatApiErrorBody } from "@/lib/api-error";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 const ROLE_META: Record<string, { label: string; color: string; icon: string }> = {
@@ -47,7 +48,7 @@ export function InviteTab({ org }: { org: Organization }) {
         setHistory(prev => prev.map(e => e.id === id ? { ...e, status: "sent" as const } : e));
         setEmail("");
       } else {
-        setHistory(prev => prev.map(e => e.id === id ? { ...e, status: "error" as const, error: (res.body as any)?.message || "Failed" } : e));
+        setHistory(prev => prev.map(e => e.id === id ? { ...e, status: "error" as const, error: formatApiErrorBody(res.body, "Failed") } : e));
       }
     } catch {
       setHistory(prev => prev.map(e => e.id === id ? { ...e, status: "error" as const, error: "Network error" } : e));
