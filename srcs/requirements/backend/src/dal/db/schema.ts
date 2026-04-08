@@ -12,3 +12,4 @@ export * from './schemas/organizations';
 export * from './schemas/sports';
 export * from './schemas/handles';
 export * from './schemas/lobby';
+export * from './schemas/files';

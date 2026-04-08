@@ -22,9 +22,6 @@ function timeoutSignal(ms: number): AbortSignal {
   return ctrl.signal;
 }
 
-// Shared lock for concurrent refreshes
-let refreshPromise: Promise<boolean> | null = null;
-
 function buildApi(
   timeout: number,
   baseUrl: string,
@@ -91,16 +88,7 @@ function buildApi(
     const isPublicEndpoint = request.path.includes("/auth/login") || request.path.includes("/auth/register") || request.path.includes("/auth/refresh");
 
     if (response.status === 401 && typeof window !== "undefined" && !isPublicEndpoint) {
-      // If a refresh isn't already happening, start one
-      if (!refreshPromise) {
-        refreshPromise = refreshToken().finally(() => {
-          // Clear the lock when done, whether it succeeded or failed
-          refreshPromise = null;
-        });
-      }
-
-      // Wait for the refresh attempt (either the one we just started, or one already in progress)
-      const refreshed = await refreshPromise;
+      const refreshed = await refreshToken();
 
       if (refreshed) {
         // The backend set a new cookie. Simply try the exact same request again.

@@ -2,9 +2,10 @@ import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { 
     TournamentSchema, 
-    PublicTournamentSchema, 
+    PublicTournamentDiscoverySchema, 
     CreateTournamentSchema, 
-    UpdateTournamentSchema 
+    UpdateTournamentSchema,
+    TournamentDiscoveryStatusSchema,
 } from "../schemas/tournaments";
 
 const c = initContract();
@@ -75,7 +76,7 @@ export const tournamentsContract = c.router({
         path: "/tournaments/:id",
         pathParams: z.object({ id: z.string().uuid() }),
         responses: {
-            200: z.object({ data: PublicTournamentSchema }),
+            200: z.object({ data: PublicTournamentDiscoverySchema }),
             404: z.object({ message: z.string() }),
         },
         summary: "Public Discovery Details (Sanitized)",
@@ -88,11 +89,11 @@ export const tournamentsContract = c.router({
             pageSize: z.coerce.number().default(20),
             search: z.string().optional(),
             sportId: z.string().uuid().optional(),
-            status: z.string().optional(),
+            status: TournamentDiscoveryStatusSchema.optional(),
         }),
         responses: {
             200: z.object({
-                tournaments: z.array(PublicTournamentSchema), 
+                tournaments: z.array(PublicTournamentDiscoverySchema), 
                 total: z.number(),
                 page: z.number(),
                 pageSize: z.number(),
@@ -106,9 +107,12 @@ export const tournamentsContract = c.router({
         method: "POST",
         path: "/tournaments/:id/lobby/join",
         pathParams: z.object({ id: z.string().uuid() }),
-        body: z.object({}), // empty
+        body: z.object({}),
         responses: {
-            201: z.object({ message: z.string(), state: z.enum(['LOBBY_JOINED', 'READY_ENTRANT_CREATED']) }),
+            201: z.object({ 
+                message: z.string(), 
+                state: z.enum(['LOBBY_JOINED', 'COMPETITOR_CREATED']) 
+            }),
             400: z.object({ message: z.string() }),
             401: z.object({ message: z.string() }),
             403: z.object({ message: z.string() }),
@@ -117,20 +121,20 @@ export const tournamentsContract = c.router({
         },
         summary: "Enter the tournament waiting room (Auto-registers for 1v1s)",
     },
-    createLobbyTeam: {
+    createCompetitor: {
         method: "POST",
-        path: "/tournaments/:id/lobby/teams",
+        path: "/tournaments/:id/lobby/competitors",
         pathParams: z.object({ id: z.string().uuid() }),
         body: z.object({ name: z.string().min(2).max(255) }),
         responses: {
-            201: z.object({ message: z.string(), teamId: z.string().uuid() }),
+            201: z.object({ message: z.string(), competitorId: z.string().uuid() }),
             400: z.object({ message: z.string() }),
             401: z.object({ message: z.string() }),
             403: z.object({ message: z.string() }),
             404: z.object({ message: z.string() }),
             409: z.object({ message: z.string() }),
         },
-        summary: "Form a team in the lobby as the Captain",
+        summary: "Form a team/competitor in the lobby",
     },
 
     getLobbyState: {
@@ -143,29 +147,29 @@ export const tournamentsContract = c.router({
                     userId: z.string().uuid(),
                     username: z.string(),
                     avatarUrl: z.string().nullable(),
-                    status: z.string(),
+                    status: z.enum(['solo', 'rostered', 'spectator']),
                     joinedAt: z.date(),
                 })),
-                teams: z.array(z.object({
+                competitors: z.array(z.object({
                     id: z.string().uuid(),
                     name: z.string(),
-                    status: z.string(),
+                    status: z.enum(['incomplete', 'ready', 'disqualified']),
                     roster: z.array(z.object({
                         userId: z.string().uuid(),
                         username: z.string(),
-                        role: z.string(),
+                        role: z.enum(['captain', 'player', 'substitute']),
                     })),
                 })),
             }),
             404: z.object({ message: z.string() }),
         },
-        summary: "Get current players and teams in the waiting room",
+        summary: "Get current players and competitors in the waiting room",
     },
 
-    inviteToTeam: {
+    inviteToCompetitor: {
         method: "POST",
-        path: "/tournaments/:id/lobby/teams/:teamId/invite",
-        pathParams: z.object({ id: z.string().uuid(), teamId: z.string().uuid() }),
+        path: "/tournaments/:id/lobby/competitors/:competitorId/invite",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
         body: z.object({ targetUserId: z.string().uuid() }),
         responses: {
             201: z.object({ message: z.string() }),
@@ -176,10 +180,10 @@ export const tournamentsContract = c.router({
         summary: "Send an invite to a solo player in the lobby",
     },
 
-    joinTeam: {
+    joinCompetitor: {
         method: "POST",
-        path: "/tournaments/:id/lobby/teams/:teamId/join",
-        pathParams: z.object({ id: z.string().uuid(), teamId: z.string().uuid() }),
+        path: "/tournaments/:id/lobby/competitors/:competitorId/join",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
         body: z.object({}),
         responses: {
             200: z.object({ message: z.string() }),
@@ -187,6 +191,92 @@ export const tournamentsContract = c.router({
             403: z.object({ message: z.string() }),
             404: z.object({ message: z.string() }),
         },
-        summary: "Accept an invite and join a team roster",
+        summary: "Accept an invite and join a competitor roster",
     },
+
+    leaveLobby: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/leave",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Leave the tournament waiting room",
+    },
+
+    leaveCompetitor: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/leave",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Leave a competitor roster and return to solo lobby status",
+    },
+
+    ejectFromLobby: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/eject",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({ targetUserId: z.string().uuid() }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Remove a user from the tournament lobby entirely (TO only)",
+    },
+
+    removeCompetitorMember: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/remove-member",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({ targetUserId: z.string().uuid() }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Remove a user from a competitor roster back to solo lobby (TO only)",
+    },
+
+    forceReadyCompetitor: {
+        method: "PATCH",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/force-ready",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Bypass minTeamSize and manually set competitor to 'ready' (TO Only)",
+    },
+
+    assignToCompetitor: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/assign",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({ userIds: z.array(z.string().uuid()) }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Directly assign players to a competitor (TO Only, bypasses invites)",
+    },
+
 });

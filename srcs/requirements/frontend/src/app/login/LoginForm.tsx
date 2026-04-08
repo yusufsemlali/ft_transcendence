@@ -2,7 +2,7 @@
 
 import { useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
 
@@ -116,17 +116,6 @@ function LoginFormContent() {
             onChange={(e) => { setPassword(e.target.value); clearValidity(passwordRef); }}
             disabled={isLoading}
           />
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1rem" }}>
-          <input
-            type="checkbox"
-            id="rememberMe"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            style={{ accentColor: "var(--primary)" }}
-          />
-          <label htmlFor="rememberMe" style={{ fontSize: "0.7rem", color: "var(--text-secondary)", cursor: "pointer" }}>REMEMBER SESSION</label>
         </div>
 
         <div style={{ marginTop: "24px" }}>

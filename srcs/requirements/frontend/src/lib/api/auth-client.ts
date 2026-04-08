@@ -3,18 +3,15 @@ export async function getIdToken(): Promise<string | null> {
     return null; // Browser handles cookies automatically
 }
 
-let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
 export async function refreshToken(_baseUrl?: string): Promise<boolean> {
-    if (isRefreshing && refreshPromise) {
+    if (refreshPromise) {
         return refreshPromise;
     }
 
-    isRefreshing = true;
     refreshPromise = (async () => {
         try {
-            // Always use the BFF proxy on the client to avoid browser console errors
             const refreshUrl = typeof window !== "undefined"
                 ? "/bff/auth/refresh"
                 : `${_baseUrl || "http://ft_backend:3000/api"}/auth/refresh`;
@@ -26,7 +23,6 @@ export async function refreshToken(_baseUrl?: string): Promise<boolean> {
                 credentials: "include",
             });
 
-            // BFF proxy always returns 200 — check the real status via header
             const realStatus = response.headers.get("X-BFF-Status");
             const isSuccess = realStatus ? parseInt(realStatus, 10) < 400 : response.ok;
 
@@ -39,8 +35,9 @@ export async function refreshToken(_baseUrl?: string): Promise<boolean> {
         return false;
     })();
 
-    const result = await refreshPromise;
-    isRefreshing = false;
-    refreshPromise = null;
-    return result;
+    try {
+        return await refreshPromise;
+    } finally {
+        refreshPromise = null;
+    }
 }

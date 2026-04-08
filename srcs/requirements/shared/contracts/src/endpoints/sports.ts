@@ -20,8 +20,8 @@ export const SportSchema = z.object({
     defaultHasDraws: z.boolean(),
 
     // --- ENGINE SCHEMAS ---
-    tournamentConfigSchema: z.record(z.any()),
-    matchConfigSchema: z.record(z.any()),
+    tournamentConfigSchema: z.record(z.any()).nullable(),
+    matchConfigSchema: z.record(z.any()).nullable(),
 
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date(),

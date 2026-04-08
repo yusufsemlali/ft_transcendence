@@ -54,18 +54,20 @@ export function CustomBackground() {
     const init = async () => {
       await loadBackground(local);
 
-      // Then fetch from API to sync with server state
-      try {
-        const response = await api.settings.getSettings({});
-        if (response.status === 200) {
-          const serverSettings = response.body;
-          setSettings(serverSettings);
-          setLocalSettings(serverSettings);
-          await loadBackground(serverSettings);
-          await applyAllSettings(serverSettings);
+      // Only fetch from API if we think the user is logged in
+      if (localStorage.getItem("isLoggedIn") === "true") {
+        try {
+          const response = await api.settings.getSettings({});
+          if (response.status === 200) {
+            const serverSettings = response.body;
+            setSettings(serverSettings);
+            setLocalSettings(serverSettings);
+            await loadBackground(serverSettings);
+            await applyAllSettings(serverSettings);
+          }
+        } catch {
+          // Not logged in or API unavailable — local settings are fine
         }
-      } catch {
-        // Not logged in or API unavailable — local settings are fine
       }
     };
     init();

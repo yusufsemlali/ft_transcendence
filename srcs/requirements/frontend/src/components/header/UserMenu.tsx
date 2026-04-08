@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-
-interface UserInfo {
-  username: string;
-  level: number;
-  avatar: string;
-}
+import type { UserInfo } from "@/lib/types/user";
 
 interface UserMenuProps {
   user: UserInfo;
