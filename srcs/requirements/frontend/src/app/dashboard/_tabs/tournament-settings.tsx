@@ -10,7 +10,6 @@ import {
   TournamentStatusActions,
   TournamentCancelDangerZone,
 } from "../_components/tournament-status-actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function TournamentSettingsTab({ tournament, org, onUpdate }: {
   tournament: Tournament;
@@ -257,27 +256,53 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
         </div>
       </div>
       
-      <div className="glass-card" style={{ padding: "24px", marginTop: "24px", border: "1px solid rgba(var(--destructive-rgb), 0.2)" }}>
-        <Alert variant="destructive" className="mb-4 dashboard-alert--flush">
-          <span className="dashboard-alert-icon">
-            <span className="material-symbols-outlined text-[var(--destructive)]">gpp_maybe</span>
-          </span>
-          <div className="dashboard-alert-body">
-            <AlertTitle>Danger zone</AlertTitle>
-            <AlertDescription>Irreversible or high-impact actions for this tournament.</AlertDescription>
-          </div>
-        </Alert>
-        <TournamentCancelDangerZone tournament={tournament} org={org} onUpdate={onUpdate} />
-        <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 16px" }}>
-          Permanently delete this tournament and all its data. This cannot be undone.
-        </p>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ color: "var(--destructive)", borderColor: "rgba(var(--destructive-rgb), 0.2)" }}
+      <div
+        className="glass-card"
+        style={{
+          marginTop: "24px",
+          padding: 0,
+          overflow: "hidden",
+          borderColor: "color-mix(in srgb, var(--destructive) 22%, var(--border-color))",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-md)",
+            padding: "var(--spacing-5)",
+            background: "color-mix(in srgb, var(--destructive) 5%, transparent)",
+            borderBottom: "1px solid color-mix(in srgb, var(--destructive) 12%, var(--border-color))",
+          }}
         >
-          Delete tournament
-        </button>
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: "22px", color: "var(--destructive)", flexShrink: 0 }}
+          >
+            gpp_maybe
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--destructive)" }}>
+              Danger zone
+            </span>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
+              Irreversible or high-impact actions for this tournament.
+            </p>
+          </div>
+        </div>
+        <div style={{ padding: "var(--spacing-5)" }}>
+          <TournamentCancelDangerZone tournament={tournament} org={org} onUpdate={onUpdate} />
+          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 12px" }}>
+            Permanently delete this tournament and all its data. This cannot be undone.
+          </p>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ color: "var(--destructive)", borderColor: "color-mix(in srgb, var(--destructive) 25%, transparent)" }}
+          >
+            Delete tournament
+          </button>
+        </div>
       </div>
     </div>
   );

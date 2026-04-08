@@ -13,9 +13,8 @@ import {
 import api from "@/lib/api/api";
 import { toast } from "@/components/ui/sonner";
 import { formatApiErrorBody } from "@/lib/api-error";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-function transitionTitle(from: string, to: string): string {
+function transitionTitle(_from: string, to: string): string {
   const labels: Record<string, string> = {
     registration: "Open registration",
     upcoming: "Move to upcoming",
@@ -25,6 +24,30 @@ function transitionTitle(from: string, to: string): string {
     draft: "Return to draft",
   };
   return labels[to] ?? `Change to ${to}`;
+}
+
+function phaseIcon(status: string) {
+  const map: Record<string, string> = {
+    draft: "edit_note",
+    registration: "how_to_reg",
+    upcoming: "event_upcoming",
+    ongoing: "sports_esports",
+    completed: "emoji_events",
+    cancelled: "cancel",
+  };
+  return map[status] ?? "info";
+}
+
+function phaseAccent(status: string): string {
+  const setupStatuses: readonly string[] = TOURNAMENT_PHASES.SETUP;
+  const liveStatuses: readonly string[] = TOURNAMENT_PHASES.LIVE;
+  const endedStatuses: readonly string[] = TOURNAMENT_PHASES.ENDED;
+
+  if (setupStatuses.includes(status)) return "var(--primary)";
+  if (liveStatuses.includes(status)) return "var(--accent-warning)";
+  if (status === "completed") return "var(--accent-success)";
+  if (endedStatuses.includes(status)) return "var(--destructive)";
+  return "var(--text-muted)";
 }
 
 type Variant = "settings" | "overview";
@@ -84,16 +107,25 @@ export function TournamentStatusActions({
     statusMutation.mutate(to);
   };
 
-  const showRevertToDraft =
-    from === "registration";
+  const showRevertToDraft = from === "registration";
 
   const setupStatuses = TOURNAMENT_PHASES.SETUP as readonly string[];
   const liveStatuses = TOURNAMENT_PHASES.LIVE as readonly string[];
-  const phaseHint = setupStatuses.includes(from)
-    ? "Registration phase — You can still adjust the rules and settings."
-    : liveStatuses.includes(from)
-      ? "Live Competition — Rules and brackets are now locked to ensure fairness."
-      : "Event Concluded — This tournament has finished.";
+  const endedStatuses = TOURNAMENT_PHASES.ENDED as readonly string[];
+
+  const accent = phaseAccent(from);
+  const isSetup = setupStatuses.includes(from);
+  const isLive = liveStatuses.includes(from);
+  const isEnded = endedStatuses.includes(from);
+  const isCancelled = from === "cancelled";
+
+  const hint = isSetup
+    ? "You can still change most tournament rules. Use the actions below to progress — each step is validated on the server."
+    : isLive
+      ? "Rules and brackets are locked to ensure fairness. Advance the tournament when play is complete."
+      : isCancelled
+        ? "This tournament was cancelled. You can reopen it if no matches have been played."
+        : "This tournament has concluded. Settings are frozen.";
 
   const buttonStyle =
     variant === "overview"
@@ -110,83 +142,87 @@ export function TournamentStatusActions({
         <div
           className="glass-card"
           style={{
-            padding: "20px",
             marginBottom: "20px",
-            border: "1px solid var(--border-subtle)",
+            padding: 0,
+            overflow: "hidden",
+            borderColor: `color-mix(in srgb, ${accent} 25%, var(--border-color))`,
           }}
         >
-          {setupStatuses.includes(from) && (
-            <Alert variant="info" className="mb-4">
-              <span className="dashboard-alert-icon">
-                <span className="material-symbols-outlined text-[var(--primary)]">tips_and_updates</span>
-              </span>
-              <div className="dashboard-alert-body">
-                <AlertTitle>Setup</AlertTitle>
-                <AlertDescription>
-                  You can still change most tournament rules. Use the actions below instead of picking a status
-                  manually — each step is validated on the server.
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
-          <h4
+          {/* ── Header row: icon + title + badge ── */}
+          <div
             style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              margin: "0 0 6px",
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--space-md)",
+              padding: "var(--spacing-5)",
+              background: `color-mix(in srgb, ${accent} 6%, transparent)`,
+              borderBottom: `1px solid color-mix(in srgb, ${accent} 12%, var(--border-color))`,
             }}
           >
-            Tournament phase
-          </h4>
-          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 16px" }}>
-            {phaseHint} Use the buttons below to progress through each stage of your event.
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
             <span
-              className="dashboard-status-badge"
-              style={{
-                background: "color-mix(in srgb, var(--primary) 18%, transparent)",
-                color: "var(--primary)",
-                textTransform: "uppercase",
-                fontSize: "11px",
-                letterSpacing: "0.04em",
-                padding: "6px 12px",
-              }}
+              className="material-symbols-outlined"
+              style={{ fontSize: "22px", color: accent, flexShrink: 0 }}
             >
-              {from.replace(/_/g, " ")}
+              {phaseIcon(from)}
             </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  Tournament phase
+                </span>
+                <span
+                  className="dashboard-status-badge"
+                  style={{
+                    background: `color-mix(in srgb, ${accent} 18%, transparent)`,
+                    color: accent,
+                    textTransform: "uppercase",
+                    fontSize: "10px",
+                    letterSpacing: "0.06em",
+                    padding: "3px 10px",
+                  }}
+                >
+                  {from.replace(/_/g, " ")}
+                </span>
+              </div>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
+                {hint}
+              </p>
+            </div>
           </div>
 
-          {from === "cancelled" ? (
-            <div style={{ marginTop: "16px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent-success)" }}>
-                Recovery
-              </span>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "8px 0" }}>
-                Reopening is allowed only if this tournament has no matches yet.
+          {/* ── Action body ── */}
+          <div style={{ padding: "var(--spacing-5)" }}>
+            {isCancelled ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--accent-success)" }}>
+                    undo
+                  </span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--accent-success)" }}>
+                    Recovery options
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {forward.map((to) => (
+                    <button
+                      key={to}
+                      type="button"
+                      className="btn btn-primary"
+                      style={buttonStyle}
+                      disabled={statusMutation.isPending}
+                      onClick={() => setConfirm({ to })}
+                    >
+                      {to === "draft" ? "Reopen as draft" : "Reopen registration"}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : isEnded ? (
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
+                No further transitions available.
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {forward.map((to) => (
-                  <button
-                    key={to}
-                    type="button"
-                    className="btn btn-primary"
-                    style={buttonStyle}
-                    disabled={statusMutation.isPending}
-                    onClick={() => setConfirm({ to })}
-                  >
-                    {to === "draft" ? "Reopen as draft" : "Reopen registration"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)" }}>
-                Next steps
-              </span>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
                 {forward.map((to) => (
                   <button
                     key={to}
@@ -211,8 +247,8 @@ export function TournamentStatusActions({
                   </button>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
