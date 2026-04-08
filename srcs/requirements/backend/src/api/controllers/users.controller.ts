@@ -73,4 +73,18 @@ export const usersController = s.router(contract.users, {
             body: { message: "Password changed successfully" },
         };
     },
+    searchUsers: async ({ query, req }: { query: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx.decodedToken?.id;
+
+        if (!userId) {
+            throw new AppError(401, "Unauthorized");
+        }
+
+        const result = await UserService.searchUsers(query.q, query.limit ?? 20, userId);
+        return {
+            status: 200,
+            body: result.data as any,
+        };
+    },
 });

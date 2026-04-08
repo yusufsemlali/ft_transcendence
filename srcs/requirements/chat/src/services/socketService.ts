@@ -134,15 +134,15 @@ class SocketService {
     const roomMetadata = await roomService.getRoom(room);
     const users = userService.getUsersInRoom(room);
     const roomDatabaseId = await roomService.getRoomDatabaseId(room);
-    const messages = roomDatabaseId
-      ? await messageService.getMessagesByRoom(roomDatabaseId, 10)
-      : [];
+    const messageCount = roomDatabaseId
+      ? await messageService.getRoomMessageCount(roomDatabaseId)
+      : 0;
 
     return {
       room,
       userCount: users.length,
       users,
-      messageCount: messages.length,
+      messageCount,
       createdAt: roomMetadata?.createdAt ?? new Date(),
     };
   }

@@ -37,6 +37,7 @@ services:
     env_file: .env
     environment:
       - PORT=3000
+      - INTERNAL_CHAT_API_URL=http://ft_chat:4000/api
     expose:
       - "3000"
     volumes:
@@ -63,6 +64,8 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - CORS_ORIGIN=*
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - transcendence-net
     healthcheck:

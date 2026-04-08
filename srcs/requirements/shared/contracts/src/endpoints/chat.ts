@@ -25,7 +25,7 @@ export const chatContract = c.router({
                 room: z.string(),
                 userCount: z.number(),
                 messageCount: z.number(),
-                createdAt: z.date(),
+                createdAt: z.coerce.date(),
             }),
             404: z.object({ message: z.string() }),
         },

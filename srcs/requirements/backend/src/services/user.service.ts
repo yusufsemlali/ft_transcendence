@@ -1,6 +1,6 @@
 import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, ilike, or, ne, and } from "drizzle-orm";
 import AppError from "@/utils/error";
 import { sanitizeUser } from "@/utils/auth";
 import { ApiResponse } from "@/utils/response";
@@ -144,4 +144,32 @@ export const changePassword = async (id: string, current: string, newPass: strin
         .where(eq(users.id, id));
 
     return new ApiResponse("Password changed successfully", null);
+};
+
+export const searchUsers = async (query: string, limit: number, excludeUserId: string) => {
+    const pattern = `%${query}%`;
+
+    const results = await db
+        .select({
+            id: users.id,
+            username: users.username,
+            displayName: users.displayName,
+            avatar: users.avatar,
+            xp: users.xp,
+            level: users.level,
+            isOnline: users.isOnline,
+        })
+        .from(users)
+        .where(
+            and(
+                ne(users.id, excludeUserId),
+                or(
+                    ilike(users.username, pattern),
+                    ilike(users.displayName, pattern),
+                ),
+            )
+        )
+        .limit(limit);
+
+    return new ApiResponse("Users found", results);
 };

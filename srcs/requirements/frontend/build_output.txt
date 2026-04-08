@@ -1,0 +1,262 @@
+﻿   Ôû▓ Next.js 15.1.6
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./src/app/about/page.tsx
+4:16  Warning: 'Section' is defined but never used.  @typescript-eslint/no-unused-vars
+4:25  Warning: 'Stack' is defined but never used.  @typescript-eslint/no-unused-vars
+49:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/account-settings/page.tsx
+26:10  Warning: 'sessionsLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+26:27  Warning: 'setSessionsLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+77:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+81:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+101:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+112:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+144:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+153:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+178:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/admin/page.tsx
+103:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+117:38  Warning: React Hook useEffect has a missing dependency: 'fetchUsers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+122:6  Warning: React Hook useEffect has a missing dependency: 'fetchUsers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+126:98  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+128:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+134:104  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+136:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+145:37  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+440:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+442:27  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+455:17  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+465:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+469:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+569:131  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+577:123  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/auth/consent/page.tsx
+60:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+70:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+90:15  Warning: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/bff/[...path]/route.ts
+80:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/page.tsx
+37:6  Warning: React Hook useEffect has missing dependencies: 'selectOrg' and 'urlOrgId'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/_components/org-picker.tsx
+60:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+207:11  Warning: 'user' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+305:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/_components/shell.tsx
+106:6  Warning: React Hook useEffect has missing dependencies: 'activeTournament', 'org.id', and 'urlTournamentId'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+212:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/_components/sidebar.tsx
+67:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/_components/topbar.tsx
+34:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/_tabs/members.tsx
+64:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+281:40  Warning: React Hook useEffect has a missing dependency: 'fetchMembers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/_tabs/overview.tsx
+5:31  Warning: 'org' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/dashboard/_tabs/tournaments.tsx
+123:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+178:114  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+195:100  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+280:37  Warning: React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/leaderboard/page.tsx
+3:10  Warning: 'useState' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/login/LoginForm.tsx
+78:23  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+83:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/profile/page.tsx
+18:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/profile/[id]/page.tsx
+106:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/settings/page.tsx
+23:10  Warning: 'saving' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+47:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+71:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+265:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+267:82  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+285:81  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/tournaments/page.tsx
+24:16  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/badge.tsx
+8:9  Warning: 'variants' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/contexts/AuthContext.tsx
+43:71  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+115:20  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+152:70  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+180:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+233:6  Warning: React Hook useEffect has missing dependencies: 'refreshUser' and 'user'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/lib/api/adapters/ts-rest-adapter.ts
+30:3  Warning: 'baseUrl' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/settings.ts
+21:23  Warning: 'l' is never reassigned. Use 'const' instead.  prefer-const
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/14) ...
+Failed to get server user: Error: Dynamic server usage: Route /profile couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /profile couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /about couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /about couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /_not-found couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /_not-found couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /tournaments couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /tournaments couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /dashboard couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /dashboard couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /settings couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /settings couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /account-settings couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /account-settings couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /login couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /login couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (3/14) 
+Failed to get server user: Error: Dynamic server usage: Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /leaderboard couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /leaderboard couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route /auth/consent couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route /auth/consent couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Failed to get server user: Error: Dynamic server usage: Route / couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at m (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\638.js:1:41139)
+    at f (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\108.js:4:31408)
+    at i (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:134:1572)
+    at o (C:\Users\Med\ft_transcendence\srcs\requirements\frontend\.next\server\chunks\225.js:101:27133)
+    at stringify (<anonymous>) {
+  description: "Route / couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (6/14) 
+   Generating static pages (10/14) 
+ Ô£ô Generating static pages (14/14)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Ôöî ãÆ /                                    4.23 kB         140 kB
+Ôö£ ãÆ /_not-found                          981 B           106 kB
+Ôö£ ãÆ /[...notfound]                       172 B           109 kB
+Ôö£ ãÆ /about                               2.06 kB         119 kB
+Ôö£ ãÆ /account-settings                    5.93 kB         138 kB
+Ôö£ ãÆ /admin                               6.66 kB         138 kB
+Ôö£ ãÆ /auth/consent                        3.35 kB         135 kB
+Ôö£ ãÆ /bff/[...path]                       137 B           106 kB
+Ôö£ ãÆ /dashboard                           13.9 kB         207 kB
+Ôö£ ãÆ /leaderboard                         1.85 kB         107 kB
+Ôö£ ãÆ /login                               4.25 kB         136 kB
+Ôö£ ãÆ /profile                             6.3 kB          191 kB
+Ôö£ ãÆ /profile/[id]                        2.58 kB         134 kB
+Ôö£ ãÆ /settings                            3.54 kB         135 kB
+Ôöö ãÆ /tournaments                         1.99 kB         133 kB
++ First Load JS shared by all            105 kB
+  Ôö£ chunks/4bd1b696-9908ec6cdfe97ee1.js  52.9 kB
+  Ôö£ chunks/517-7cd9bcdce01514d6.js       50.5 kB
+  Ôöö other shared chunks (total)          1.98 kB
+
+
+ãÆ Middleware                             32.1 kB
+
+ãÆ  (Dynamic)  server-rendered on demand
+

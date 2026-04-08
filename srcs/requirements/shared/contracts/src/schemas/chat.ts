@@ -5,7 +5,7 @@ export const MessageSchema = z.object({
   userId: z.string(),
   username: z.string(),
   content: z.string(),
-  timestamp: z.date(),
+  timestamp: z.coerce.date(),
 });
 
 export type Message = z.infer<typeof MessageSchema>;
@@ -14,7 +14,7 @@ export const RoomSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 export type Room = z.infer<typeof RoomSchema>;

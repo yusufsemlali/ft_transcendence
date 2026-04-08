@@ -70,11 +70,13 @@ function upsertRoom(rooms: Room[], roomId: string): Room[] {
   ];
 }
 
-export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
+export function useChatStore(currentUser: ChatUser | null, initialRoom?: string): ChatStoreState {
   const [socket, setSocket] = useState<ChatSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [availability, setAvailability] = useState<ChatAvailability>("ready");
   const [activeRoom, setActiveRoom] = useState(() => {
+    if (initialRoom) return initialRoom;
+
     if (typeof window === "undefined") {
       return DEFAULT_ROOM;
     }
@@ -95,6 +97,8 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
   const joinedRoomRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const roomRefreshTimerRef = useRef<number | null>(null);
+  const lastRetryRef = useRef<number>(0);
+  const socketRef = useRef<ChatSocket | null>(null);
 
   const loadRooms = useCallback(async () => {
     if (!currentUser) {
@@ -145,16 +149,19 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     setIsLoadingHistory(false);
   }, []);
 
-  const joinCurrentRoom = useCallback((targetRoom: string) => {
-    if (!socket || !currentUser || !targetRoom) {
+  const joinCurrentRoomRef = useRef<(targetRoom: string) => void>(() => {});
+
+  joinCurrentRoomRef.current = (targetRoom: string) => {
+    const s = socketRef.current;
+    if (!s || !currentUser || !targetRoom) {
       return;
     }
 
     joinedRoomRef.current = targetRoom;
-    joinChatRoom(socket, currentUser, targetRoom);
-    requestRoomInfo(socket, targetRoom);
-    requestServerStats(socket);
-  }, [currentUser, socket]);
+    joinChatRoom(s, currentUser, targetRoom);
+    requestRoomInfo(s, targetRoom);
+    requestServerStats(s);
+  };
 
   useEffect(() => {
     if (!currentUser) {
@@ -164,18 +171,20 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
       setTypingUsers([]);
       setMessages([]);
       setError(null);
+      socketRef.current = null;
       return;
     }
 
     const nextSocket = createChatSocket();
     setSocket(nextSocket);
+    socketRef.current = nextSocket;
     setConnectionStatus("connecting");
 
     const onConnect = () => {
       setConnectionStatus("connected");
       setAvailability("ready");
       setError(null);
-      joinCurrentRoom(joinedRoomRef.current ?? activeRoom);
+      joinCurrentRoomRef.current(joinedRoomRef.current ?? activeRoom);
     };
 
     const onConnectError = (eventError?: { message?: string; description?: unknown }) => {
@@ -275,8 +284,10 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
       nextSocket.removeAllListeners();
       nextSocket.disconnect();
       setSocket(null);
+      socketRef.current = null;
     };
-  }, [currentUser, joinCurrentRoom]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -308,14 +319,21 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
       return;
     }
 
+    // Clear stale typing state from previous room
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
     startTransition(() => {
       setTypingUsers([]);
       setUsers([]);
     });
     void loadRoomMessages(activeRoom);
-    joinCurrentRoom(activeRoom);
+    joinCurrentRoomRef.current(activeRoom);
     setRooms((existing) => upsertRoom(existing, activeRoom));
-  }, [activeRoom, connectionStatus, currentUser, joinCurrentRoom, loadRoomMessages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeRoom, connectionStatus, currentUser, loadRoomMessages]);
 
   const sendMessageAction = useCallback(async () => {
     const nextMessage = draft.trim().slice(0, MAX_MESSAGE_LENGTH);
@@ -337,6 +355,13 @@ export function useChatStore(currentUser: ChatUser | null): ChatStoreState {
     if (!socket) {
       return;
     }
+
+    // Guard against rapid-fire retries (2 second cooldown)
+    const now = Date.now();
+    if (now - lastRetryRef.current < 2000) {
+      return;
+    }
+    lastRetryRef.current = now;
 
     setConnectionStatus("connecting");
     socket.connect();

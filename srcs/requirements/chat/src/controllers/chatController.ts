@@ -61,8 +61,8 @@ export const chatController = s.router(contract.chat, {
 
     const parsedLimit = query.limit ? parseInt(query.limit, 10) : 50;
     const parsedOffset = query.offset ? parseInt(query.offset, 10) : 0;
-    const limit = Number.isFinite(parsedLimit) ? parsedLimit : 50;
-    const offset = Number.isFinite(parsedOffset) ? parsedOffset : 0;
+    const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 50, 1), 100);
+    const offset = Math.max(Number.isFinite(parsedOffset) ? parsedOffset : 0, 0);
     const roomDatabaseId = await roomService.getRoomDatabaseId(room.id);
 
     return {

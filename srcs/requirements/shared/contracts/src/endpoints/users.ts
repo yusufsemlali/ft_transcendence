@@ -1,5 +1,5 @@
 import { initContract } from "@ts-rest/core";
-import { UserSchema, UpdateUserSchema } from "../schemas/users";
+import { UserSchema, UpdateUserSchema, PublicUserSchema } from "../schemas/users";
 import { z } from "zod";
 
 const c = initContract();
@@ -50,5 +50,18 @@ export const usersContract = c.router({
             401: z.object({ message: z.string() }),
         },
         summary: "Update current password with security verification",
+    },
+    searchUsers: {
+        method: "GET",
+        path: "/users/search",
+        query: z.object({
+            q: z.string().min(1).max(50),
+            limit: z.coerce.number().min(1).max(50).default(20),
+        }),
+        responses: {
+            200: z.array(PublicUserSchema),
+            401: z.object({ message: z.string() }),
+        },
+        summary: "Search for users by username or display name",
     },
 });
