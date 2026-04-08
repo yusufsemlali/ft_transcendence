@@ -173,11 +173,11 @@ export default function AdminPage() {
   };
 
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px 20px", width: "100%" }}>
+    <div className="admin-page">
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h1 style={{ fontSize: "22px", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
+          <h1 style={{ fontSize: "clamp(18px, 4vw, 22px)", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
             <span className="material-symbols-outlined" style={{ fontSize: "24px", verticalAlign: "-4px", marginRight: "8px", color: "var(--primary)" }}>admin_panel_settings</span>
             Admin Panel
           </h1>
@@ -186,8 +186,8 @@ export default function AdminPage() {
       </div>
 
       {/* Filters */}
-      <div className="glass-card" style={{ padding: "16px", marginBottom: "16px", display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "flex-end" }}>
-        <label className="dashboard-field" style={{ flex: 2, minWidth: "200px" }}>
+      <div className="glass-card admin-toolbar" style={{ padding: "16px", marginBottom: "16px" }}>
+        <label className="dashboard-field admin-toolbar-search">
           <span className="dashboard-field-label">Search</span>
           <div style={{ position: "relative" }}>
             <span className="material-symbols-outlined" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", color: "var(--text-muted)" }}>search</span>
@@ -199,14 +199,14 @@ export default function AdminPage() {
             />
           </div>
         </label>
-        <label className="dashboard-field" style={{ width: "140px" }}>
+        <label className="dashboard-field admin-filter-field">
           <span className="dashboard-field-label">Role</span>
           <select className="dashboard-input" value={roleFilter} onChange={e => { setRoleFilter(e.target.value as any); setPage(1); }}>
             <option value="">All Roles</option>
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
         </label>
-        <label className="dashboard-field" style={{ width: "140px" }}>
+        <label className="dashboard-field admin-filter-field">
           <span className="dashboard-field-label">Status</span>
           <select className="dashboard-input" value={statusFilter} onChange={e => { setStatusFilter(e.target.value as any); setPage(1); }}>
             <option value="">All Status</option>
@@ -215,7 +215,7 @@ export default function AdminPage() {
         </label>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: selectedUser ? "1fr 380px" : "1fr", gap: "16px" }}>
+      <div className={`admin-layout${selectedUser ? " admin-layout--split" : ""}`}>
         {/* ── User Table ── */}
         <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
           {loading ? (
@@ -226,8 +226,8 @@ export default function AdminPage() {
             <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>No users found</div>
           ) : (
             <>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+              <div className="admin-table-wrap">
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "520px" }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
                       <th style={{ textAlign: "left", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>User</th>
@@ -294,9 +294,9 @@ export default function AdminPage() {
 
         {/* ── User Detail Panel ── */}
         {selectedUser && (
-          <div className="glass-card animate-fade-in" style={{ padding: "20px", alignSelf: "start", position: "sticky", top: "80px" }}>
+          <div className="glass-card animate-fade-in admin-detail-panel" style={{ padding: "20px", position: "sticky", top: "80px" }}>
             {/* Close */}
-            <button onClick={() => setSelectedUser(null)} style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+            <button type="button" onClick={() => setSelectedUser(null)} style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
               <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
             </button>
 
@@ -466,13 +466,13 @@ function Modal({ title, onClose, onConfirm, confirmLabel, confirmColor, children
   title: string; onClose: () => void; onConfirm: () => void; confirmLabel: string; confirmColor?: string; children: React.ReactNode;
 }) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={onClose}>
-      <div className="glass-card animate-fade-in" style={{ padding: "24px", minWidth: "340px", maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={onClose}>
+      <div className="glass-card animate-fade-in modal-dialog" onClick={e => e.stopPropagation()}>
         <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)", margin: "0 0 16px" }}>{title}</h3>
         {children}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "20px" }}>
-          <button className="btn btn-secondary" onClick={onClose} style={{ fontSize: "11px", padding: "6px 16px" }}>Cancel</button>
-          <button className="btn btn-primary" onClick={onConfirm} style={{ fontSize: "11px", padding: "6px 16px", background: confirmColor }}>{confirmLabel}</button>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "20px", flexWrap: "wrap" }}>
+          <button type="button" className="btn btn-secondary" onClick={onClose} style={{ fontSize: "11px", padding: "6px 16px" }}>Cancel</button>
+          <button type="button" className="btn btn-primary" onClick={onConfirm} style={{ fontSize: "11px", padding: "6px 16px", background: confirmColor }}>{confirmLabel}</button>
         </div>
       </div>
     </div>

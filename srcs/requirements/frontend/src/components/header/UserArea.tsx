@@ -40,14 +40,7 @@ export function UserArea() {
           <button className="nav-icon" title="notifications">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <UserMenu
-            user={{
-              username: user.username,
-              level: user.level,
-              avatar: user.avatar,
-            }}
-            onLogout={handleLogout}
-          />
+          <UserMenu user={user} onLogout={handleLogout} />
         </>
       ) : (
         <Link

@@ -134,17 +134,17 @@ export default function FriendsPage() {
   };
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 20px", width: "100%" }}>
+    <div className="friends-page">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+      <div className="friends-page-header">
         <div>
-          <h1 style={{ fontSize: "22px", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
+          <h1 style={{ fontSize: "clamp(18px, 4vw, 22px)", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
             <span className="material-symbols-outlined" style={{ fontSize: "24px", verticalAlign: "-4px", marginRight: "8px", color: "var(--primary)" }}>group</span>
             Friends
           </h1>
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>{counts.accepted} friends · {counts.pending} pending</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowSendModal(true)} style={{ fontSize: "12px", padding: "8px 18px" }}>
+        <button type="button" className="btn btn-primary" onClick={() => setShowSendModal(true)} style={{ fontSize: "12px", padding: "8px 18px" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_add</span>
           Add Friend
         </button>
@@ -164,9 +164,11 @@ export default function FriendsPage() {
       )}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "16px", overflowX: "auto" }}>
+      <div className="friends-tabs">
         {TAB_META.map(t => (
-          <button key={t.key}
+          <button
+            key={t.key}
+            type="button"
             className={`btn ${tab === t.key ? "btn-primary" : "btn-secondary"}`}
             onClick={() => setTab(t.key)}
             style={{ fontSize: "11px", padding: "6px 14px", ...(tab === t.key ? { background: t.color } : {}) }}
@@ -217,8 +219,8 @@ export default function FriendsPage() {
 
       {/* ── Send Request Modal ── */}
       {showSendModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowSendModal(false)}>
-          <div className="glass-card animate-fade-in" style={{ padding: "24px", minWidth: "380px", maxWidth: "440px" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowSendModal(false)}>
+          <div className="glass-card animate-fade-in modal-dialog" onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)", margin: "0 0 4px" }}>
               <span className="material-symbols-outlined" style={{ fontSize: "18px", verticalAlign: "-3px", marginRight: "6px", color: "var(--primary)" }}>person_add</span>
               Send Friend Request
@@ -235,9 +237,9 @@ export default function FriendsPage() {
               />
             </label>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "20px" }}>
-              <button className="btn btn-secondary" onClick={() => setShowSendModal(false)} style={{ fontSize: "11px", padding: "6px 16px" }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSendRequest} disabled={sendLoading || !targetUserId.trim()} style={{ fontSize: "11px", padding: "6px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "20px", flexWrap: "wrap" }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowSendModal(false)} style={{ fontSize: "11px", padding: "6px 16px" }}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={handleSendRequest} disabled={sendLoading || !targetUserId.trim()} style={{ fontSize: "11px", padding: "6px 16px" }}>
                 {sendLoading ? <><span className="material-symbols-outlined" style={{ fontSize: "14px", animation: "spin 1s linear infinite" }}>progress_activity</span> Sending...</> : <><span className="material-symbols-outlined" style={{ fontSize: "14px" }}>send</span> Send Request</>}
               </button>
             </div>
@@ -260,11 +262,7 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div className="glass-card" style={{
-      padding: "14px 16px",
-      display: "flex", alignItems: "center", gap: "14px",
-      transition: "transform 0.15s, box-shadow 0.15s",
-    }}>
+    <div className="glass-card friend-card">
       {/* Avatar */}
       <div style={{ position: "relative", flexShrink: 0 }}>
         <div style={{
@@ -289,8 +287,8 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
       </div>
 
       {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div className="friend-card-main">
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>{friend.displayName || friend.username}</span>
           {friend.status === "pending" && (
             <span style={{
@@ -315,38 +313,37 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+      <div className="friend-card-actions">
         {friend.status === "pending" && (
           <>
-            <button className="btn btn-primary" onClick={() => onAccept(friend.friendshipId)} style={{ fontSize: "11px", padding: "6px 12px" }}>
+            <button type="button" className="btn btn-primary" onClick={() => onAccept(friend.friendshipId)} style={{ fontSize: "11px", padding: "6px 12px" }}>
               <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>check</span> Accept
             </button>
-            <button className="btn btn-secondary" onClick={() => onReject(friend.friendshipId)} style={{ fontSize: "11px", padding: "6px 12px" }}>
+            <button type="button" className="btn btn-secondary" onClick={() => onReject(friend.friendshipId)} style={{ fontSize: "11px", padding: "6px 12px" }}>
               <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>close</span> Decline
             </button>
           </>
         )}
 
         {friend.status === "accepted" && (
-          <div style={{ position: "relative" }}>
-            <button className="btn btn-secondary" onClick={() => setShowMenu(!showMenu)} style={{ fontSize: "11px", padding: "6px 10px" }}>
+          <div className="friend-card-menu-wrap" style={{ position: "relative" }}>
+            <button type="button" className="btn btn-secondary" onClick={() => setShowMenu(!showMenu)} style={{ fontSize: "11px", padding: "6px 10px" }}>
               <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>more_vert</span>
             </button>
             {showMenu && (
-              <div className="glass-card" style={{
+              <div className="dropdown-menu-panel" style={{
                 position: "absolute", right: 0, top: "100%", marginTop: "4px",
-                padding: "4px", minWidth: "160px", zIndex: 10,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                minWidth: "160px", zIndex: 20,
               }}>
-                <MenuButton icon="person_remove" label="Remove Friend" color="var(--text-primary)" onClick={() => { onRemove(friend.friendshipId); setShowMenu(false); }} />
-                <MenuButton icon="block" label="Block" color="var(--destructive)" onClick={() => { onBlock(friend.id); setShowMenu(false); }} />
+                <MenuButton icon="person_remove" label="Remove Friend" onClick={() => { onRemove(friend.friendshipId); setShowMenu(false); }} />
+                <MenuButton icon="block" label="Block" destructive onClick={() => { onBlock(friend.id); setShowMenu(false); }} />
               </div>
             )}
           </div>
         )}
 
         {friend.status === "blocked" && (
-          <button className="btn btn-secondary" onClick={() => onUnblock(friend.id)} style={{ fontSize: "11px", padding: "6px 12px" }}>
+          <button type="button" className="btn btn-secondary" onClick={() => onUnblock(friend.id)} style={{ fontSize: "11px", padding: "6px 12px" }}>
             <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>lock_open</span> Unblock
           </button>
         )}
@@ -355,15 +352,13 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
   );
 }
 
-function MenuButton({ icon, label, color, onClick }: { icon: string; label: string; color: string; onClick: () => void }) {
+function MenuButton({ icon, label, destructive, onClick }: { icon: string; label: string; destructive?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{
-      display: "flex", alignItems: "center", gap: "8px", width: "100%",
-      padding: "8px 12px", background: "none", border: "none", cursor: "pointer",
-      fontSize: "12px", color, borderRadius: "4px", transition: "background 0.1s",
-    }}
-    onMouseEnter={e => (e.currentTarget.style.background = "color-mix(in srgb, var(--text-muted) 8%, transparent)")}
-    onMouseLeave={e => (e.currentTarget.style.background = "none")}
+    <button
+      type="button"
+      onClick={onClick}
+      className={`dropdown-menu-item${destructive ? " dropdown-menu-item--destructive" : ""}`}
+      style={{ width: "100%" }}
     >
       <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>{icon}</span>
       {label}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import type { UserInfo } from "@/lib/types/user";
 
@@ -12,6 +13,10 @@ interface UserMenuProps {
 export function UserMenu({ user, onLogout }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  /** Backend: admin panel listUsers is admin-only; moderators have partial admin API access */
+  const showAdminLink = user.role === "admin" || user.role === "moderator";
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -20,15 +25,25 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const items: { href: string; icon: string; label: string; adminOnly?: boolean; destructive?: boolean }[] = [
+    { href: "/profile", icon: "person", label: "Profile" },
+    { href: "/friends", icon: "group", label: "Friends" },
+    { href: "/account-settings", icon: "manage_accounts", label: "Account settings" },
+    { href: "/admin", icon: "admin_panel_settings", label: "Admin panel", adminOnly: true },
+  ];
 
   return (
     <div className="relative" ref={menuRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`nav-user-btn ${isOpen ? "active" : ""}`}
         title="user menu"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
         style={{ padding: "0.25rem 0.5rem", gap: "0.5rem" }}
       >
         <span
@@ -43,129 +58,41 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
         >
           {user.username}
         </span>
-        {/* <span
-          className="nav-level"
-          title="Current User Level"
-          style={{
-            background: "rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.6)",
-          }}
-        >
-          {user.level}
-        </span> */}
       </button>
 
       {isOpen && (
         <div
-          data-slot="card"
-          className="absolute right-0 top-full mt-3 z-50 animate-fade-in min-w-[190px]"
-          style={{
-            padding: "0.4rem",
-            overflow: "hidden",
-          }}
+          className="dropdown-menu-panel absolute right-0 top-full mt-3 animate-fade-in"
+          role="menu"
         >
-          <Link
-            href="/stats"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              query_stats
-            </span>
-            <span className="font-bold uppercase tracking-wider">
-              User stats
-            </span>
-          </Link>
-          <Link
-            href="/friends"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              group
-            </span>
-            <span className="font-bold uppercase tracking-wider">Friends</span>
-          </Link>
-          <Link
-            href="/profile"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-              background: "oklch(0.623 0.226 344 / 0.15)",
-              color: "white",
-              borderRadius: "6px",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", color: "var(--primary)" }}
-            >
-              public
-            </span>
-            <span className="font-black uppercase tracking-widest">
-              Public profile
-            </span>
-          </Link>
-          <Link
-            href="/account-settings"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              settings
-            </span>
-            <span className="font-bold uppercase tracking-wider">
-              Account settings
-            </span>
-          </Link>
+          {items.map((item) => {
+            if (item.adminOnly && !showAdminLink) return null;
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                role="menuitem"
+                className={`dropdown-menu-item${active ? " dropdown-menu-item--active" : ""}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <span className="material-symbols-outlined">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+          <div className="dropdown-menu-separator" role="separator" />
           <button
+            type="button"
+            role="menuitem"
             onClick={() => {
               setIsOpen(false);
               onLogout();
             }}
-            className="dropdown-item"
-            style={{
-              width: "100%",
-              textAlign: "left",
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
+            className="dropdown-menu-item dropdown-menu-item--destructive"
           >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              logout
-            </span>
-            <span className="font-bold uppercase tracking-wider">Sign out</span>
+            <span className="material-symbols-outlined">logout</span>
+            Sign out
           </button>
         </div>
       )}

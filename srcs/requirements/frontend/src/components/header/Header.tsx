@@ -42,7 +42,6 @@ export function Header() {
               <NavLink href="/tournaments" icon="sports_esports" title="tournaments" />
               <NavLink href="/friends" icon="group" title="friends" />
               <NavLink href="/leaderboard" icon="social_leaderboard" title="leaderboard" />
-              <NavLink href="/admin" icon="admin_panel_settings" title="admin" />
               <NavLink href="/settings" icon="settings" title="settings" />
             </div>
           </div>
@@ -95,10 +94,6 @@ export function Header() {
           <Link href="/leaderboard" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">social_leaderboard</span>
             <span className="nav-link-text">leaderboard</span>
-          </Link>
-          <Link href="/admin" className="nav-link" onClick={() => setMobileOpen(false)}>
-            <span className="material-symbols-outlined">admin_panel_settings</span>
-            <span className="nav-link-text">admin</span>
           </Link>
           <Link href="/settings" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">settings</span>
