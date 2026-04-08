@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
 import type { Friend, PublicUser } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";

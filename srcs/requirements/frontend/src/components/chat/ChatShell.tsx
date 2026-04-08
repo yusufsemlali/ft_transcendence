@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/lib/store/hooks";
 import { useChatStore } from "@/hooks/use-chat-store";
 
 function formatMessageTime(timestamp: string | Date): string {

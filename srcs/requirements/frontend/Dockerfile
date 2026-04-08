@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app/frontend
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9
 
 # Install shared deps first (cached separately)
 COPY shared/contracts/package.json /app/shared/contracts/
