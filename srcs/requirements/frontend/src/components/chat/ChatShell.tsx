@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/store/hooks";
 import { useChatStore } from "@/hooks/use-chat-store";
+import api from "@/lib/api/api";
+import { toast } from "@/components/ui/sonner";
 
 function formatMessageTime(timestamp: string | Date): string {
   return new Date(timestamp).toLocaleTimeString([], {
@@ -20,6 +22,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
   const { user, isAuthenticated } = useAuth();
   const [pendingRoom, setPendingRoom] = useState("");
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [addingFriendId, setAddingFriendId] = useState<string | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -33,6 +36,23 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
   }, [user]);
 
   const store = useChatStore(chatUser, initialRoom);
+
+  const handleAddFriend = useCallback(async (targetUserId: string) => {
+    setAddingFriendId(targetUserId);
+    try {
+      const res = await api.friends.sendFriendRequest({ body: { targetUserId } });
+      if (res.status === 201) {
+        toast.success("Friend request sent!");
+      } else {
+        const msg = (res.body as any)?.message || "Could not send request";
+        toast.error(msg);
+      }
+    } catch {
+      toast.error("Failed to send friend request");
+    } finally {
+      setAddingFriendId(null);
+    }
+  }, []);
 
   useEffect(() => {
     composerRef.current?.focus();
@@ -382,19 +402,44 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
             </div>
           ) : (
             <div className="stack-xs">
-              {store.users.map((u) => (
-                <div key={u.id} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "6px 8px", borderRadius: "var(--radius)",
-                  background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: "var(--text-muted)" }}>person</span>
-                    <span style={{ fontSize: 12, fontWeight: 500 }}>{u.username}</span>
+              {store.users.map((u) => {
+                const isMe = u.id === chatUser?.id;
+                return (
+                  <div key={u.id} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "6px 8px", borderRadius: "var(--radius)",
+                    background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16, color: "var(--text-muted)" }}>person</span>
+                      <span style={{ fontSize: 12, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.username}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                      {!isMe && (
+                        <button
+                          type="button"
+                          title={`Add ${u.username} as friend`}
+                          disabled={addingFriendId === u.id}
+                          onClick={() => void handleAddFriend(u.id)}
+                          style={{
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            width: 22, height: 22, borderRadius: "50%",
+                            border: "none", cursor: addingFriendId === u.id ? "not-allowed" : "pointer",
+                            background: "transparent", color: "var(--text-muted)",
+                            transition: "all 0.15s", padding: 0,
+                            opacity: addingFriendId === u.id ? 0.4 : 1,
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--primary)"; e.currentTarget.style.color = "white"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>person_add</span>
+                        </button>
+                      )}
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399", flexShrink: 0 }} />
+                    </div>
                   </div>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399", flexShrink: 0 }} />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

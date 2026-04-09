@@ -58,11 +58,18 @@ export default function FriendsPage() {
       setSearching(true);
       try {
         const res = await api.users.searchUsers({ query: { q: userSearchQuery.trim(), limit: 20 } });
+        console.log("[FriendsPage] searchUsers response:", res.status, res.body);
         if (res.status === 200 && Array.isArray(res.body)) {
           setSearchResults(res.body);
+        } else if (res.status === 200 && res.body && typeof res.body === "object" && !Array.isArray(res.body)) {
+          // ts-rest might return the body as-is if validation fails
+          setSearchResults([]);
+        } else {
+          setSearchResults([]);
         }
-      } catch {
-        /* silently fail */
+      } catch (err) {
+        console.error("[FriendsPage] searchUsers error:", err);
+        setSearchResults([]);
       } finally {
         setSearching(false);
       }

@@ -8,9 +8,9 @@ RUN npm install -g pnpm@9
 COPY shared/contracts/package.json /app/shared/contracts/
 RUN cd /app/shared/contracts && pnpm install
 
-# Install frontend deps (cached separately)
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN pnpm install
+# Install frontend deps (fresh resolve from package.json)
+COPY frontend/package.json ./
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source
 COPY frontend/ .

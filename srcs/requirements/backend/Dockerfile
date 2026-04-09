@@ -8,9 +8,9 @@ RUN npm install -g pnpm@9
 COPY shared/contracts/package.json /app/shared/contracts/
 RUN cd /app/shared/contracts && pnpm install
 
-# Install backend deps (cached separately)
-COPY backend/package.json backend/pnpm-lock.yaml ./
-RUN pnpm install
+# Install backend deps (fresh resolve from package.json)
+COPY backend/package.json ./
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source
 COPY backend/ .

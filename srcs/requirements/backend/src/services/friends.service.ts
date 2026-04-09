@@ -8,10 +8,10 @@ import { ApiResponse } from "@/utils/response";
 type FriendshipStatus = 'pending' | 'accepted' | 'blocked';
 
 interface FriendResult {
-    friendId: string;
-    friendUsername: string;
-    friendDisplayName: string | null;
-    friendAvatar: string;
+    id: string;
+    username: string;
+    displayName: string | null;
+    avatar: string;
     isOnline: boolean;
     status: FriendshipStatus;
     friendshipId: string;
@@ -53,11 +53,11 @@ export const getMyFriends = async (
         ))
         .where(and(...conditions));
 
-    const friends: FriendResult[] = rows.map((row) => ({
-        friendId: row.friendUserId,
-        friendUsername: row.friendUsername,
-        friendDisplayName: row.friendDisplayName,
-        friendAvatar: row.friendAvatar,
+    const friends = rows.map((row) => ({
+        id: row.friendUserId,
+        username: row.friendUsername,
+        displayName: row.friendDisplayName,
+        avatar: row.friendAvatar,
         isOnline: row.friendIsOnline,
         status: row.status as FriendshipStatus,
         friendshipId: row.friendshipId,
@@ -97,10 +97,10 @@ export const getFriendship = async (currentUserId: string, targetUserId: string)
 
     const r = row[0];
     const friend: FriendResult = {
-        friendId: r.targetId,
-        friendUsername: r.targetUsername,
-        friendDisplayName: r.targetDisplayName,
-        friendAvatar: r.targetAvatar,
+        id: r.targetId,
+        username: r.targetUsername,
+        displayName: r.targetDisplayName,
+        avatar: r.targetAvatar,
         isOnline: r.targetIsOnline,
         status: r.status as FriendshipStatus,
         friendshipId: r.friendshipId,

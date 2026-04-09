@@ -44,6 +44,7 @@ export const addApiRoutes = (app: Express) => {
         matches: matchesController,
         files: filesController,
     }, apiRouter, {
+        jsonQuery: true,
         globalMiddleware: [
             authenticateTsRestRequest()
         ],

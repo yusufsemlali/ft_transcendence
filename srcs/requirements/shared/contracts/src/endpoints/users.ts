@@ -40,7 +40,7 @@ export const usersContract = c.router({
     },
     getUserById: {
         method: "GET",
-        path: "/users/:id",
+        path: "/users/by-id/:id",
         pathParams: z.object({
             id: z.string().uuid(),
         }),
