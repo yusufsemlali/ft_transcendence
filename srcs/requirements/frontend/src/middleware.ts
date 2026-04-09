@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const adminRoutes = ["/admin"];
 
-const protectedRoutes = ["/settings", "/profile", "/tournaments/create", "/dashboard"];
-
+const protectedRoutes = ["/settings", "/profile", "/tournaments/create", "/dashboard", "/admin"];
 const authRoutes = ["/login"];
 
+
+
 export function middleware(request: NextRequest) {
-    // 1. Check for both access and refresh cookies
-    const hasAccessToken = request.cookies.has("access_token");
+
+    const accessToken = request.cookies.get("access_token")?.value;
     const hasRefreshToken = request.cookies.has("refresh_token");
-    const isAuthenticated = hasAccessToken || hasRefreshToken;
+    const isAuthenticated = !!accessToken || hasRefreshToken;
 
     const { pathname } = request.nextUrl;
 
@@ -25,12 +25,6 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/", request.url));
     }
 
-    if (isAuthenticated && adminRoutes.some(route => pathname.startsWith(route))) {
-        const user = request.auth?.user;
-        if (user?.role !== "admin") {
-            return NextResponse.redirect(new URL("/", request.url));
-        }
-    }
 
     return NextResponse.next();
 }
