@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "@/lib/api/api";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /* ── Types ── */
 type FriendshipStatus = "pending" | "accepted" | "blocked";
@@ -259,8 +266,6 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
   onBlock: (id: string) => void;
   onUnblock: (id: string) => void;
 }) {
-  const [showMenu, setShowMenu] = useState(false);
-
   return (
     <div className="glass-card friend-card">
       {/* Avatar */}
@@ -326,20 +331,27 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
         )}
 
         {friend.status === "accepted" && (
-          <div className="friend-card-menu-wrap" style={{ position: "relative" }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setShowMenu(!showMenu)} style={{ fontSize: "11px", padding: "6px 10px" }}>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: "11px", padding: "6px 10px" }}
+            >
               <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>more_vert</span>
-            </button>
-            {showMenu && (
-              <div className="dropdown-menu-panel" style={{
-                position: "absolute", right: 0, top: "100%", marginTop: "4px",
-                minWidth: "160px", zIndex: 20,
-              }}>
-                <MenuButton icon="person_remove" label="Remove Friend" onClick={() => { onRemove(friend.friendshipId); setShowMenu(false); }} />
-                <MenuButton icon="block" label="Block" destructive onClick={() => { onBlock(friend.id); setShowMenu(false); }} />
-              </div>
-            )}
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={4}>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+                  Remove Friend
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => onBlock(friend.id)}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>block</span>
+                  Block
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
         {friend.status === "blocked" && (
@@ -349,19 +361,5 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock }
         )}
       </div>
     </div>
-  );
-}
-
-function MenuButton({ icon, label, destructive, onClick }: { icon: string; label: string; destructive?: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`dropdown-menu-item${destructive ? " dropdown-menu-item--destructive" : ""}`}
-      style={{ width: "100%" }}
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>{icon}</span>
-      {label}
-    </button>
   );
 }

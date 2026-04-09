@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 function Select({
   children,
@@ -33,7 +28,7 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={cn("scroll-my-1 p-1", className)}
+      className={cn("p-[var(--space-xs)]", className)}
       {...props}
     />
   );
@@ -63,7 +58,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         "dashboard-input flex items-center justify-between gap-2 w-full text-left transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
-        "data-[open=true]:border-[var(--primary)] data-[open=true]:ring-1 data-[open=true]:ring-[var(--primary)]/20 data-[open=true]:shadow-[0_0_15px_rgba(var(--theme-color-rgb,var(--primary)),0.15)]",
+        "data-[popup-open]:border-[var(--primary)] data-[popup-open]:ring-1 data-[popup-open]:ring-[var(--primary)]/20",
         className
       )}
       style={{ padding: "8px 12px", minHeight: "36px" }}
@@ -72,7 +67,7 @@ function SelectTrigger({
       {children}
       <SelectPrimitive.Icon
         render={
-          <span className="material-symbols-outlined shrink-0 text-[18px] opacity-40 transition-transform duration-300 data-[state=open]:rotate-180 pointer-events-none">
+          <span className="material-symbols-outlined shrink-0 text-[18px] opacity-40 transition-transform duration-300 pointer-events-none">
             expand_more
           </span>
         }
@@ -85,10 +80,10 @@ function SelectContent({
   className,
   children,
   side = "bottom",
-  sideOffset = 4,
+  sideOffset = 6,
   align = "start",
   alignOffset = 0,
-  alignItemWithTrigger = false, // Set to false to behave like typical dropdown dropdowns
+  alignItemWithTrigger = false,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
@@ -103,28 +98,29 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
-        className="isolate z-[9999]"
+        className="isolate z-[10000]"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "relative isolate z-[9999] max-h-[300px] w-(--anchor-width) min-w-[var(--anchor-width)] origin-(--transform-origin) overflow-y-auto shadow-md p-1",
-            "rounded-(--radius)",
-            "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+            "select-popup relative isolate z-[10000] max-h-[min(24rem,90vh)] min-w-[var(--anchor-width)] origin-(--transform-origin) overflow-y-auto",
+            "animate-in fade-in-0 zoom-in-95 data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[ending-style]:zoom-out-95",
             className
           )}
           style={{
-            background: "oklch(0.15 0 0 / 0.97)",
-            backdropFilter: "blur(24px) saturate(1.2)",
-            WebkitBackdropFilter: "blur(24px) saturate(1.2)",
-            border: "1px solid oklch(1 0 0 / 0.1)",
-            boxShadow: "0 16px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.2)",
+            padding: "var(--space-xs)",
+            borderRadius: "var(--radius)",
+            background: "linear-gradient(145deg, oklch(100% 0 0 / var(--glass-opacity)) 0%, oklch(100% 0 0 / calc(var(--glass-opacity) / 2)) 100%)",
+            backdropFilter: "blur(var(--glass-blur)) saturate(1.6)",
+            WebkitBackdropFilter: "blur(var(--glass-blur)) saturate(1.6)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "var(--shadow-glass)",
           }}
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List className="space-y-0.5">{children}</SelectPrimitive.List>
+          <SelectPrimitive.List>{children}</SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
@@ -139,29 +135,61 @@ function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn("px-2 py-1.5 text-xs font-semibold text-[oklch(0.8_0_0)]", className)}
+      className={cn(className)}
+      style={{
+        padding: "var(--space-sm)",
+        fontSize: "0.65rem",
+        fontWeight: 600,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase" as const,
+        color: "var(--text-muted)",
+      }}
       {...props}
     />
   );
 }
 
+function extractLabel(children: React.ReactNode): string | undefined {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  const parts: string[] = [];
+  React.Children.forEach(children, (child) => {
+    if (typeof child === "string") parts.push(child);
+    else if (typeof child === "number") parts.push(String(child));
+  });
+  return parts.length > 0 ? parts.join("") : undefined;
+}
+
 function SelectItem({
   className,
   children,
+  label: labelProp,
   ...props
 }: SelectPrimitive.Item.Props) {
+  const label = labelProp ?? extractLabel(children);
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
-      className={cn(
-        "relative flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm outline-none transition-all duration-150 select-none",
-        "rounded-(--radius-sm)",
-        "text-[oklch(0.8_0_0)] hover:bg-white/10 hover:text-white",
-        "data-[highlighted]:bg-white/10 data-[highlighted]:text-white", // Base UI highlighted state
-        "data-[selected]:bg-[var(--primary)] data-[selected]:text-white data-[selected]:font-semibold data-[selected]:shadow-sm", // Selected state
-        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        className
-      )}
+      label={label}
+      className={cn("select-item", className)}
+      style={{
+        position: "relative",
+        display: "flex",
+        width: "100%",
+        boxSizing: "border-box",
+        cursor: "pointer",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "var(--space-sm)",
+        borderRadius: "calc(var(--radius) / 1.5)",
+        padding: "var(--space-sm) var(--space-sm)",
+        fontSize: "0.875rem",
+        fontWeight: 400,
+        outline: "none",
+        transition: "background var(--transition-speed), color var(--transition-speed)",
+        userSelect: "none",
+        color: "var(--text-secondary)",
+      }}
       {...props}
     >
       <SelectPrimitive.ItemText className="flex-1 truncate">
@@ -169,7 +197,10 @@ function SelectItem({
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={
-          <span className="material-symbols-outlined text-[16px] shrink-0 pointer-events-none">
+          <span
+            className="material-symbols-outlined shrink-0 pointer-events-none"
+            style={{ fontSize: "16px", color: "var(--primary)" }}
+          >
             check
           </span>
         }
@@ -185,7 +216,13 @@ function SelectSeparator({
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn("pointer-events-none -mx-1 my-1 h-px bg-[oklch(1_0_0/0.1)]", className)}
+      className={cn(className)}
+      style={{
+        pointerEvents: "none",
+        margin: "var(--space-xs) calc(-1 * var(--space-xs))",
+        height: "1px",
+        background: "var(--border-color)",
+      }}
       {...props}
     />
   );
@@ -199,7 +236,7 @@ function SelectScrollUpButton({
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
       className={cn(
-        "flex cursor-default items-center justify-center py-1 bg-[oklch(0.15_0_0/0.97)] text-[var(--text-muted)] hover:text-white transition-colors",
+        "flex cursor-default items-center justify-center py-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
         className
       )}
       {...props}
@@ -217,7 +254,7 @@ function SelectScrollDownButton({
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
       className={cn(
-        "flex cursor-default items-center justify-center py-1 bg-[oklch(0.15_0_0/0.97)] text-[var(--text-muted)] hover:text-white transition-colors",
+        "flex cursor-default items-center justify-center py-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
         className
       )}
       {...props}

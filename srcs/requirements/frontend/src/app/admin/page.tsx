@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "@/lib/api/api";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 /* ── Types (from contracts) ── */
 type UserRole = "user" | "admin" | "moderator" | "organizer";
@@ -199,20 +200,30 @@ export default function AdminPage() {
             />
           </div>
         </label>
-        <label className="dashboard-field admin-filter-field">
+        <div className="dashboard-field admin-filter-field">
           <span className="dashboard-field-label">Role</span>
-          <select className="dashboard-input" value={roleFilter} onChange={e => { setRoleFilter(e.target.value as any); setPage(1); }}>
-            <option value="">All Roles</option>
-            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </label>
-        <label className="dashboard-field admin-filter-field">
+          <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v as UserRole | ""); setPage(1); }}>
+            <SelectTrigger style={{ fontSize: "12px" }}>
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Roles</SelectItem>
+              {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="dashboard-field admin-filter-field">
           <span className="dashboard-field-label">Status</span>
-          <select className="dashboard-input" value={statusFilter} onChange={e => { setStatusFilter(e.target.value as any); setPage(1); }}>
-            <option value="">All Status</option>
-            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </label>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as UserStatus | ""); setPage(1); }}>
+            <SelectTrigger style={{ fontSize: "12px" }}>
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Status</SelectItem>
+              {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className={`admin-layout${selectedUser ? " admin-layout--split" : ""}`}>

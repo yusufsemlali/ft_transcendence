@@ -1137,6 +1137,33 @@ a.dropdown-menu-item:hover:not(.dropdown-menu-item--active):not(.dropdown-menu-i
   color: var(--text-muted);
 }
 
+/* ── Select items (Base UI) — mirrors dropdown-menu-item tokens ── */
+.select-item:hover,
+.select-item[data-highlighted] {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.select-item[data-selected] {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.select-item[data-selected]:hover,
+.select-item[data-selected][data-highlighted] {
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.select-item:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+.select-item[data-disabled] {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
 /* Animation */
 @keyframes fadeIn {
   from {

@@ -12,6 +12,7 @@ import {
   type Sport,
 } from "@ft-transcendence/contracts";
 import { toastApiError } from "@/lib/api-error";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -202,49 +203,56 @@ export function DiscoveryList() {
           alignItems: "center",
         }}
       >
-        <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", gap: "8px", alignItems: "center" }}>
           Sport
-          <select
-            className="dashboard-input"
-            style={{ minWidth: "160px", fontSize: "13px", padding: "6px 10px" }}
+          <Select
             value={sportId ?? ""}
-            onChange={(e) =>
-              setParams({
-                sportId: e.target.value || undefined,
-                page: "1",
-              })
+            onValueChange={(v) =>
+              setParams({ sportId: v || undefined, page: "1" })
             }
           >
-            <option value="">All sports</option>
-            {sports.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger style={{ minWidth: "160px", fontSize: "13px", padding: "6px 10px" }}>
+              <SelectValue placeholder="All sports">
+                {sportId && (() => {
+                  const s = sports.find(sp => sp.id === sportId);
+                  return s?.name ?? null;
+                })()}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All sports</SelectItem>
+              {sports.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", gap: "8px", alignItems: "center" }}>
           Status
-          <select
-            className="dashboard-input"
-            style={{ minWidth: "160px", fontSize: "13px", padding: "6px 10px" }}
+          <Select
             value={status ?? ""}
-            onChange={(e) =>
-              setParams({
-                status: e.target.value || undefined,
-                page: "1",
-              })
+            onValueChange={(v) =>
+              setParams({ status: v || undefined, page: "1" })
             }
           >
-            <option value="">All statuses</option>
-            {TOURNAMENT_DISCOVERY_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger style={{ minWidth: "160px", fontSize: "13px", padding: "6px 10px" }}>
+              <SelectValue placeholder="All statuses">
+                {status ? status.replace(/_/g, " ") : null}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All statuses</SelectItem>
+              {TOURNAMENT_DISCOVERY_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s.replace(/_/g, " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {loading && (

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/store/hooks";
+import { UserMenu } from "@/components/header/UserMenu";
 
 export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <div className="dashboard-topbar">
@@ -18,7 +19,13 @@ export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
 
       {/* Right: action icons + user */}
-      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <Link href="/" className="dashboard-topbar-btn" title="Home">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>home</span>
+        </Link>
+        <Link href="/tournaments" className="dashboard-topbar-btn" title="Tournaments">
+          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>sports_esports</span>
+        </Link>
         <button className="dashboard-topbar-btn" title="Notifications">
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>notifications</span>
         </button>
@@ -29,15 +36,12 @@ export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>settings</span>
         </Link>
         {user && (
-          <Link href="/profile" className="dashboard-topbar-user" title={user.username}>
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
-            ) : (
-              <span style={{ fontSize: "12px", fontWeight: "700", color: "var(--primary)" }}>
-                {(user.displayName || user.username || "U").charAt(0).toUpperCase()}
-              </span>
-            )}
-          </Link>
+          <div style={{ marginLeft: "4px" }}>
+            <UserMenu 
+              user={user} 
+              onLogout={() => logout()} 
+            />
+          </div>
         )}
       </div>
     </div>
