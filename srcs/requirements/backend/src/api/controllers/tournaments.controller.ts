@@ -155,8 +155,10 @@ export const tournamentsController = s.router(contract.tournaments, {
         };
     },
 
-    getLobbyState: async ({ params }: any) => {
-        const result = await LobbyService.getLobbyState(params.id);
+    getLobbyState: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id || undefined;
+        const result = await LobbyService.getLobbyState(params.id, userId);
         return {
             status: 200,
             body: result as any,
@@ -310,6 +312,95 @@ export const tournamentsController = s.router(contract.tournaments, {
             status: 200,
             body: result as any,
         };
+    },
+
+    declineInvite: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.declineInvite({
+            tournamentId: params.id,
+            competitorId: params.competitorId,
+            userId,
+            isTO,
+        });
+        return { status: 200, body: result as any };
+    },
+
+    revokeInvite: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.revokeInvite({
+            tournamentId: params.id,
+            competitorId: params.competitorId,
+            targetUserId: params.targetUserId,
+            captainId: userId,
+            isTO,
+        });
+        return { status: 200, body: result as any };
+    },
+
+    kickMember: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.kickMember({
+            tournamentId: params.id,
+            competitorId: params.competitorId,
+            targetUserId: params.userId,
+            captainId: userId,
+            isTO,
+        });
+        return { status: 200, body: result as any };
+    },
+
+    transferCaptain: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.transferCaptain({
+            tournamentId: params.id,
+            competitorId: params.competitorId,
+            userId,
+            newCaptainUserId: body.newCaptainUserId,
+            isTO,
+        });
+        return { status: 200, body: result as any };
+    },
+
+    updateCompetitor: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const tournament = await TournamentService.getTournamentById(params.id);
+        const isTO = await TournamentService.isTournamentAdmin(userId, tournament.data.organizationId);
+
+        const result = await LobbyService.updateCompetitorInfo({
+            tournamentId: params.id,
+            competitorId: params.competitorId,
+            userId,
+            name: body.name,
+            isTO,
+        });
+        return { status: 200, body: result as any };
     },
 
 });

@@ -5,7 +5,7 @@
 
 const INTEGRATIONS: {
   id: string; name: string; description: string; icon: string;
-  color: string; status: "available" | "coming_soon";
+  color: string; status: "coming_soon" | "coming_soon";
 }[] = [
   {
     id: "discord",
@@ -13,7 +13,7 @@ const INTEGRATIONS: {
     description: "Send tournament updates, match results, and announcements to your Discord server via webhooks.",
     icon: "forum",
     color: "#5865F2",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "twitch",
@@ -29,7 +29,7 @@ const INTEGRATIONS: {
     description: "Send real-time HTTP callbacks to your own services when events occur in your organization.",
     icon: "webhook",
     color: "var(--accent-warning, #f59e0b)",
-    status: "available",
+    status: "coming_soon",
   },
   {
     id: "email",
@@ -53,7 +53,7 @@ const INTEGRATIONS: {
     description: "Enable public read-only API access for your organization's tournaments and standings.",
     icon: "api",
     color: "var(--primary)",
-    status: "available",
+    status: "coming_soon",
   },
 ];
 

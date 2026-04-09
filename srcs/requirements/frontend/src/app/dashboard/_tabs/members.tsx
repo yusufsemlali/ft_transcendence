@@ -20,6 +20,7 @@ interface Member {
   level: number;
   isOnline: boolean;
   orgRole: OrgRole;
+  status: "pending" | "active" | "declined";
   joinedAt: string | Date;
 }
 
@@ -43,6 +44,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
   const isSelf = currentUserId === member.id;
   const isOwner = member.orgRole === "owner";
   const canManage = isAdmin && !isOwner && !isSelf;
+  const isPending = member.status === "pending";
 
   return (
     <div style={{
@@ -52,6 +54,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
       padding: "12px 16px",
       borderBottom: "1px solid var(--border-color)",
       transition: "background 0.15s",
+      opacity: isPending ? 0.7 : 1,
     }}>
       {/* Avatar */}
       <div style={{ position: "relative", flexShrink: 0 }}>
@@ -61,6 +64,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
           borderRadius: "50%",
           overflow: "hidden",
           backgroundColor: "var(--bg-secondary)",
+          filter: isPending ? "grayscale(1)" : "none",
         }}>
           {member.avatar ? (
             <img
@@ -81,7 +85,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
           )}
         </div>
         {/* Online indicator */}
-        {member.isOnline && (
+        {!isPending && member.isOnline && (
           <div style={{
             position: "absolute",
             bottom: "0",
@@ -105,19 +109,30 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
           {isSelf && (
             <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.5px" }}>(YOU)</span>
           )}
+          {isPending && (
+            <span style={{ 
+              fontSize: "9px", 
+              fontWeight: 800, 
+              color: "var(--accent-warning, #f59e0b)", 
+              letterSpacing: "0.5px",
+              padding: "1px 5px",
+              borderRadius: "4px",
+              background: "color-mix(in srgb, var(--accent-warning, #f59e0b) 12%, transparent)"
+            }}>
+              INVITED
+            </span>
+          )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
           <span>@{member.username}</span>
           <span style={{ opacity: 0.3 }}>·</span>
-          <span>Lvl {member.level}</span>
-          <span style={{ opacity: 0.3 }}>·</span>
-          <span>{new Date(member.joinedAt).toLocaleDateString()}</span>
+          <span>{isPending ? "Invited on" : "Joined"} {new Date(member.joinedAt).toLocaleDateString()}</span>
         </div>
       </div>
 
       {/* Role badge / selector */}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {canManage ? (
+        {canManage && !isPending ? (
           <div style={{ width: "130px" }}>
             <Select
               value={member.orgRole}
@@ -161,9 +176,9 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
             }}
             onMouseEnter={e => { e.currentTarget.style.color = "var(--destructive)"; e.currentTarget.style.background = "color-mix(in srgb, var(--destructive) 10%, transparent)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
-            title="Remove member"
+            title={isPending ? "Cancel invitation" : "Remove member"}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_remove</span>
+            <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>{isPending ? "cancel" : "person_remove"}</span>
           </button>
         )}
       </div>
@@ -193,10 +208,10 @@ function AddMemberForm({ org, onAdded, onCancel }: {
         body: { email: email.trim(), role: role as OrgRole },
       });
       if (res.status === 201) {
-        toast.success("Invitation sent");
+        toast.success("Invitation sent successfully!");
         onAdded();
       } else {
-        toastApiError(res.body, "Failed to add member");
+        toastApiError(res.body, "Failed to send invitation");
       }
     } catch {
       toast.error("An unexpected error occurred");
@@ -208,7 +223,7 @@ function AddMemberForm({ org, onAdded, onCancel }: {
   return (
     <div className="glass-card" style={{ padding: "20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h3 style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>Add Member</h3>
+        <h3 style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>Invite New Member</h3>
         <button onClick={onCancel} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
         </button>
@@ -224,11 +239,12 @@ function AddMemberForm({ org, onAdded, onCancel }: {
             placeholder="user@example.com"
             className="dashboard-input"
             onKeyDown={e => e.key === "Enter" && handleSubmit()}
+            autoFocus
           />
         </label>
 
         <label className="dashboard-field" style={{ width: "140px" }}>
-          <span className="dashboard-field-label">Role</span>
+          <span className="dashboard-field-label">Assign Role</span>
           <Select value={role} onValueChange={setRole}>
             <SelectTrigger>
               <SelectValue />
@@ -244,7 +260,8 @@ function AddMemberForm({ org, onAdded, onCancel }: {
         <div style={{ display: "flex", gap: "8px" }}>
           <button className="btn btn-secondary" onClick={onCancel} style={{ fontSize: "11px", padding: "8px 16px" }}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting} style={{ fontSize: "11px", padding: "8px 16px" }}>
-            {submitting ? "Adding..." : "Add Member"}
+            <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>send</span>
+            {submitting ? "Sending..." : "Send Invite"}
           </button>
         </div>
       </div>
@@ -275,7 +292,6 @@ export function MembersTab({ org }: { org: Organization }) {
 
   useEffect(() => { fetchMembers(); }, [org.id]);
 
-  // Determine if current user has admin+ privileges
   const currentMember = members.find(m => m.id === currentUserId);
   const isAdmin = currentMember?.orgRole === "owner" || currentMember?.orgRole === "admin";
 
@@ -287,12 +303,16 @@ export function MembersTab({ org }: { org: Organization }) {
       });
       if (res.status === 200) {
         setMembers(prev => prev.map(m => m.id === userId ? { ...m, orgRole: role } : m));
+        toast.success("Role updated");
       }
     } catch { /* silent */ }
   };
 
   const handleRemove = async (userId: string, name: string) => {
-    if (!confirm(`Remove ${name} from this organization?`)) return;
+    const isPending = members.find(m => m.id === userId)?.status === "pending";
+    const msg = isPending ? `Cancel invitation for ${name}?` : `Remove ${name} from this organization?`;
+    if (!confirm(msg)) return;
+
     try {
       const res = await api.organizations.removeMember({
         params: { id: org.id, userId },
@@ -300,11 +320,11 @@ export function MembersTab({ org }: { org: Organization }) {
       });
       if (res.status === 200) {
         setMembers(prev => prev.filter(m => m.id !== userId));
+        toast.success(isPending ? "Invitation cancelled" : "Member removed");
       }
     } catch { /* silent */ }
   };
 
-  // Filter & sort
   const filtered = members
     .filter(m => {
       if (!search) return true;
@@ -313,10 +333,16 @@ export function MembersTab({ org }: { org: Organization }) {
         (m.displayName?.toLowerCase().includes(q) ?? false);
     })
     .sort((a, b) => {
-      // Sort by role weight: owner > admin > referee > member
+      // Pending always at bottom of their role group
+      if (a.status !== b.status) {
+        return a.status === "pending" ? 1 : -1;
+      }
       const weights: Record<string, number> = { owner: 0, admin: 1, referee: 2, member: 3 };
       return (weights[a.orgRole] ?? 4) - (weights[b.orgRole] ?? 4);
     });
+
+  const activeCount = members.filter(m => m.status === "active").length;
+  const pendingCount = members.filter(m => m.status === "pending").length;
 
   if (loading) {
     return (
@@ -333,7 +359,8 @@ export function MembersTab({ org }: { org: Organization }) {
         <div>
           <h2 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text-primary)", margin: "0 0 4px" }}>Members</h2>
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
-            {members.length} member{members.length !== 1 ? "s" : ""}
+            {activeCount} active member{activeCount !== 1 ? "s" : ""}
+            {pendingCount > 0 && <span> · {pendingCount} pending</span>}
             {members.filter(m => m.isOnline).length > 0 && (
               <span> · <span style={{ color: "#22c55e" }}>{members.filter(m => m.isOnline).length} online</span></span>
             )}
@@ -358,7 +385,7 @@ export function MembersTab({ org }: { org: Organization }) {
           {isAdmin && !showAdd && (
             <button className="btn btn-primary" style={{ fontSize: "11px", padding: "8px 16px" }} onClick={() => setShowAdd(true)}>
               <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>person_add</span>
-              Add Member
+              Invite
             </button>
           )}
         </div>

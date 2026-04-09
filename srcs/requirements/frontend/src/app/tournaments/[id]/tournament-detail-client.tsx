@@ -45,11 +45,11 @@ export function TournamentDetailClient({ id }: { id: string }) {
     onSuccess: (body) => {
       toast.success(
         body.state === "COMPETITOR_CREATED"
-          ? "You are registered. Opening dashboard…"
-          : "Joined the lobby. Opening dashboard…",
+          ? "You are registered. Opening lobby…"
+          : "Joined the lobby!",
       );
       queryClient.invalidateQueries({ queryKey: ["public-tournament", id] });
-      router.push("/dashboard");
+      router.push(`/tournaments/${id}/lobby`);
     },
     onError: (e: Error) => {
       toast.error(e.message);
@@ -214,17 +214,31 @@ export function TournamentDetailClient({ id }: { id: string }) {
             ) : null}
           </dl>
 
-          <div style={{ marginTop: "32px", display: "flex", flexWrap: "wrap", gap: "12px" }}>
+          <div style={{ marginTop: "32px", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
             {user ? (
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={joinMutation.isPending || t.status !== "registration"}
-                onClick={() => joinMutation.mutate()}
-                style={{ padding: "10px 24px" }}
-              >
-                {joinMutation.isPending ? "Joining…" : "Join lobby"}
-              </button>
+              <>
+                {t.status === "registration" && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={joinMutation.isPending}
+                    onClick={() => joinMutation.mutate()}
+                    style={{ padding: "10px 24px" }}
+                  >
+                    {joinMutation.isPending ? "Joining…" : "Join lobby"}
+                  </button>
+                )}
+                {t.status !== "draft" && (
+                  <Link
+                    href={`/tournaments/${id}/lobby`}
+                    className="btn btn-secondary"
+                    style={{ padding: "10px 24px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>groups</span>
+                    View Lobby
+                  </Link>
+                )}
+              </>
             ) : (
               <Link
                 href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
@@ -234,9 +248,13 @@ export function TournamentDetailClient({ id }: { id: string }) {
                 Log in to join
               </Link>
             )}
-            {t.status !== "registration" ? (
-              <span style={{ fontSize: "13px", color: "var(--text-muted)", alignSelf: "center" }}>
-                Registration is only open when status is &quot;registration&quot;.
+            {t.status !== "registration" && t.status !== "draft" ? (
+              <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                Registration is closed.
+              </span>
+            ) : t.status === "draft" ? (
+              <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                This tournament is still in draft.
               </span>
             ) : null}
           </div>

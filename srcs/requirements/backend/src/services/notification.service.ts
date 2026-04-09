@@ -1,7 +1,13 @@
 import { db } from "@/dal/db";
 import { notifications } from "@/dal/db/schemas/notifications";
 
-type NotificationType = "friend_request" | "tournament_invite" | "match_starting" | "achievement_unlocked" | "system_alert";
+type NotificationType = 
+    | "friend_request" 
+    | "tournament_invite" 
+    | "organization_invite"
+    | "match_starting" 
+    | "achievement_unlocked" 
+    | "system_alert";
 
 export async function createNotification(params: {
     userId: string;

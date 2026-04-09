@@ -21,11 +21,17 @@ export function removeSseClient(userId: string, res: Response): void {
     }
 }
 
-function pushToUser(userId: string): void {
-    const clients = sseClients.get(userId);
+interface NotificationPayload {
+    userId: string;
+    type?: string;
+    refId?: string | null;
+}
+
+function pushToUser(payload: NotificationPayload): void {
+    const clients = sseClients.get(payload.userId);
     if (!clients || clients.size === 0) return;
 
-    const frame = `event: notification\ndata: ${JSON.stringify({ userId })}\n\n`;
+    const frame = `event: notification\ndata: ${JSON.stringify(payload)}\n\n`;
     for (const res of clients) {
         res.write(frame);
     }
@@ -35,7 +41,11 @@ async function ensureNotifyTrigger(client: pg.Client): Promise<void> {
     await client.query(`
         CREATE OR REPLACE FUNCTION notify_new_notification() RETURNS trigger AS $$
         BEGIN
-            PERFORM pg_notify('notifications', NEW.user_id::text);
+            PERFORM pg_notify('notifications', json_build_object(
+                'userId', NEW.user_id,
+                'type', NEW.type,
+                'refId', NEW.ref_id
+            )::text);
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
@@ -66,7 +76,12 @@ async function connectAndListen(): Promise<void> {
 
     client.on("notification", (msg: pg.Notification) => {
         if (msg.channel === "notifications" && msg.payload) {
-            pushToUser(msg.payload);
+            try {
+                const parsed = JSON.parse(msg.payload) as NotificationPayload;
+                pushToUser(parsed);
+            } catch {
+                pushToUser({ userId: msg.payload });
+            }
         }
     });
 

@@ -136,7 +136,6 @@ export function Sidebar({ org, section, page, navigateOrg, activeTournament, tou
             <SidebarItem icon="shield_person" label="Roles & Permissions" active={section === "admin" && page === "roles"}   onClick={() => goOrg("admin", "roles")} />
             <SidebarItem icon="person_add"    label="Invite Players"     active={section === "admin" && page === "invite"}  onClick={() => goOrg("admin", "invite")} />
             <SidebarItem icon="gavel"         label="Referee Panel"      active={section === "admin" && page === "referees"} onClick={() => goOrg("admin", "referees")} />
-            <SidebarItem icon="history"       label="Audit Log"          active={section === "admin" && page === "audit"}   onClick={() => goOrg("admin", "audit")} />
           </div>
 
           {/* Configure */}

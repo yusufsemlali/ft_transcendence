@@ -15,11 +15,9 @@ import { MembersTab } from "../_tabs/members";
 import { RolesTab } from "../_tabs/roles";
 import { InviteTab } from "../_tabs/invite";
 import { RefereesTab } from "../_tabs/referees";
-import { AuditLogTab } from "../_tabs/audit-log";
 import { OrgSettingsTab } from "../_tabs/org-settings";
 import { SportModesTab } from "../_tabs/sport-modes";
 import { IntegrationsTab } from "../_tabs/integrations";
-import { ActivityTab } from "../_tabs/activity";
 import { SettingsTab } from "../_tabs/settings";
 import { TournamentSettingsTab } from "../_tabs/tournament-settings";
 import { TournamentOverviewTab } from "../_tabs/tournament-overview";
@@ -48,7 +46,6 @@ const ORG_TABS: Record<OrgSection, TabDef[]> = {
     { id: "roles",    label: "Roles & Permissions", icon: "shield_person" },
     { id: "invite",   label: "Invite Players",     icon: "person_add" },
     { id: "referees", label: "Referee Panel",       icon: "gavel" },
-    { id: "audit",    label: "Audit Log",           icon: "history" },
   ],
   config: [
     { id: "org-settings", label: "Org Settings",  icon: "tune" },
@@ -358,7 +355,6 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {section === "admin" && page === "roles"    && <RolesTab org={org} />}
               {section === "admin" && page === "invite"   && <InviteTab org={org} />}
               {section === "admin" && page === "referees" && <RefereesTab org={org} />}
-              {section === "admin" && page === "audit"    && <AuditLogTab />}
 
               {section === "config" && page === "org-settings" && <OrgSettingsTab org={org} />}
               {section === "config" && page === "sport-modes"  && <SportModesTab />}

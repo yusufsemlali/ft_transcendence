@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
+import { toast } from "react-hot-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +37,20 @@ interface PublicUser {
   level: number;
 }
 
-const TAB_META: { key: FriendshipStatus | "all"; label: string; icon: string; color: string }[] = [
-  { key: "all",      label: "All",     icon: "group",        color: "var(--primary)" },
-  { key: "accepted", label: "Friends", icon: "favorite",     color: "var(--accent-success, #22c55e)" },
-  { key: "pending",  label: "Pending", icon: "schedule",     color: "var(--accent-warning, #f59e0b)" },
-  { key: "blocked",  label: "Blocked", icon: "block",        color: "var(--destructive)" },
+interface OrgInvite {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  role: string;
+  joinedAt: string | Date;
+}
+
+const TAB_META: { key: FriendshipStatus | "invites" | "all"; label: string; icon: string; color: string }[] = [
+  { key: "all",      label: "All",       icon: "group",        color: "var(--primary)" },
+  { key: "accepted", label: "Friends",   icon: "favorite",     color: "var(--accent-success, #22c55e)" },
+  { key: "pending",  label: "Requests",  icon: "schedule",     color: "var(--accent-warning, #f59e0b)" },
+  { key: "invites",  label: "Org Invites", icon: "business",   color: "var(--accent-info, #3b82f6)" },
+  { key: "blocked",  label: "Blocked",   icon: "block",        color: "var(--destructive)" },
 ];
 
 export default function FriendsPage() {
@@ -48,8 +58,9 @@ export default function FriendsPage() {
   const router = useRouter();
 
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [orgInvites, setOrgInvites] = useState<OrgInvite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<FriendshipStatus | "all">("all");
+  const [tab, setTab] = useState<FriendshipStatus | "invites" | "all">("all");
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -61,17 +72,21 @@ export default function FriendsPage() {
   const [sendingTo, setSendingTo] = useState<string | null>(null);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchFriends = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const query = tab !== "all" ? { status: tab } : {};
-      const res = await api.friends.getMyFriends({ query });
-      if (res.status === 200) setFriends(res.body as Friend[]);
+      const query = (tab !== "all" && tab !== "invites") ? { status: tab } : {};
+      const [fRes, oRes] = await Promise.all([
+        api.friends.getMyFriends({ query }),
+        api.organizations.getMyInvites()
+      ]);
+      if (fRes.status === 200) setFriends(fRes.body as Friend[]);
+      if (oRes.status === 200) setOrgInvites(oRes.body.data as OrgInvite[]);
     } catch { }
     finally { setLoading(false); }
   }, [tab]);
 
-  useEffect(() => { fetchFriends(); }, [fetchFriends]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const showMsg = (type: "success" | "error", text: string) => {
     setMessage({ type, text });
@@ -105,7 +120,7 @@ export default function FriendsPage() {
     return () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); };
   }, [userSearchQuery]);
 
-  /* ── Actions ── */
+  /* ── Friend Actions ── */
   const handleAccept = async (friendshipId: string) => {
     try {
       const res = await api.friends.acceptFriendRequest({ params: { friendshipId } });
@@ -140,7 +155,7 @@ export default function FriendsPage() {
     try {
       const res = await api.friends.blockUser({ params: { userId } });
       if (res.status === 200) {
-        fetchFriends();
+        fetchData();
         showMsg("success", "User blocked");
       } else { showMsg("error", (res.body as any)?.message || "Failed"); }
     } catch { showMsg("error", "Network error"); }
@@ -162,7 +177,7 @@ export default function FriendsPage() {
       const res = await api.friends.sendFriendRequest({ body: { targetUserId: targetId } });
       if (res.status === 201) {
         showMsg("success", "Friend request sent!");
-        fetchFriends();
+        fetchData();
       } else {
         showMsg("error", (res.body as any)?.message || "Failed to send request");
       }
@@ -171,6 +186,27 @@ export default function FriendsPage() {
     } finally {
       setSendingTo(null);
     }
+  };
+
+  /* ── Org Actions ── */
+  const handleAcceptOrg = async (id: string) => {
+    try {
+      const res = await api.organizations.acceptInvite({ params: { id } });
+      if (res.status === 200) {
+        setOrgInvites(prev => prev.filter(inv => inv.organizationId !== id));
+        showMsg("success", "Joined organization!");
+      }
+    } catch { showMsg("error", "Failed to join"); }
+  };
+
+  const handleDeclineOrg = async (id: string) => {
+    try {
+      const res = await api.organizations.declineInvite({ params: { id } });
+      if (res.status === 200) {
+        setOrgInvites(prev => prev.filter(inv => inv.organizationId !== id));
+        showMsg("success", "Invitation declined");
+      }
+    } catch { showMsg("error", "Failed to decline"); }
   };
 
   const openDMChat = (friendUsername: string) => {
@@ -196,6 +232,7 @@ export default function FriendsPage() {
     accepted: friends.filter(f => f.status === "accepted").length,
     pending: friends.filter(f => f.status === "pending").length,
     blocked: friends.filter(f => f.status === "blocked").length,
+    invites: orgInvites.length,
   };
 
   return (
@@ -205,12 +242,14 @@ export default function FriendsPage() {
         <div>
           <h1 style={{ fontSize: "clamp(18px, 4vw, 22px)", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
             <span className="material-symbols-outlined" style={{ fontSize: "24px", verticalAlign: "-4px", marginRight: "8px", color: "var(--primary)" }}>group</span>
-            Friends
+            Friends & Connections
           </h1>
-          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>{counts.accepted} friends · {counts.pending} pending</p>
+          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>
+            {counts.accepted} friends · {counts.invites} pending invites
+          </p>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setShowAddModal(true)} style={{ fontSize: "12px", padding: "8px 18px" }}>
-          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_add</span>
+          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_search</span>
           Find Players
         </button>
       </div>
@@ -243,27 +282,54 @@ export default function FriendsPage() {
             <span style={{
               marginLeft: "4px", fontSize: "10px", padding: "1px 6px", borderRadius: "8px",
               background: tab === t.key ? "rgba(255,255,255,0.2)" : "color-mix(in srgb, var(--text-muted) 10%, transparent)",
-            }}>{counts[t.key]}</span>
+            }}>{counts[t.key as keyof typeof counts]}</span>
           </button>
         ))}
       </div>
 
-      {/* Search Current Friends */}
-      <div style={{ position: "relative", marginBottom: "16px" }}>
-        <span className="material-symbols-outlined" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", color: "var(--text-muted)" }}>search</span>
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter friends..." className="dashboard-input" style={{ paddingLeft: "36px", width: "100%" }} />
-      </div>
+      {/* Search Bar */}
+      {tab !== "invites" && (
+        <div style={{ position: "relative", marginBottom: "16px" }}>
+          <span className="material-symbols-outlined" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", color: "var(--text-muted)" }}>search</span>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter friends..." className="dashboard-input" style={{ paddingLeft: "36px", width: "100%" }} />
+        </div>
+      )}
 
-      {/* Friends list */}
+      {/* Content Rendering */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "48px" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
+        </div>
+      ) : tab === "invites" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {orgInvites.length === 0 ? (
+            <div className="glass-card" style={{ padding: "48px", textAlign: "center" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "var(--text-muted)", opacity: 0.3 }}>business</span>
+              <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "12px" }}>No organization invitations.</p>
+            </div>
+          ) : (
+            orgInvites.map(inv => (
+              <div key={inv.organizationId} className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>business</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>{inv.organizationName}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Invited as <b>{inv.role}</b></div>
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                   <button className="btn btn-primary" onClick={() => handleAcceptOrg(inv.organizationId)} style={{ fontSize: "11px", padding: "6px 12px" }}>Accept</button>
+                   <button className="btn btn-secondary" onClick={() => handleDeclineOrg(inv.organizationId)} style={{ fontSize: "11px", padding: "6px 12px" }}>Decline</button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       ) : filtered.length === 0 ? (
         <div className="glass-card" style={{ padding: "48px", textAlign: "center" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "var(--text-muted)", opacity: 0.3 }}>group</span>
           <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "12px" }}>
-            {search ? "No results found" : tab === "pending" ? "No pending requests" : tab === "blocked" ? "No blocked users" : "No friends yet. Find someone to add!"}
+            {search ? "No results found" : tab === "pending" ? "No pending requests" : tab === "blocked" ? "No blocked users" : "No friends yet."}
           </p>
         </div>
       ) : (
@@ -284,76 +350,37 @@ export default function FriendsPage() {
         </div>
       )}
 
-      {/* ── Find Players Modal (Search) ── */}
+      {/* ── Find Players Modal ── */}
       {showAddModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowAddModal(false)}>
-          <div className="glass-card animate-fade-in modal-dialog" style={{ width: "100%", maxWidth: "480px" }} onClick={e => e.stopPropagation()}>
+          <div className="glass-card modal-dialog" style={{ width: "100%", maxWidth: "480px" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
               <div>
-                <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)", margin: 0 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px", verticalAlign: "-3px", marginRight: "6px", color: "var(--primary)" }}>person_search</span>
-                  Find Players
-                </h3>
-                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>Search for users by their username or display name.</p>
+                <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)", margin: 0 }}>Find Players</h3>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>Search by username to add friends.</p>
               </div>
               <button onClick={() => setShowAddModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
               </button>
             </div>
-
             <div style={{ position: "relative", marginBottom: "16px" }}>
               <span className="material-symbols-outlined" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "18px", color: "var(--text-muted)" }}>search</span>
-              <input
-                type="text" value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)}
-                placeholder="Type to search..."
-                className="dashboard-input"
-                style={{ paddingLeft: "38px", width: "100%" }}
-                autoFocus
-              />
+              <input type="text" value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)} placeholder="Type to search..." className="dashboard-input" style={{ paddingLeft: "38px", width: "100%" }} autoFocus />
             </div>
-
             <div style={{ maxHeight: "300px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
-              {searching && (
-                <div style={{ textAlign: "center", padding: "20px" }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
-                </div>
-              )}
-
-              {!searching && userSearchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                <div style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)", fontSize: "12px" }}>No players found matching "{userSearchQuery}"</div>
-              )}
-
-              {searchResults.map(u => {
-                const status = getFriendshipStatus(u.id);
-                return (
-                  <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {u.avatar ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</div>
-                        <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>@{u.username} • Lv.{u.level}</div>
-                      </div>
+              {searching ? (
+                 <div style={{ textAlign: "center", padding: "20px" }}><span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span></div>
+              ) : searchResults.map(u => (
+                <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {u.avatar ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
                     </div>
-
-                    {status === "accepted" ? (
-                      <span style={{ fontSize: "10px", color: "var(--accent-success)", fontWeight: "600", padding: "4px 8px" }}>FRIENDS</span>
-                    ) : status === "pending" ? (
-                      <span style={{ fontSize: "10px", color: "var(--accent-warning)", fontWeight: "600", padding: "4px 8px" }}>PENDING</span>
-                    ) : (
-                      <button
-                        onClick={() => handleSendRequest(u.id)}
-                        disabled={sendingTo === u.id}
-                        className="btn btn-primary"
-                        style={{ padding: "4px 12px", fontSize: "11px" }}
-                      >
-                        {sendingTo === u.id ? "..." : "Add"}
-                      </button>
-                    )}
+                    <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</div>
                   </div>
-                );
-              })}
+                  <button onClick={() => handleSendRequest(u.id)} disabled={sendingTo === u.id} className="btn btn-primary" style={{ padding: "4px 12px", fontSize: "11px" }}>{sendingTo === u.id ? "..." : "Add"}</button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -376,106 +403,32 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
   const isOutgoing = friend.status === "pending" && friend.senderId === currentUserId;
 
   return (
-    <div className="glass-card friend-card">
-      {/* Avatar */}
+    <div className="glass-card friend-card" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{
-          width: "44px", height: "44px", borderRadius: "50%", overflow: "hidden",
-          backgroundColor: "var(--bg-secondary)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {friend.avatar ? (
-            <img src={friend.avatar} alt={friend.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <span className="material-symbols-outlined" style={{ fontSize: "22px", color: "var(--text-muted)" }}>person</span>
-          )}
+        <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {friend.avatar ? <img src={friend.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--text-muted)" }}>person</span>}
         </div>
-        {friend.status !== "blocked" && (
-          <div style={{
-            position: "absolute", bottom: "1px", right: "1px",
-            width: "10px", height: "10px", borderRadius: "50%",
-            border: "2px solid var(--background)",
-            background: friend.isOnline ? "var(--accent-success, #22c55e)" : "var(--text-muted)",
-          }} />
-        )}
       </div>
-
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {friend.displayName || friend.username}
-          </span>
-          {friend.isOnline && friend.status === "accepted" && <span style={{ fontSize: "10px", color: "var(--accent-success, #22c55e)", fontWeight: "500" }}>• Online</span>}
-        </div>
-        <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
-          <span>@{friend.username}</span>
-          <span style={{ opacity: 0.5 }}>•</span>
-          <span>Joined {new Date(friend.since).toLocaleDateString()}</span>
-        </div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{friend.displayName || friend.username}</div>
+        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>@{friend.username}</div>
       </div>
-
-      {/* Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-        {friend.status === "accepted" && (
+      <div style={{ display: "flex", gap: "6px" }}>
+        {friend.status === "accepted" && <button className="btn btn-primary" onClick={onChat} style={{ fontSize: "11px", padding: "6px 12px" }}>Chat</button>}
+        {friend.status === "pending" && !isOutgoing && (
           <>
-            <button
-              onClick={onChat}
-              className="btn btn-primary"
-              style={{ padding: "6px 12px", fontSize: "11px", gap: "4px" }}
-              title="Message"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>chat</span>
-              Chat
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass w-40">
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)} className="text-destructive focus:text-destructive">
-                    <span className="material-symbols-outlined mr-2">person_remove</span>
-                    Remove Friend
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onBlock(friend.id)}>
-                    <span className="material-symbols-outlined mr-2">block</span>
-                    Block User
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button className="btn btn-primary" onClick={() => onAccept(friend.friendshipId)} style={{ fontSize: "11px", padding: "6px 12px" }}>Accept</button>
+            <button className="btn btn-secondary" onClick={() => onReject(friend.friendshipId)} style={{ fontSize: "11px", padding: "6px 12px" }}>Ignore</button>
           </>
         )}
-
-        {friend.status === "pending" && (
-          <div style={{ display: "flex", gap: "4px" }}>
-            {isOutgoing ? (
-              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: "600", padding: "6px 12px", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
-                  REQUESTED
-                </span>
-                <button
-                  onClick={() => onRemove(friend.friendshipId)}
-                  className="btn btn-ghost"
-                  style={{ padding: "6px 4px", color: "var(--destructive)", minWidth: "auto" }}
-                  title="Cancel Request"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>cancel</span>
-                </button>
-              </div>
-            ) : (
-              <>
-                <button onClick={() => onAccept(friend.friendshipId)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: "11px" }}>Accept</button>
-                <button onClick={() => onReject(friend.friendshipId)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "11px" }}>Ignore</button>
-              </>
-            )}
-          </div>
-        )}
-
-        {friend.status === "blocked" && (
-          <button onClick={() => onUnblock(friend.id)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "11px" }}>Unblock</button>
-        )}
+        {friend.status === "pending" && isOutgoing && <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: "600" }}>REQUESTED</span>}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}><span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="glass w-40">
+            <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)} className="text-destructive"><span className="material-symbols-outlined mr-2">person_remove</span>Remove</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onBlock(friend.id)}><span className="material-symbols-outlined mr-2">block</span>Block</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

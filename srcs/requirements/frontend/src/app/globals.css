@@ -2443,3 +2443,61 @@ select.dashboard-input {
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   LOBBY — Responsive grid layouts
+   ═══════════════════════════════════════════════════ */
+
+.lobby-grid-1v1 {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 16px;
+}
+
+.lobby-grid-team {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 16px;
+}
+
+.lobby-grid-team-staff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.lobby-free-agents {
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .lobby-grid-team {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lobby-grid-team > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .lobby-free-agents {
+    max-height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lobby-grid-1v1,
+  .lobby-grid-team,
+  .lobby-grid-team-staff {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-grid-team > :first-child {
+    grid-column: auto;
+  }
+
+  .lobby-free-agents {
+    max-height: 280px;
+  }
+}

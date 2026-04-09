@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, varchar, uuid, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './users';
-import { orgRoleEnum } from './enums';
+import { orgRoleEnum, orgMemberStatusEnum } from './enums';
 
 export const organizations = pgTable('organizations', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -22,6 +22,9 @@ export const organizationMembers = pgTable('organization_members', {
 
     // role: 'owner', 'admin', 'referee', 'member'
     role: orgRoleEnum('role').default('member').notNull(),
+    
+    // status: 'pending', 'active', 'declined'
+    status: orgMemberStatusEnum('status').default('active').notNull(),
 
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (table) => ({

@@ -1,6 +1,5 @@
 import type { Organization } from "@ft-transcendence/contracts";
 import { StatWidget } from "../_components/stat-widget";
-import { ActivityRow } from "../_components/activity-row";
 
 export function OverviewTab({ org }: { org: Organization }) {
   return (
@@ -15,23 +14,6 @@ export function OverviewTab({ org }: { org: Organization }) {
 
       {/* Widgets */}
       <div className="dashboard-widget-grid">
-        {/* Recent Activity */}
-        <div className="glass-card dashboard-widget">
-          <div className="dashboard-widget-header">
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--primary)" }}>timeline</span>
-              <span style={{ fontSize: "12px", fontWeight: "600", letterSpacing: "1px", color: "var(--text-secondary)" }}>RECENT ACTIVITY</span>
-            </div>
-            <button className="btn btn-ghost" style={{ fontSize: "11px", padding: "4px 8px" }}>View All</button>
-          </div>
-          <div className="dashboard-widget-body">
-            <div className="stack-xs">
-              <ActivityRow icon="login" text="You accessed this organization" time="Just now" accent="var(--accent-success)" />
-              <ActivityRow icon="add_circle" text="Organization created" time="Recently" accent="var(--primary)" />
-            </div>
-          </div>
-        </div>
-
         {/* Quick Actions */}
         <div className="glass-card dashboard-widget">
           <div className="dashboard-widget-header">

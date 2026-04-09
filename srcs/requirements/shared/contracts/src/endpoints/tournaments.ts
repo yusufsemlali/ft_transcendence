@@ -160,6 +160,18 @@ export const tournamentsContract = c.router({
                         role: z.enum(['captain', 'player', 'substitute']),
                     })),
                 })),
+                pendingInvites: z.array(z.object({
+                    inviteId: z.string().uuid(),
+                    competitorId: z.string().uuid(),
+                    competitorName: z.string(),
+                    inviterUsername: z.string(),
+                    createdAt: z.date(),
+                })).optional(),
+                /** Pending invites this user sent (captain / TO) — for “Sent” on free-agent rows */
+                outgoingInvites: z.array(z.object({
+                    inviteId: z.string().uuid(),
+                    targetUserId: z.string().uuid(),
+                })).optional(),
             }),
             404: z.object({ message: z.string() }),
         },
@@ -277,6 +289,83 @@ export const tournamentsContract = c.router({
             404: z.object({ message: z.string() }),
         },
         summary: "Directly assign players to a competitor (TO Only, bypasses invites)",
+    },
+
+    declineInvite: {
+        method: "POST",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/decline",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Decline a pending team invite (Solo player)",
+    },
+
+    revokeInvite: {
+        method: "DELETE",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/invites/:targetUserId",
+        pathParams: z.object({
+            id: z.string().uuid(),
+            competitorId: z.string().uuid(),
+            targetUserId: z.string().uuid(),
+        }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Revoke a pending invite sent to a player (Captain)",
+    },
+
+    kickMember: {
+        method: "DELETE",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/members/:userId",
+        pathParams: z.object({
+            id: z.string().uuid(),
+            competitorId: z.string().uuid(),
+            userId: z.string().uuid(),
+        }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Remove a player from the roster (Captain)",
+    },
+
+    transferCaptain: {
+        method: "PATCH",
+        path: "/tournaments/:id/lobby/competitors/:competitorId/captain",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({ newCaptainUserId: z.string().uuid() }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Transfer captain role to another roster member",
+    },
+
+    updateCompetitor: {
+        method: "PATCH",
+        path: "/tournaments/:id/lobby/competitors/:competitorId",
+        pathParams: z.object({ id: z.string().uuid(), competitorId: z.string().uuid() }),
+        body: z.object({ name: z.string().min(2).max(255).optional() }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Update team name (Captain, registration phase only)",
     },
 
 });

@@ -7,6 +7,7 @@ import { ORG_ROLES } from "../constants/roles";
 const c = initContract();
 
 export const OrgRolesSchema = z.enum(ORG_ROLES);
+export const OrgMemberStatusSchema = z.enum(['pending', 'active', 'declined']);
 
 export const OrganizationProfileSchema = OrganizationSchema.extend({
     stats: z.object({
@@ -18,6 +19,7 @@ export const OrganizationProfileSchema = OrganizationSchema.extend({
 
 export const MemberSchema = PublicUserSchema.extend({
     orgRole: OrgRolesSchema,
+    status: OrgMemberStatusSchema,
     joinedAt: z.coerce.date(),
 });
 
@@ -32,7 +34,7 @@ export const organizationsContract = c.router({
             }),
             401: z.object({ message: z.string() }),
         },
-        summary: "List all organizations the user is a member of",
+        summary: "List all organizations the user is an active member of",
     },
     getOrganization: {
         method: "GET",
@@ -96,11 +98,11 @@ export const organizationsContract = c.router({
         }),
         responses: {
             201: z.object({ message: z.string() }),
-            403: z.object({ message: z.string() }), // Not allowed to add
-            404: z.object({ message: z.string() }), // User email not found
-            409: z.object({ message: z.string() }), // Already a member
+            403: z.object({ message: z.string() }), 
+            404: z.object({ message: z.string() }), 
+            409: z.object({ message: z.string() }), 
         },
-        summary: "Add a user to the organization by email",
+        summary: "Invite a user to the organization by email (Pending status)",
     },
     updateMemberRole: {
         method: "PATCH",
@@ -157,5 +159,47 @@ export const organizationsContract = c.router({
             404: z.object({ message: z.string() }),
         },
         summary: "List all members and their roles in an organization",
+    },
+
+    // --- NEW: Invites Management ---
+    getMyInvites: {
+        method: "GET",
+        path: "/organizations/invites/me",
+        responses: {
+            200: z.object({ 
+                message: z.string(), 
+                data: z.array(z.object({
+                    organizationId: z.string().uuid(),
+                    organizationName: z.string(),
+                    organizationSlug: z.string(),
+                    role: OrgRolesSchema,
+                    joinedAt: z.coerce.date(),
+                }))
+            }),
+            401: z.object({ message: z.string() }),
+        },
+        summary: "Get all pending organization invitations for the current user",
+    },
+    acceptInvite: {
+        method: "POST",
+        path: "/organizations/:id/invites/accept",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Accept an organization invitation",
+    },
+    declineInvite: {
+        method: "POST",
+        path: "/organizations/:id/invites/decline",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Decline an organization invitation",
     },
 });

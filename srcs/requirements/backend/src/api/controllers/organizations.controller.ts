@@ -9,6 +9,7 @@ import { users } from "@/dal/db/schemas/users";
 import { and, eq, isNull, count, notInArray } from "drizzle-orm";
 import { requireOrgRole } from "@/utils/rbac";
 import { ApiResponse } from "@/utils/response";
+import * as NotificationService from "@/services/notification.service";
 
 const s = initServer();
 
@@ -41,6 +42,7 @@ export const organizationsController = s.router(contract.organizations, {
             .where(
                 and(
                     eq(organizationMembers.userId, userId),
+                    eq(organizationMembers.status, "active"),
                     isNull(organizations.deletedAt)
                 )
             );
@@ -63,20 +65,17 @@ export const organizationsController = s.router(contract.organizations, {
              throw new AppError(404, "Organization not found");
         }
 
-        // --- THE FIX (IDOR): Check privacy flag ---
         if (org.visibility === 'private') {
             if (!userId) {
                 throw new AppError(401, "Must be logged in to view private organizations");
             }
-            // This will throw a 403 if they are not a member
             await requireOrgRole(userId, org.id, ["owner", "admin", "referee", "member"]);
         }
 
-        // 📊 Calculate Stats
         const [membersCount] = await db
             .select({ value: count() })
             .from(organizationMembers)
-            .where(eq(organizationMembers.organizationId, params.id));
+            .where(and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.status, "active")));
 
         const [totalTourneys] = await db
             .select({ value: count() })
@@ -108,79 +107,48 @@ export const organizationsController = s.router(contract.organizations, {
     updateOrganization: async ({ params, body, req }: { params: any; body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
-
-        // RBAC Check: Only owner or admin can update
         await requireOrgRole(userId, params.id, ["owner", "admin"]);
 
         try {
             const [updated] = await db
                 .update(organizations)
-                .set({
-                    ...body,
-                    updatedAt: new Date(),
-                })
+                .set({ ...body, updatedAt: new Date() })
                 .where(and(eq(organizations.id, params.id), isNull(organizations.deletedAt)))
                 .returning();
 
-            if (!updated) {
-                throw new AppError(404, "Organization not found");
-            }
+            if (!updated) throw new AppError(404, "Organization not found");
 
             return {
                 status: 200,
                 body: new ApiResponse("Organization updated successfully", updated as any) as any
             };
         } catch (error: any) {
-            const errorCode = error.code || error.cause?.code;
-            const constraintName = error.constraint || error.cause?.constraint || "";
-
-            const isSlugViolation = errorCode === '23505' && 
-                (constraintName.includes('slug_unique') || constraintName.includes('slug_key') || error.message.includes('slug'));
-
-            if (isSlugViolation) {
-                throw new AppError(409, "Slug already taken.");
-            }
+            if (error.code === '23505') throw new AppError(409, "Slug already taken.");
             throw error;
         }
     },
     deleteOrganization: async ({ params, req }: { params: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
-
-        // RBAC: ONLY the owner can delete the entire organization
         await requireOrgRole(userId, params.id, ["owner"]);
 
-        const [deleted] = await db
-            .delete(organizations)
-            .where(eq(organizations.id, params.id))
-            .returning();
+        const [deleted] = await db.delete(organizations).where(eq(organizations.id, params.id)).returning();
+        if (!deleted) throw new AppError(404, "Organization not found");
 
-        if (!deleted) {
-            throw new AppError(404, "Organization not found");
-        }
-
-        return {
-            status: 200,
-            body: new ApiResponse("Organization and all its data permanently deleted successfully", null) as any
-        };
+        return { status: 200, body: new ApiResponse("Organization permanently deleted", null) as any };
     },
     createOrganization: async ({ body, req }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
-        if (!userId || contextReq.ctx?.decodedToken?.type === "None") {
-            throw new AppError(401, "Must be logged in to create an organization");
-        }
+        if (!userId) throw new AppError(401, "Not authenticated");
 
         try {
             const newOrg = await db.transaction(async (tx) => {
                 const [org] = await tx.insert(organizations).values({
                     name: body.name,
-                    slug: body.slug, // Normalization (trim/lowercase) is now handled by Zod transform
+                    slug: body.slug,
                     description: body.description,
                     logoUrl: body.logoUrl,
                     visibility: body.visibility || 'public',
@@ -189,240 +157,178 @@ export const organizationsController = s.router(contract.organizations, {
                 await tx.insert(organizationMembers).values({
                     organizationId: org.id,
                     userId: userId,
-                    role: 'owner'
+                    role: 'owner',
+                    status: 'active'
                 });
-
                 return org;
             });
 
-            return {
-                status: 201 as const,
-                body: new ApiResponse("Organization created successfully", newOrg as any) as any
-            };
+            return { status: 201, body: new ApiResponse("Organization created successfully", newOrg as any) as any };
         } catch (error: any) {
-            const errorCode = error.code || error.cause?.code;
-            const constraintName = error.constraint || error.cause?.constraint || "";
-
-            const isSlugViolation = errorCode === '23505' && 
-                (constraintName.includes('slug_unique') || constraintName.includes('slug_key') || error.message.includes('slug'));
-
-            if (isSlugViolation) {
-                throw new AppError(409, "Slug already taken.");  
-            }
+            if (error.code === '23505') throw new AppError(409, "Slug already taken.");  
             throw error;
         }
     },
     addMember: async ({ params, body, req }: { params: any; body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
-
-        // RBAC: Only owner or admin can add members
         await requireOrgRole(userId, params.id, ["owner", "admin"]);
 
-        // --- THE FIX (Enumeration): Resolve user by email but return opaque response ---
         const [targetUser] = await db.select().from(users).where(eq(users.email, body.email));
-        
         if (!targetUser) {
-            // Do NOT reveal the user doesn't exist.
-            return {
-                status: 201, // Return success anyway
-                body: new ApiResponse("If an account matches that email, an invitation has been sent.", null) as any
-            };
-        }
-
-        // Check for existing membership
-        const [existing] = await db.select().from(organizationMembers).where(
-            and(
-                eq(organizationMembers.organizationId, params.id),
-                eq(organizationMembers.userId, targetUser.id)
-            )
-        );
-        
-        if (existing) {
-            // It's okay to reveal existing membership as the requester is an admin/owner of THIS org
-            throw new AppError(409, "User is already a member of this organization");
-        }
-
-        try {
-            await db.insert(organizationMembers).values({
-                organizationId: params.id,
-                userId: targetUser.id,
-                role: body.role as any
-            });
-
             return {
                 status: 201,
                 body: new ApiResponse("If an account matches that email, an invitation has been sent.", null) as any
             };
-        } catch (error: any) {
-            const errorCode = error.code || error.cause?.code;
-            const constraintName = error.constraint || error.cause?.constraint || "";
-
-            if (errorCode === '23505' && constraintName.includes('unique_owner_per_org')) {
-                throw new AppError(400, "This organization already has an owner.");
-            }
-            throw error;
         }
+
+        const [existing] = await db.select().from(organizationMembers).where(
+            and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, targetUser.id))
+        );
+        if (existing) {
+            if (existing.status === 'pending') throw new AppError(409, "Invitation already pending.");
+            throw new AppError(409, "User is already a member.");
+        }
+
+        const [org] = await db.select().from(organizations).where(eq(organizations.id, params.id));
+
+        await db.insert(organizationMembers).values({
+            organizationId: params.id,
+            userId: targetUser.id,
+            role: body.role as any,
+            status: 'pending'
+        });
+
+        await NotificationService.createNotification({
+            userId: targetUser.id,
+            type: "organization_invite",
+            title: `Invitation to join ${org.name}`,
+            body: `You have been invited to join ${org.name} as a ${body.role}.`,
+            refId: org.id
+        });
+
+        return {
+            status: 201,
+            body: new ApiResponse("Invitation sent successfully.", null) as any
+        };
+    },
+    getMyInvites: async ({ req }: { req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const invites = await db
+            .select({
+                organizationId: organizations.id,
+                organizationName: organizations.name,
+                organizationSlug: organizations.slug,
+                role: organizationMembers.role,
+                joinedAt: organizationMembers.joinedAt,
+            })
+            .from(organizationMembers)
+            .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
+            .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.status, "pending")));
+
+        return {
+            status: 200,
+            body: new ApiResponse("Invites retrieved", invites as any) as any
+        };
+    },
+    acceptInvite: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const [updated] = await db
+            .update(organizationMembers)
+            .set({ status: 'active', joinedAt: new Date() })
+            .where(and(
+                eq(organizationMembers.organizationId, params.id),
+                eq(organizationMembers.userId, userId),
+                eq(organizationMembers.status, 'pending')
+            ))
+            .returning();
+
+        if (!updated) throw new AppError(404, "Invitation not found.");
+        return { status: 200, body: new ApiResponse("Invitation accepted", null) as any };
+    },
+    declineInvite: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        const [deleted] = await db
+            .delete(organizationMembers)
+            .where(and(
+                eq(organizationMembers.organizationId, params.id),
+                eq(organizationMembers.userId, userId),
+                eq(organizationMembers.status, 'pending')
+            ))
+            .returning();
+
+        if (!deleted) throw new AppError(404, "Invitation not found.");
+        return { status: 200, body: new ApiResponse("Invitation declined", null) as any };
     },
     updateMemberRole: async ({ params, body, req }: { params: any; body: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
-
-        // RBAC: Only owner can change roles
         await requireOrgRole(userId, params.id, ["owner"]);
 
-        // Safety: Prevent owner from demoting themselves (must always have an owner)
         if (userId === params.userId && body.role !== 'owner') {
-             throw new AppError(403, "Owners cannot demote themselves to avoid leaving the organization ownerless.");
+             throw new AppError(403, "Owners cannot demote themselves.");
         }
 
-        const [existing] = await db.select().from(organizationMembers).where(
-            and(
-                eq(organizationMembers.organizationId, params.id),
-                eq(organizationMembers.userId, params.userId)
-            )
-        );
-        if (!existing) throw new AppError(404, "Member not found");
-
-        try {
-            await db.update(organizationMembers)
-                .set({ role: body.role as any })
-                .where(
-                    and(
-                        eq(organizationMembers.organizationId, params.id),
-                        eq(organizationMembers.userId, params.userId)
-                    )
-                );
-
-            return {
-                status: 200,
-                body: new ApiResponse("Member role updated successfully", null) as any
-            };
-        } catch (error: any) {
-            const errorCode = error.code || error.cause?.code;
-            const constraintName = error.constraint || error.cause?.constraint || "";
-
-            if (errorCode === '23505' && constraintName.includes('unique_owner_per_org')) {
-                throw new AppError(400, "Cannot promote this user to owner. This organization already has one.");
-            }
-            throw error;
-        }
+        const [updated] = await db.update(organizationMembers)
+            .set({ role: body.role as any })
+            .where(and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, params.userId)))
+            .returning();
+            
+        if (!updated) throw new AppError(404, "Member not found");
+        return { status: 200, body: new ApiResponse("Member role updated", null) as any };
     },
     leaveOrganization: async ({ params, req }: { params: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
 
-        const [membership] = await db
-            .select()
-            .from(organizationMembers)
-            .where(
-                and(
-                    eq(organizationMembers.organizationId, params.id),
-                    eq(organizationMembers.userId, userId)
-                )
-            );
+        const [membership] = await db.select().from(organizationMembers).where(
+            and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, userId))
+        );
+        if (!membership) throw new AppError(404, "Not a member");
+        if (membership.role === "owner") throw new AppError(403, "Owner cannot leave");
 
-        if (!membership) throw new AppError(404, "You are not a member of this organization");
-
-        // 🛡️ OWNER SAFETY: Cannot leave the ship you own
-        if (membership.role === "owner") {
-            throw new AppError(403, "The organization owner cannot leave. You must either transfer ownership first or delete the organization.");
-        }
-
-        await db
-            .delete(organizationMembers)
-            .where(
-                and(
-                    eq(organizationMembers.organizationId, params.id),
-                    eq(organizationMembers.userId, userId)
-                )
-            );
-
-        return {
-            status: 200,
-            body: new ApiResponse("You have left the organization successfully", null) as any
-        };
+        await db.delete(organizationMembers).where(and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, userId)));
+        return { status: 200, body: new ApiResponse("Left successfully", null) as any };
     },
     removeMember: async ({ params, req }: { params: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
-
-        // RBAC Check: Admin or Owner can kick
         await requireOrgRole(userId, params.id, ["owner", "admin"]);
 
-        // Target Check: Is the person being kicked the owner?
-        const [targetMember] = await db
-            .select()
-            .from(organizationMembers)
-            .where(
-                and(
-                    eq(organizationMembers.organizationId, params.id),
-                    eq(organizationMembers.userId, params.userId)
-                )
-            );
+        const [targetMember] = await db.select().from(organizationMembers).where(
+            and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, params.userId))
+        );
+        if (!targetMember) throw new AppError(404, "Member not found");
+        if (targetMember.role === "owner") throw new AppError(403, "Owner cannot be removed");
 
-        if (!targetMember) throw new AppError(404, "Member not found in this organization");
-        
-        // 🛡️ NO MUTINY RULE: Cannot kick the owner
-        if (targetMember.role === "owner") {
-            throw new AppError(403, "The organization owner cannot be removed.");
-        }
-
-        // 🛡️ HIERARCHY RULE: Admins shouldn't kick other admins
-        const [requester] = await db
-            .select()
-            .from(organizationMembers)
-            .where(
-                and(
-                    eq(organizationMembers.organizationId, params.id),
-                    eq(organizationMembers.userId, userId)
-                )
-            );
-
+        const [requester] = await db.select().from(organizationMembers).where(
+            and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, userId))
+        );
         if (requester.role === "admin" && targetMember.role === "admin" && userId !== params.userId) {
             throw new AppError(403, "Admins cannot kick other admins.");
         }
 
-        await db
-            .delete(organizationMembers)
-            .where(
-                and(
-                    eq(organizationMembers.organizationId, params.id),
-                    eq(organizationMembers.userId, params.userId)
-                )
-            );
-
-        return {
-            status: 200,
-            body: new ApiResponse("Member kicked successfully", null) as any
-        };
+        await db.delete(organizationMembers).where(and(eq(organizationMembers.organizationId, params.id), eq(organizationMembers.userId, params.userId)));
+        return { status: 200, body: new ApiResponse("Member removed", null) as any };
     },
     getOrganizationMembers: async ({ params, req }: { params: any; req: any }) => {
         const contextReq = req as unknown as RequestWithContext;
         const userId = contextReq.ctx?.decodedToken?.id;
-
         if (!userId) throw new AppError(401, "Unauthorized");
-
-        // --- THE FIX (IDOR): Verify the requester is actually in the organization ---
-        // Prevents non-members from scraping the member list and PII of private orgs
         await requireOrgRole(userId, params.id, ["owner", "admin", "referee", "member"]);
-
-        const [org] = await db
-            .select({ id: organizations.id })
-            .from(organizations)
-            .where(and(eq(organizations.id, params.id), isNull(organizations.deletedAt)));
-
-        if (!org) {
-             throw new AppError(404, "Organization not found");
-        }
 
         const membersList = await db
             .select({
@@ -433,8 +339,8 @@ export const organizationsController = s.router(contract.organizations, {
                 xp: users.xp,
                 level: users.level,
                 isOnline: users.isOnline,
-                // --- THE FIX (PII): We explicitly DO NOT select users.email here ---
                 orgRole: organizationMembers.role,
+                status: organizationMembers.status,
                 joinedAt: organizationMembers.joinedAt,
             })
             .from(organizationMembers)
@@ -443,7 +349,7 @@ export const organizationsController = s.router(contract.organizations, {
 
         return {
             status: 200,
-            body: new ApiResponse("Members retrieved successfully", membersList as any) as any,
+            body: new ApiResponse("Members retrieved manually", membersList as any) as any,
         };
     }
 });

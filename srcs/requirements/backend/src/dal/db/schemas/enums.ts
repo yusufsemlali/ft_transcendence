@@ -5,10 +5,18 @@ import { ORG_ROLES } from '@ft-transcendence/contracts';
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'moderator', 'organizer']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'suspended', 'banned', 'muted']);
 export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted', 'blocked']);
-export const notificationTypeEnum = pgEnum('notification_type', ['friend_request', 'tournament_invite', 'match_starting', 'achievement_unlocked', 'system_alert']);
+export const notificationTypeEnum = pgEnum('notification_type', [
+    'friend_request', 
+    'tournament_invite', 
+    'organization_invite',
+    'match_starting', 
+    'achievement_unlocked', 
+    'system_alert'
+]);
 
 // --- Organization ---
 export const orgRoleEnum = pgEnum('org_role', ORG_ROLES as [string, ...string[]]);
+export const orgMemberStatusEnum = pgEnum('org_member_status', ['pending', 'active', 'declined']);
 
 // --- Tournament Lifecycle ---
 export const tournamentStatusEnum = pgEnum('tournament_status', ['draft', 'registration', 'upcoming', 'ongoing', 'completed', 'cancelled']);

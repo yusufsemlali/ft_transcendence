@@ -5,6 +5,21 @@ import api from "@/lib/api/api";
 import { toast } from "@/components/ui/sonner";
 import type { Notification } from "@ft-transcendence/contracts";
 
+export interface SseNotificationPayload {
+    userId: string;
+    type?: string;
+    refId?: string | null;
+}
+
+export type SseNotificationListener = (payload: SseNotificationPayload) => void;
+
+const sseListeners = new Set<SseNotificationListener>();
+
+export function addSseNotificationListener(fn: SseNotificationListener): () => void {
+    sseListeners.add(fn);
+    return () => { sseListeners.delete(fn); };
+}
+
 export interface UseNotificationsReturn {
     unreadCount: number;
     notifications: Notification[];
@@ -79,10 +94,22 @@ export function useNotifications(userId: string | undefined): UseNotificationsRe
         });
         eventSourceRef.current = es;
 
-        es.addEventListener("notification", () => {
+        es.addEventListener("notification", (event) => {
             fetchUnreadCount();
             fetchNotifications();
             toast.info("You have a new notification");
+
+            let payload: SseNotificationPayload = { userId: userId! };
+            try {
+                const parsed = JSON.parse(event.data);
+                if (parsed && typeof parsed === "object") {
+                    payload = parsed as SseNotificationPayload;
+                }
+            } catch {}
+
+            for (const listener of sseListeners) {
+                try { listener(payload); } catch {}
+            }
         });
 
         es.onerror = () => {
