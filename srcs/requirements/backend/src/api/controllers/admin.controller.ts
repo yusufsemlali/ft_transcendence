@@ -2,6 +2,8 @@ import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
+import { files } from "@/dal/db/schemas/files";
+import { invites } from "@/dal/db/schemas/lobby";
 import { eq, ilike, or, and, sql, desc } from "drizzle-orm";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
@@ -174,10 +176,13 @@ export const adminController = s.router(contract.admin, {
         // 🛡️ Safeguard 2: Prevent the "Last Admin" deadlock
         await ensureNotLastAdmin(params.id);
 
-        const [deleted] = await db
-            .delete(users)
-            .where(eq(users.id, params.id))
-            .returning();
+        const [deleted] = await db.transaction(async (tx) => {
+            await tx.delete(invites).where(
+                or(eq(invites.inviterId, params.id), eq(invites.targetUserId, params.id))
+            );
+            await tx.delete(files).where(eq(files.uploaderId, params.id));
+            return tx.delete(users).where(eq(users.id, params.id)).returning();
+        });
 
         if (!deleted) throw new AppError(404, "User not found");
 

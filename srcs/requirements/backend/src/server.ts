@@ -1,12 +1,11 @@
 import "dotenv/config";
 import app from "./app";
 import { Server } from "http";
+import { startNotificationListener } from "./services/notification-listener";
 
 async function bootServer(port: number): Promise<Server> {
     try {
         console.log(`Starting server in ${process.env.NODE_ENV} mode...`);
-
-        // Database connection test could go here
 
         return app.listen(port, "0.0.0.0", () => {
             console.log(`
@@ -17,6 +16,7 @@ async function bootServer(port: number): Promise<Server> {
 ║  Access via NGINX: https://localhost:8080 ║
 ╚═══════════════════════════════════════════╝
             `);
+            startNotificationListener();
         });
     } catch (error) {
         console.error("Failed to boot server:", error);

@@ -4,8 +4,8 @@ export default defineConfig({
     schema: './src/dal/db/schema.ts',
     out: './src/dal/db/drizzle',
     dialect: 'postgresql',
-    // ADD THIS LINE: Tell Drizzle to look at both schemas during push
-    schemaFilter: ['public', 'auth'], 
+    schemaFilter: ['public', 'auth'],
+    tablesFilter: ['!chat_rooms', '!chat_messages'],
     dbCredentials: {
         url: process.env.DATABASE_URL,
     },

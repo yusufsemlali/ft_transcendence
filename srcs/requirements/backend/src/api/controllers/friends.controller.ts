@@ -1,6 +1,7 @@
 import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import * as FriendsService from "@/services/friends.service";
+import { createNotification } from "@/services/notification.service";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 
@@ -37,7 +38,17 @@ export const friendsController = s.router(contract.friends, {
     },
     sendFriendRequest: async ({ body, req }: { body: any; req: any }) => {
         const userId = getUserId(req);
+        const contextReq = req as unknown as RequestWithContext;
+        const senderUsername = contextReq.ctx.decodedToken?.username || "Someone";
+
         const result = await FriendsService.sendFriendRequest(userId, body.targetUserId);
+
+        await createNotification({
+            userId: body.targetUserId,
+            type: "friend_request",
+            title: `${senderUsername} sent you a friend request`,
+            refId: result.data!.friendshipId,
+        }).catch((err) => console.error("[notifications] Failed to create notification:", err));
 
         return {
             status: 201 as const,

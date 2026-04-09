@@ -64,8 +64,8 @@ export const invites = pgTable('invites', {
     id: uuid('id').primaryKey().defaultRandom(),
     tournamentId: uuid('tournament_id').references(() => tournaments.id, { onDelete: 'cascade' }).notNull(),
     competitorId: uuid('competitor_id').references(() => competitors.id, { onDelete: 'cascade' }).notNull(),
-    inviterId: uuid('inviter_id').references(() => users.id).notNull(),
-    targetUserId: uuid('target_user_id').references(() => users.id).notNull(),
+    inviterId: uuid('inviter_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     status: inviteStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table: any) => ({

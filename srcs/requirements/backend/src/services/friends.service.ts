@@ -15,6 +15,7 @@ interface FriendResult {
     isOnline: boolean;
     status: FriendshipStatus;
     friendshipId: string;
+    senderId: string;
     since: Date;
 }
 
@@ -61,6 +62,7 @@ export const getMyFriends = async (
         isOnline: row.friendIsOnline,
         status: row.status as FriendshipStatus,
         friendshipId: row.friendshipId,
+        senderId: row.senderId,
         since: row.createdAt,
     }));
 
@@ -104,6 +106,7 @@ export const getFriendship = async (currentUserId: string, targetUserId: string)
         isOnline: r.targetIsOnline,
         status: r.status as FriendshipStatus,
         friendshipId: r.friendshipId,
+        senderId: r.senderId,
         since: r.createdAt,
     };
 

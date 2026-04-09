@@ -5,7 +5,7 @@ export const fileVisibilityEnum = pgEnum('file_visibility', ['public', 'private'
 
 export const files = pgTable('files', {
     id: uuid('id').primaryKey().defaultRandom(),
-    uploaderId: uuid('uploader_id').references(() => users.id).notNull(),
+    uploaderId: uuid('uploader_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     
     originalName: varchar('original_name', { length: 255 }).notNull(),
     savedName: varchar('saved_name', { length: 255 }).notNull().unique(),

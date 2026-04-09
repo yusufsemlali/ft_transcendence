@@ -10,6 +10,7 @@ export const FriendSchema = z.object({
     isOnline: z.boolean(),
     status: FriendshipStatusSchema,
     friendshipId: z.string().uuid(),
+    senderId: z.string().uuid(),
     since: z.coerce.date(),
 });
 

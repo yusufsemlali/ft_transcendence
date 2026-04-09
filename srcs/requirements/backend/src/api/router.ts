@@ -12,6 +12,7 @@ import { chatController } from "./controllers/chat.controller";
 import { friendsController } from "./controllers/friends.controller";
 import { matchesController } from "./controllers/matches.controller";
 import { filesController } from "./controllers/files.controller";
+import { notificationsController } from "./controllers/notifications.controller";
 import { Router, Express, Request, Response, NextFunction } from "express";
 import { authenticateTsRestRequest } from "@/middlewares/auth";
 import { uploadRateLimiter } from "@/middlewares/rate-limit";
@@ -43,6 +44,7 @@ export const addApiRoutes = (app: Express) => {
         friends: friendsController,
         matches: matchesController,
         files: filesController,
+        notifications: notificationsController,
     }, apiRouter, {
         jsonQuery: true,
         globalMiddleware: [

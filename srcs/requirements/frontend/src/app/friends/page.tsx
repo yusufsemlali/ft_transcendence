@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
@@ -23,7 +23,17 @@ interface Friend {
   isOnline: boolean;
   status: FriendshipStatus;
   friendshipId: string;
+  senderId: string;
   since: string | Date;
+}
+
+interface PublicUser {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+  isOnline: boolean;
+  level: number;
 }
 
 const TAB_META: { key: FriendshipStatus | "all"; label: string; icon: string; color: string }[] = [
@@ -43,10 +53,13 @@ export default function FriendsPage() {
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  /* ── Send request state ── */
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [targetUserId, setTargetUserId] = useState("");
-  const [sendLoading, setSendLoading] = useState(false);
+  /* ── User Search state ── */
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<PublicUser[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchFriends = useCallback(async () => {
     setLoading(true);
@@ -64,6 +77,33 @@ export default function FriendsPage() {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 4000);
   };
+
+  /* ── User Search Logic ── */
+  useEffect(() => {
+    if (!userSearchQuery.trim() || userSearchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+
+    searchTimeout.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await api.users.searchUsers({ query: { q: userSearchQuery.trim(), limit: 10 } });
+        if (res.status === 200 && Array.isArray(res.body)) {
+          setSearchResults(res.body as PublicUser[]);
+        } else {
+          setSearchResults([]);
+        }
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+
+    return () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); };
+  }, [userSearchQuery]);
 
   /* ── Actions ── */
   const handleAccept = async (friendshipId: string) => {
@@ -116,19 +156,21 @@ export default function FriendsPage() {
     } catch { showMsg("error", "Network error"); }
   };
 
-  const handleSendRequest = async () => {
-    if (!targetUserId.trim()) return;
-    setSendLoading(true);
+  const handleSendRequest = async (targetId: string) => {
+    setSendingTo(targetId);
     try {
-      const res = await api.friends.sendFriendRequest({ body: { targetUserId: targetUserId.trim() } });
+      const res = await api.friends.sendFriendRequest({ body: { targetUserId: targetId } });
       if (res.status === 201) {
         showMsg("success", "Friend request sent!");
-        setShowSendModal(false);
-        setTargetUserId("");
         fetchFriends();
-      } else { showMsg("error", (res.body as any)?.message || "Failed to send request"); }
-    } catch { showMsg("error", "Network error"); }
-    finally { setSendLoading(false); }
+      } else {
+        showMsg("error", (res.body as any)?.message || "Failed to send request");
+      }
+    } catch {
+      showMsg("error", "Network error");
+    } finally {
+      setSendingTo(null);
+    }
   };
 
   const openDMChat = (friendUsername: string) => {
@@ -144,6 +186,10 @@ export default function FriendsPage() {
     const q = search.toLowerCase();
     return f.username.toLowerCase().includes(q) || (f.displayName || "").toLowerCase().includes(q);
   });
+
+  const getFriendshipStatus = (userId: string) => {
+    return friends.find(f => f.id === userId)?.status ?? null;
+  };
 
   const counts = {
     all: friends.length,
@@ -163,9 +209,9 @@ export default function FriendsPage() {
           </h1>
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>{counts.accepted} friends · {counts.pending} pending</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => setShowSendModal(true)} style={{ fontSize: "12px", padding: "8px 18px" }}>
+        <button type="button" className="btn btn-primary" onClick={() => setShowAddModal(true)} style={{ fontSize: "12px", padding: "8px 18px" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person_add</span>
-          Add Friend
+          Find Players
         </button>
       </div>
 
@@ -202,10 +248,10 @@ export default function FriendsPage() {
         ))}
       </div>
 
-      {/* Search */}
+      {/* Search Current Friends */}
       <div style={{ position: "relative", marginBottom: "16px" }}>
         <span className="material-symbols-outlined" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", color: "var(--text-muted)" }}>search</span>
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search friends..." className="dashboard-input" style={{ paddingLeft: "36px", width: "100%" }} />
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter friends..." className="dashboard-input" style={{ paddingLeft: "36px", width: "100%" }} />
       </div>
 
       {/* Friends list */}
@@ -217,7 +263,7 @@ export default function FriendsPage() {
         <div className="glass-card" style={{ padding: "48px", textAlign: "center" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "48px", color: "var(--text-muted)", opacity: 0.3 }}>group</span>
           <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "12px" }}>
-            {search ? "No results found" : tab === "pending" ? "No pending requests" : tab === "blocked" ? "No blocked users" : "No friends yet. Send a request!"}
+            {search ? "No results found" : tab === "pending" ? "No pending requests" : tab === "blocked" ? "No blocked users" : "No friends yet. Find someone to add!"}
           </p>
         </div>
       ) : (
@@ -232,36 +278,82 @@ export default function FriendsPage() {
               onBlock={handleBlock}
               onUnblock={handleUnblock}
               onChat={() => openDMChat(friend.username)}
+              currentUserId={user?.id}
             />
           ))}
         </div>
       )}
 
-      {/* ── Send Request Modal ── */}
-      {showSendModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowSendModal(false)}>
-          <div className="glass-card animate-fade-in modal-dialog" onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)", margin: "0 0 4px" }}>
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", verticalAlign: "-3px", marginRight: "6px", color: "var(--primary)" }}>person_add</span>
-              Send Friend Request
-            </h3>
-            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 16px" }}>Enter the user ID of the player you want to add.</p>
-
-            <label className="dashboard-field">
-              <span className="dashboard-field-label">User ID</span>
-              <input
-                type="text" value={targetUserId} onChange={e => setTargetUserId(e.target.value)}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                className="dashboard-input"
-                onKeyDown={e => e.key === "Enter" && !sendLoading && handleSendRequest()}
-              />
-            </label>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "20px", flexWrap: "wrap" }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowSendModal(false)} style={{ fontSize: "11px", padding: "6px 16px" }}>Cancel</button>
-              <button type="button" className="btn btn-primary" onClick={handleSendRequest} disabled={sendLoading || !targetUserId.trim()} style={{ fontSize: "11px", padding: "6px 16px" }}>
-                {sendLoading ? <><span className="material-symbols-outlined" style={{ fontSize: "14px", animation: "spin 1s linear infinite" }}>progress_activity</span> Sending...</> : <><span className="material-symbols-outlined" style={{ fontSize: "14px" }}>send</span> Send Request</>}
+      {/* ── Find Players Modal (Search) ── */}
+      {showAddModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} onClick={() => setShowAddModal(false)}>
+          <div className="glass-card animate-fade-in modal-dialog" style={{ width: "100%", maxWidth: "480px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)", margin: 0 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px", verticalAlign: "-3px", marginRight: "6px", color: "var(--primary)" }}>person_search</span>
+                  Find Players
+                </h3>
+                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>Search for users by their username or display name.</p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
               </button>
+            </div>
+
+            <div style={{ position: "relative", marginBottom: "16px" }}>
+              <span className="material-symbols-outlined" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "18px", color: "var(--text-muted)" }}>search</span>
+              <input
+                type="text" value={userSearchQuery} onChange={e => setUserSearchQuery(e.target.value)}
+                placeholder="Type to search..."
+                className="dashboard-input"
+                style={{ paddingLeft: "38px", width: "100%" }}
+                autoFocus
+              />
+            </div>
+
+            <div style={{ maxHeight: "300px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {searching && (
+                <div style={{ textAlign: "center", padding: "20px" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
+                </div>
+              )}
+
+              {!searching && userSearchQuery.trim().length >= 2 && searchResults.length === 0 && (
+                <div style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)", fontSize: "12px" }}>No players found matching "{userSearchQuery}"</div>
+              )}
+
+              {searchResults.map(u => {
+                const status = getFriendshipStatus(u.id);
+                return (
+                  <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {u.avatar ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</div>
+                        <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>@{u.username} • Lv.{u.level}</div>
+                      </div>
+                    </div>
+
+                    {status === "accepted" ? (
+                      <span style={{ fontSize: "10px", color: "var(--accent-success)", fontWeight: "600", padding: "4px 8px" }}>FRIENDS</span>
+                    ) : status === "pending" ? (
+                      <span style={{ fontSize: "10px", color: "var(--accent-warning)", fontWeight: "600", padding: "4px 8px" }}>PENDING</span>
+                    ) : (
+                      <button
+                        onClick={() => handleSendRequest(u.id)}
+                        disabled={sendingTo === u.id}
+                        className="btn btn-primary"
+                        style={{ padding: "4px 12px", fontSize: "11px" }}
+                      >
+                        {sendingTo === u.id ? "..." : "Add"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -271,7 +363,7 @@ export default function FriendsPage() {
 }
 
 /* ── Friend Card ── */
-function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, onChat }: {
+function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, onChat, currentUserId }: {
   friend: Friend;
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
@@ -279,7 +371,10 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
   onBlock: (id: string) => void;
   onUnblock: (id: string) => void;
   onChat: () => void;
+  currentUserId?: string;
 }) {
+  const isOutgoing = friend.status === "pending" && friend.senderId === currentUserId;
+
   return (
     <div className="glass-card friend-card">
       {/* Avatar */}
@@ -355,8 +450,26 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
 
         {friend.status === "pending" && (
           <div style={{ display: "flex", gap: "4px" }}>
-            <button onClick={() => onAccept(friend.friendshipId)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: "11px" }}>Accept</button>
-            <button onClick={() => onReject(friend.friendshipId)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "11px" }}>Ignore</button>
+            {isOutgoing ? (
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: "600", padding: "6px 12px", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
+                  REQUESTED
+                </span>
+                <button
+                  onClick={() => onRemove(friend.friendshipId)}
+                  className="btn btn-ghost"
+                  style={{ padding: "6px 4px", color: "var(--destructive)", minWidth: "auto" }}
+                  title="Cancel Request"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>cancel</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => onAccept(friend.friendshipId)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: "11px" }}>Accept</button>
+                <button onClick={() => onReject(friend.friendshipId)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "11px" }}>Ignore</button>
+              </>
+            )}
           </div>
         )}
 

@@ -11,6 +11,8 @@ import { rootRateLimiter } from "./middlewares/rate-limit";
 import { contract, COMPATIBILITY_CHECK_HEADER } from "@ft-transcendence/contracts";
 import { generateOpenApi } from "@ts-rest/open-api";
 import swaggerUi from "swagger-ui-express";
+import { verifyAccessToken } from "./utils/auth";
+import { addSseClient, removeSseClient } from "./services/notification-listener";
 
 function buildApp(): express.Application {
     const app = express();
@@ -66,6 +68,45 @@ function buildApp(): express.Application {
 
     // Static file serving for uploads (before auth/rate-limit)
     app.use("/api/uploads", express.static("/app/uploads"));
+
+    // SSE endpoint for real-time notification push
+    app.get("/api/notifications/stream", (req, res) => {
+        const token = req.cookies?.access_token
+            || req.headers.authorization?.split(" ")[1];
+
+        if (!token) {
+            res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        let userId: string;
+        try {
+            const decoded = verifyAccessToken(token);
+            userId = decoded.id;
+        } catch {
+            res.status(401).json({ message: "Invalid token" });
+            return;
+        }
+
+        res.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        });
+        res.write(": connected\n\n");
+
+        addSseClient(userId, res);
+
+        const heartbeat = setInterval(() => {
+            res.write(": heartbeat\n\n");
+        }, 30_000);
+
+        req.on("close", () => {
+            clearInterval(heartbeat);
+            removeSseClient(userId, res);
+        });
+    });
 
     // API Routes via ts-rest contract
     addApiRoutes(app);
