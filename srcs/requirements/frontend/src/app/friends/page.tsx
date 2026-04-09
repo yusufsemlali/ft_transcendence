@@ -334,10 +334,8 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
               Chat
             </button>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
-                </button>
+              <DropdownMenuTrigger className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass w-40">
                 <DropdownMenuGroup>

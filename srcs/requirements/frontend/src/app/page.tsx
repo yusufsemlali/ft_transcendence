@@ -81,8 +81,8 @@ export default function Home() {
 
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
             <Link href={isAuthenticated ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: "16px 32px", fontSize: "12px", fontWeight: "800", letterSpacing: "1px" }}>
-              {isAuthenticated ? "ACCESS COMMAND DASHBOARD" : "ESTABLISH ORGANIZATION"}
-              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginLeft: "8px" }}>{isAuthenticated ? "terminal" : "add_business"}</span>
+              {isAuthenticated ? "ACCESS COMMAND DASHBOARD" : "INITIALIZE INFRASTRUCTURE"}
+              <span className="material-symbols-outlined" style={{ fontSize: "18px", marginLeft: "8px" }}>{isAuthenticated ? "terminal" : "rocket_launch"}</span>
             </Link>
             {!isAuthenticated && (
               <Link href="/login" className="btn btn-secondary" style={{ padding: "16px 32px", fontSize: "12px", borderRadius: "12px" }}>
@@ -195,17 +195,17 @@ export default function Home() {
           <h2 style={{ fontSize: "clamp(24px, 5vw, 40px)", fontWeight: "300", color: "var(--text-primary)" }}>Initialize Your Organization.</h2>
           <p style={{ color: "var(--text-muted)", fontSize: "clamp(0.9rem, 2vw, 1.1rem)", maxWidth: "600px" }}>Connect with the definitively professional management system for tournament coordination.</p>
         </div>
-        <Link href="/register" className="btn btn-primary" style={{ padding: "16px 48px", borderRadius: "16px", textTransform: "uppercase", fontWeight: "900", letterSpacing: "2px", fontSize: "12px" }}>
-          Create Management Node
+        <Link href={isAuthenticated ? "/dashboard" : "/login"} className="btn btn-primary" style={{ padding: "16px 48px", borderRadius: "16px", textTransform: "uppercase", fontWeight: "900", letterSpacing: "2px", fontSize: "12px" }}>
+          {isAuthenticated ? "Launch Dashboard" : "Create Management Node"}
         </Link>
       </div>
 
       <footer className="footer" style={{ marginTop: "clamp(60px, 10vw, 120px)" }}>
-        <Link href="/contact" className="footer-link">contact</Link>
-        <Link href="/support" className="footer-link">support</Link>
+        <Link href="/" className="footer-link">home</Link>
+        <Link href="/tournaments" className="footer-link">tournaments</Link>
         <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-link">github</a>
-        <Link href="/terms" className="footer-link">terms</Link>
-        <Link href="/privacy" className="footer-link">privacy</Link>
+        <Link href="/settings" className="footer-link">settings</Link>
+        <Link href="/profile" className="footer-link">profile</Link>
       </footer>
     </div>
   );
