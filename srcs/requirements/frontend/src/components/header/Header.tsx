@@ -35,18 +35,18 @@ export function Header() {
               </span>
               <span>tournify</span>
             </Link>
-    
+
             {/* Desktop nav links */}
             <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <NavLink href="/dashboard" icon="dashboard" title="dashboard" />
               <NavLink href="/tournaments" icon="sports_esports" title="tournaments" />
               <NavLink href="/friends" icon="group" title="friends" />
-              <NavLink href="/leaderboard" icon="social_leaderboard" title="leaderboard" />
+              {/* <NavLink href="/leaderboard" icon="social_leaderboard" title="leaderboard" /> */}
               <NavLink href="/chat" icon="chat" title="chat" />
               <NavLink href="/settings" icon="settings" title="settings" />
             </div>
           </div>
-    
+
           {/* Right side: User area + mobile hamburger */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <UserArea />
@@ -92,10 +92,10 @@ export function Header() {
             <span className="material-symbols-outlined">group</span>
             <span className="nav-link-text">friends</span>
           </Link>
-          <Link href="/leaderboard" className="nav-link" onClick={() => setMobileOpen(false)}>
+          {/* <Link href="/leaderboard" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">social_leaderboard</span>
             <span className="nav-link-text">leaderboard</span>
-          </Link>
+          </Link> */}
           <Link href="/chat" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">chat</span>
             <span className="nav-link-text">chat</span>
