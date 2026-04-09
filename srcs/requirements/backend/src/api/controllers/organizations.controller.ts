@@ -145,7 +145,7 @@ export const organizationsController = s.router(contract.organizations, {
         if (!userId) throw new AppError(401, "Not authenticated");
 
         try {
-            const newOrg = await db.transaction(async (tx) => {
+            const newOrg = await db.transaction(async (tx: any) => {
                 const [org] = await tx.insert(organizations).values({
                     name: body.name,
                     slug: body.slug,

@@ -6,8 +6,6 @@ import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
-import { EmptyPanel } from "./empty-panel";
-
 /* Tab imports — Org level */
 import { OverviewTab } from "../_tabs/overview";
 import { TournamentsTab } from "../_tabs/tournaments";
@@ -22,6 +20,10 @@ import { SettingsTab } from "../_tabs/settings";
 import { TournamentSettingsTab } from "../_tabs/tournament-settings";
 import { TournamentOverviewTab } from "../_tabs/tournament-overview";
 import { LobbyTab } from "../_tabs/lobby";
+import { BracketsTab } from "../_tabs/brackets";
+import { MatchesTab } from "../_tabs/matches";
+import { StandingsTab } from "../_tabs/standings";
+import { ScheduleTab } from "../_tabs/schedule";
 import { TestUploadTab } from "../_tabs/test-upload";
 
 /* ═══════════════════════════════════════
@@ -329,10 +331,10 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
                     org={org}
                 />
               )}
-              {tournamentPage === "brackets"  && <EmptyPanel icon="account_tree"  title="Brackets"             subtitle="View and manage the tournament bracket tree. Drag to rearrange seedings." />}
-              {tournamentPage === "matches"   && <EmptyPanel icon="scoreboard"    title="Matches"              subtitle="Track live matches, submit scores, and review completed games." />}
-              {tournamentPage === "standings"  && <EmptyPanel icon="leaderboard"   title="Standings"            subtitle="Current rankings, win rates, and point tables for all participants." />}
-              {tournamentPage === "schedule"   && <EmptyPanel icon="calendar_month" title="Schedule"            subtitle="Plan match dates, set check-in windows, and manage the event timeline." />}
+              {tournamentPage === "brackets"  && <BracketsTab tournament={activeTournament} org={org} />}
+              {tournamentPage === "matches"   && <MatchesTab tournament={activeTournament} org={org} />}
+              {tournamentPage === "standings"  && <StandingsTab tournament={activeTournament} org={org} />}
+              {tournamentPage === "schedule"   && <ScheduleTab tournament={activeTournament} org={org} />}
               {tournamentPage === "settings"   && (
                 <TournamentSettingsTab 
                     tournament={activeTournament} 

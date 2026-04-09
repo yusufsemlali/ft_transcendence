@@ -69,6 +69,7 @@ export * from "./schemas/organizations";
 export * from "./schemas/chat";
 export * from "./schemas/friends";
 export * from "./schemas/matches";
+export * from "./schemas/bracket";
 export * from "./schemas/notifications";
 export * from "./endpoints/sports";
 export * from "./endpoints/files";

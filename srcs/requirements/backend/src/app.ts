@@ -46,6 +46,14 @@ function buildApp(): express.Application {
 
     console.log("[INFO] Regenerated OpenAPI documentation from contracts.");
 
+    // Mount Swagger UI (Before Helmet to avoid CSP conflicts)
+    app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument, {
+        swaggerOptions: {
+            persistAuthorization: true,
+        },
+        customSiteTitle: "Tournify API Documentation",
+    }));
+
     // Body parsing, cookies, CORS, and security headers
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
@@ -63,9 +71,6 @@ function buildApp(): express.Application {
     app.use(compatibilityCheckMiddleware);
     app.use(contextMiddleware);
     app.use(rootRateLimiter);
-
-    // Mount Swagger UI
-    app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
     // Static file serving for uploads (before auth/rate-limit)
     app.use("/api/uploads", express.static("/app/uploads"));
