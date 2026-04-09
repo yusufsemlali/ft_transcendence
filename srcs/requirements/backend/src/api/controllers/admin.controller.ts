@@ -4,7 +4,8 @@ import { db } from "@/dal/db";
 import { users } from "@/dal/db/schemas/users";
 import { files } from "@/dal/db/schemas/files";
 import { invites } from "@/dal/db/schemas/lobby";
-import { eq, ilike, or, and, sql, desc } from "drizzle-orm";
+import { organizations } from "@/dal/db/schemas/organizations";
+import { eq, ilike, or, and, sql, desc, isNull } from "drizzle-orm";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 import { requireGlobalRole, ensureNotLastAdmin } from "@/utils/rbac";
@@ -237,6 +238,76 @@ export const adminController = s.router(contract.admin, {
         return {
             status: 200,
             body: { message: "All sessions for this user have been revoked" },
+        };
+    },
+    getOrganizations: async ({ query, req }: { query: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        await requireGlobalRole(userId, ["admin"]);
+
+        const { page, pageSize, search } = query;
+        const offset = (page - 1) * pageSize;
+
+        const filters = [isNull(organizations.deletedAt)];
+        if (search) {
+            filters.push(
+                or(
+                    ilike(organizations.name, `%${search}%`),
+                    ilike(organizations.slug, `%${search}%`),
+                ),
+            );
+        }
+        const whereClause = and(...filters);
+
+        const orgList = await db
+            .select()
+            .from(organizations)
+            .where(whereClause)
+            .limit(pageSize)
+            .offset(offset)
+            .orderBy(desc(organizations.createdAt));
+
+        const [totalCount] = await db
+            .select({ value: sql`count(*)`.mapWith(Number) })
+            .from(organizations)
+            .where(whereClause);
+
+        const total = totalCount?.value || 0;
+
+        return {
+            status: 200,
+            body: {
+                organizations: orgList as any,
+                total,
+                page,
+                pageSize,
+                totalPages: Math.ceil(total / pageSize),
+            },
+        };
+    },
+    deleteOrganization: async ({ params, req }: { params: any; req: any }) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const adminId = contextReq.ctx?.decodedToken?.id;
+
+        if (!adminId) throw new AppError(401, "Unauthorized");
+
+        await requireGlobalRole(adminId, ["admin"]);
+
+        const [deleted] = await db
+            .delete(organizations)
+            .where(eq(organizations.id, params.id))
+            .returning();
+
+        if (!deleted) throw new AppError(404, "Organization not found");
+
+        return {
+            status: 200,
+            body: {
+                message: `Organization "${deleted.name}" and its tournaments (and related data) have been permanently deleted.`,
+            },
         };
     },
 });

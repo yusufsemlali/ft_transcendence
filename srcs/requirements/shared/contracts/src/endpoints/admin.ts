@@ -2,6 +2,7 @@ import { initContract } from "@ts-rest/core";
 import { z } from "zod";
 import { UserSchema, UserRoleSchema, UserStatusSchema } from "../schemas/users";
 import { SessionSchema } from "../schemas/auth";
+import { OrganizationSchema } from "../schemas/organizations";
 
 const c = initContract();
 
@@ -124,5 +125,39 @@ export const adminContract = c.router({
             403: z.object({ message: z.string() }),
         },
         summary: "Force logout ALL active sessions for a user (Requires: Admin)",
+    },
+    getOrganizations: {
+        method: "GET",
+        path: "/admin/organizations",
+        query: z.object({
+            page: z.coerce.number().default(1),
+            pageSize: z.coerce.number().default(20),
+            search: z.string().optional(),
+        }),
+        responses: {
+            200: z.object({
+                organizations: z.array(OrganizationSchema),
+                total: z.number(),
+                page: z.number(),
+                pageSize: z.number(),
+                totalPages: z.number(),
+            }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+        },
+        summary: "List organizations (Requires: Admin)",
+    },
+    deleteOrganization: {
+        method: "DELETE",
+        path: "/admin/organizations/:id",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({}),
+        responses: {
+            200: z.object({ message: z.string() }),
+            401: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+        },
+        summary: "Permanently delete an organization and cascaded data (Requires: Admin)",
     },
 });

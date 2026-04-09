@@ -72,3 +72,11 @@ admin:
 	docker exec ft_database psql -U $$U -d $$D -c "UPDATE auth.users SET role = 'admin' WHERE email = '$$EMAIL';"
 
 .PHONY: all down clean fclean re nuke logs status db db-generate db-push db-migrate db-reset frontend backend logs-b logs-f admin
+
+seed:
+	docker exec -it ft_backend pnpm seed:fake
+
+seed-args:
+	docker exec -it ft_backend pnpm seed:fake -- --users $(or $(USERS),50) --tournaments $(or $(TOURNAMENTS),10) --lobby $(or $(LOBBY),8)
+
+.PHONY: seed seed-args

@@ -65,6 +65,28 @@ export default function AdminPage() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [activeTab, setActiveTab] = useState<"users" | "organizations">("users");
+
+  interface OrgRow {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    logoUrl: string | null;
+    visibility: "public" | "private";
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    deletedAt?: string | Date | null;
+  }
+  const [orgs, setOrgs] = useState<OrgRow[]>([]);
+  const [orgTotal, setOrgTotal] = useState(0);
+  const [orgPage, setOrgPage] = useState(1);
+  const [orgTotalPages, setOrgTotalPages] = useState(1);
+  const [orgSearch, setOrgSearch] = useState("");
+  const [orgsLoading, setOrgsLoading] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<OrgRow | null>(null);
+  const [showDeleteOrgModal, setShowDeleteOrgModal] = useState(false);
+
   /* ── Modals ── */
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -92,6 +114,25 @@ export default function AdminPage() {
   }, [page, search, roleFilter, statusFilter]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const fetchOrgs = useCallback(async () => {
+    setOrgsLoading(true);
+    try {
+      const query: Record<string, string | number> = { page: orgPage, pageSize: 20 };
+      if (orgSearch) query.search = orgSearch;
+      const res = await api.admin.getOrganizations({ query });
+      if (res.status === 200) {
+        setOrgs(res.body.organizations as OrgRow[]);
+        setOrgTotal(res.body.total);
+        setOrgTotalPages(res.body.totalPages);
+      }
+    } catch { /* ignore */ }
+    finally { setOrgsLoading(false); }
+  }, [orgPage, orgSearch]);
+
+  useEffect(() => {
+    if (activeTab === "organizations") fetchOrgs();
+  }, [activeTab, fetchOrgs]);
 
   const fetchSessions = async (userId: string) => {
     setSessionsLoading(true);
@@ -151,6 +192,23 @@ export default function AdminPage() {
     setShowDeleteModal(false);
   };
 
+  const handleDeleteOrg = async () => {
+    if (!selectedOrg) return;
+    try {
+      const res = await api.admin.deleteOrganization({ params: { id: selectedOrg.id }, body: {} });
+      if (res.status === 200) {
+        setOrgs((prev) => prev.filter((o) => o.id !== selectedOrg.id));
+        setSelectedOrg(null);
+        setActionMessage({ type: "success", text: "Organization deleted" });
+      } else {
+        setActionMessage({ type: "error", text: (res.body as { message?: string })?.message || "Failed" });
+      }
+    } catch {
+      setActionMessage({ type: "error", text: "Network error" });
+    }
+    setShowDeleteOrgModal(false);
+  };
+
   const handleRevokeSession = async (sessionId: string) => {
     if (!selectedUser) return;
     try {
@@ -182,10 +240,35 @@ export default function AdminPage() {
             <span className="material-symbols-outlined" style={{ fontSize: "24px", verticalAlign: "-4px", marginRight: "8px", color: "var(--primary)" }}>admin_panel_settings</span>
             Admin Panel
           </h1>
-          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>{total} users on the platform</p>
+          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0" }}>
+            {activeTab === "users" ? `${total} users on the platform` : `${orgTotal} organizations`}
+          </p>
         </div>
       </div>
 
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+        <button
+          type="button"
+          className={`btn ${activeTab === "users" ? "btn-primary" : "btn-secondary"}`}
+          style={{ fontSize: "12px", padding: "6px 14px" }}
+          onClick={() => { setActiveTab("users"); setSelectedOrg(null); }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: "16px", verticalAlign: "-3px", marginRight: "4px" }}>group</span>
+          Users
+        </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === "organizations" ? "btn-primary" : "btn-secondary"}`}
+          style={{ fontSize: "12px", padding: "6px 14px" }}
+          onClick={() => { setActiveTab("organizations"); setSelectedUser(null); }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: "16px", verticalAlign: "-3px", marginRight: "4px" }}>domain</span>
+          Organizations
+        </button>
+      </div>
+
+      {activeTab === "users" && (
+      <>
       {/* Filters */}
       <div className="glass-card admin-toolbar" style={{ padding: "16px", marginBottom: "16px" }}>
         <label className="dashboard-field admin-toolbar-search">
@@ -429,6 +512,137 @@ export default function AdminPage() {
         </p>
         <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>This action cannot be undone. All data will be lost.</p>
       </Modal>}
+      </>
+      )}
+
+      {activeTab === "organizations" && (
+      <>
+      <div className="glass-card admin-toolbar" style={{ padding: "16px", marginBottom: "16px" }}>
+        <label className="dashboard-field admin-toolbar-search">
+          <span className="dashboard-field-label">Search</span>
+          <div style={{ position: "relative" }}>
+            <span className="material-symbols-outlined" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", color: "var(--text-muted)" }}>search</span>
+            <input
+              type="text"
+              value={orgSearch}
+              onChange={(e) => { setOrgSearch(e.target.value); setOrgPage(1); }}
+              placeholder="Search by name or slug..."
+              className="dashboard-input"
+              style={{ paddingLeft: "32px" }}
+            />
+          </div>
+        </label>
+      </div>
+
+      <div className={`admin-layout${selectedOrg ? " admin-layout--split" : ""}`}>
+        <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
+          {orgsLoading ? (
+            <div style={{ padding: "48px", textAlign: "center" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
+            </div>
+          ) : orgs.length === 0 ? (
+            <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>No organizations found</div>
+          ) : (
+            <>
+              <div className="admin-table-wrap">
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "480px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+                      <th style={{ textAlign: "left", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Name</th>
+                      <th style={{ textAlign: "left", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Slug</th>
+                      <th style={{ textAlign: "center", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Visibility</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orgs.map((o) => (
+                      <tr
+                        key={o.id}
+                        onClick={() => { setSelectedOrg(o); setActionMessage(null); }}
+                        style={{
+                          borderBottom: "1px solid var(--border-color)",
+                          cursor: "pointer",
+                          background: selectedOrg?.id === o.id ? "color-mix(in srgb, var(--primary) 8%, transparent)" : undefined,
+                          transition: "background 0.15s",
+                        }}
+                        onMouseEnter={(e) => { if (selectedOrg?.id !== o.id) (e.currentTarget.style.background = "color-mix(in srgb, var(--text-muted) 4%, transparent)"); }}
+                        onMouseLeave={(e) => { if (selectedOrg?.id !== o.id) (e.currentTarget.style.background = ""); }}
+                      >
+                        <td style={{ padding: "10px 14px", fontWeight: "600", color: "var(--text-primary)" }}>{o.name}</td>
+                        <td style={{ padding: "10px 14px", color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: "11px" }}>{o.slug}</td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", textTransform: "capitalize", fontSize: "11px" }}>{o.visibility}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {orgTotalPages > 1 && (
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", padding: "12px" }}>
+                  <button className="btn btn-secondary" disabled={orgPage <= 1} onClick={() => setOrgPage((p) => p - 1)} style={{ fontSize: "11px", padding: "4px 10px" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>chevron_left</span>
+                  </button>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Page {orgPage} of {orgTotalPages}</span>
+                  <button className="btn btn-secondary" disabled={orgPage >= orgTotalPages} onClick={() => setOrgPage((p) => p + 1)} style={{ fontSize: "11px", padding: "4px 10px" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>chevron_right</span>
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {selectedOrg && (
+          <div className="glass-card animate-fade-in admin-detail-panel" style={{ padding: "20px", position: "sticky", top: "80px" }}>
+            <button type="button" onClick={() => setSelectedOrg(null)} style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+            </button>
+            <div style={{ marginBottom: "12px" }}>
+              <div style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)" }}>{selectedOrg.name}</div>
+              <div style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>{selectedOrg.slug}</div>
+            </div>
+            {actionMessage && activeTab === "organizations" && (
+              <div style={{
+                padding: "8px 12px", borderRadius: "6px", marginBottom: "12px", fontSize: "11px",
+                background: actionMessage.type === "success" ? "color-mix(in srgb, var(--accent-success, #22c55e) 10%, transparent)" : "color-mix(in srgb, var(--destructive) 10%, transparent)",
+                color: actionMessage.type === "success" ? "var(--accent-success, #22c55e)" : "var(--destructive)",
+                display: "flex", alignItems: "center", gap: "6px",
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{actionMessage.type === "success" ? "check_circle" : "error"}</span>
+                {actionMessage.text}
+              </div>
+            )}
+            <div style={{ display: "grid", gap: "8px", marginBottom: "16px" }}>
+              <InfoChip label="Visibility" value={selectedOrg.visibility} />
+              <InfoChip label="Created" value={new Date(selectedOrg.createdAt).toLocaleString()} />
+              {selectedOrg.description && <InfoChip label="Description" value={selectedOrg.description} span={2} />}
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: "11px", padding: "6px 12px", justifyContent: "flex-start", color: "var(--destructive)", borderColor: "color-mix(in srgb, var(--destructive) 30%, transparent)", width: "100%" }}
+              onClick={() => setShowDeleteOrgModal(true)}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>delete_forever</span>
+              Delete organization
+            </button>
+            <p style={{ fontSize: "10px", color: "var(--text-muted)", margin: "10px 0 0" }}>
+              Deletes the org row; tournaments and members cascade from the database.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {showDeleteOrgModal && (
+        <Modal title="Delete organization" onClose={() => setShowDeleteOrgModal(false)} onConfirm={handleDeleteOrg} confirmLabel="Delete forever" confirmColor="var(--destructive)">
+          <p style={{ fontSize: "13px", color: "var(--text-primary)", margin: "0 0 8px" }}>
+            Permanently delete <strong>{selectedOrg?.name}</strong>?
+          </p>
+          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
+            All tournaments under this organization and related lobby/match data will be removed. This cannot be undone.
+          </p>
+        </Modal>
+      )}
+      </>
+      )}
     </div>
   );
 }
