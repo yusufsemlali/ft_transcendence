@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { setUser, refreshUserThunk } from "@/lib/store/authSlice";
 import { refreshToken } from "@/lib/api/auth-client";
 import { toast } from "@/components/ui/sonner";
+import { syncUserSettingsFromServer } from "@/lib/settings";
 
 const PROTECTED_ROUTES = ["/settings", "/profile", "/tournaments/create"];
 
@@ -29,10 +30,13 @@ export function AuthEffects() {
       if (now - lastLogoutAt < 5000) return;
       lastLogoutAt = now;
 
+      const wasLoggedIn = localStorage.getItem("isLoggedIn") === "true";
       dispatch(setUser(null));
       localStorage.removeItem("isLoggedIn");
 
-      toast.info("Session expired, please login again");
+      if (wasLoggedIn) {
+        toast.info("Session expired, please login again");
+      }
 
       const currentPath = window.location.pathname;
       const isProtected = PROTECTED_ROUTES.some((r) =>
@@ -50,24 +54,38 @@ export function AuthEffects() {
     return () => window.removeEventListener("auth:logout", handleForcedLogout);
   }, [dispatch, router]);
 
-  // 2. Hydration: OAuth redirect or stale localStorage flag
+  // 2a. OAuth callback: set login flag and strip query even when SSR already hydrated `user`
   useEffect(() => {
-    if (!user) {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get("oauth_success") === "true") {
-        localStorage.setItem("isLoggedIn", "true");
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname,
-        );
-      }
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("oauth_success") === "true") {
+      localStorage.setItem("isLoggedIn", "true");
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname,
+      );
+    }
+  }, []);
 
-      if (localStorage.getItem("isLoggedIn") === "true") {
-        dispatch(refreshUserThunk());
-      }
+  // 2b. Client-only restore when Redux has no user yet
+  useEffect(() => {
+    if (!user && localStorage.getItem("isLoggedIn") === "true") {
+      dispatch(refreshUserThunk());
     }
   }, [dispatch, user]);
+
+  // 2c. Load theme/background from API for any authenticated session (covers OAuth + SSR hydration)
+  const lastSyncedSettingsForUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user?.id) {
+      lastSyncedSettingsForUserId.current = null;
+      return;
+    }
+    if (localStorage.getItem("isLoggedIn") !== "true") return;
+    if (lastSyncedSettingsForUserId.current === user.id) return;
+    lastSyncedSettingsForUserId.current = user.id;
+    void syncUserSettingsFromServer();
+  }, [user?.id]);
 
   // 3. Proactive background token refresh
   useEffect(() => {

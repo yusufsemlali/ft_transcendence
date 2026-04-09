@@ -4,15 +4,21 @@ import { tournaments } from './tournaments';
 
 // --- ENUMS ---
 export const lobbyStatusEnum = pgEnum('lobby_status', [
-    'solo',      // LFT / Just chilling in the lobby
-    'invited',   // Pending an invite to an entrant group
-    'rostered'   // Successfully joined an entrant group
+    'solo',      // LFT / Just chilling
+    'rostered',   // Successfully joined a competitor group
+    'spectator'   // Downgraded after registration closes if not rostered
 ]);
 
-export const entrantStatusEnum = pgEnum('entrant_status', [
+export const competitorStatusEnum = pgEnum('competitor_status', [
     'incomplete', // Has players, but not enough to meet minTeamSize
     'ready',      // Fully legal roster, ready for bracket logic
-    'disqualified' // TO manually disqualified them
+    'disqualified' // TO manually disqualified them or failed to meet requirements
+]);
+
+export const inviteStatusEnum = pgEnum('invite_status', [
+    'pending',
+    'accepted',
+    'declined'
 ]);
 
 export const rosterRoleEnum = pgEnum('roster_role', [
@@ -21,47 +27,48 @@ export const rosterRoleEnum = pgEnum('roster_role', [
     'substitute'
 ]);
 
-// --- 1. THE LOBBY POOL (Humans in the building) ---
-export const tournamentPlayers = pgTable('tournament_players', {
+// --- 1. THE LOBBY (Humans in the room) ---
+export const lobby = pgTable('lobby', {
     id: uuid('id').primaryKey().defaultRandom(),
     tournamentId: uuid('tournament_id').references(() => tournaments.id, { onDelete: 'cascade' }).notNull(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     status: lobbyStatusEnum('status').default('solo').notNull(),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (t: any) => ({
-    // A user can only be in the lobby for a specific tournament once
     unqPlayer: unique().on(t.tournamentId, t.userId)
 }));
 
-// --- 2. COMPETITIVE UNITS (The actual bracket actors) ---
-export const tournamentEntrants = pgTable('tournament_entrants', {
+// --- 2. COMPETITORS (The actual bracket actors) ---
+export const competitors = pgTable('competitors', {
     id: uuid('id').primaryKey().defaultRandom(),
     tournamentId: uuid('tournament_id').references(() => tournaments.id, { onDelete: 'cascade' }).notNull(),
     name: varchar('name', { length: 255 }).notNull(), // User's name for 1v1s, Team name for 5v5s
-    status: entrantStatusEnum('status').default('incomplete').notNull(),
-    seed: integer('seed'), // Optional: To support TO seeding mechanisms
+    status: competitorStatusEnum('status').default('incomplete').notNull(),
+    seed: integer('seed'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-// --- 3. ROSTER JUNCTION (Linking Lobby Humans to Competitive Units) ---
-export const entrantRosters = pgTable('entrant_rosters', {
+// --- 3. ROSTERS (Linking Lobby Humans to Competitors) ---
+export const rosters = pgTable('rosters', {
     id: uuid('id').primaryKey().defaultRandom(),
-    entrantId: uuid('entrant_id').references(() => tournamentEntrants.id, { onDelete: 'cascade' }).notNull(),
+    competitorId: uuid('competitor_id').references(() => competitors.id, { onDelete: 'cascade' }).notNull(),
     userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     role: rosterRoleEnum('role').default('player').notNull(),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (t: any) => ({
-    unqRoster: unique().on(t.entrantId, t.userId)
+    unqRoster: unique().on(t.competitorId, t.userId)
 }));
 
-// --- 4. TEAM INVITES (Tracking specific RELATIONAL invites) ---
-export const tournamentInvites = pgTable('tournament_invites', {
+// --- 4. INVITES (Tracking specific RELATIONAL invites) ---
+export const invites = pgTable('invites', {
     id: uuid('id').primaryKey().defaultRandom(),
     tournamentId: uuid('tournament_id').references(() => tournaments.id, { onDelete: 'cascade' }).notNull(),
-    teamId: uuid('team_id').references(() => tournamentEntrants.id, { onDelete: 'cascade' }).notNull(),
+    competitorId: uuid('competitor_id').references(() => competitors.id, { onDelete: 'cascade' }).notNull(),
     inviterId: uuid('inviter_id').references(() => users.id).notNull(),
     targetUserId: uuid('target_user_id').references(() => users.id).notNull(),
+    status: inviteStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table: any) => ({
-    unqInvite: unique().on(table.teamId, table.targetUserId)
+    unqInvite: unique().on(table.competitorId, table.targetUserId)
 }));
+

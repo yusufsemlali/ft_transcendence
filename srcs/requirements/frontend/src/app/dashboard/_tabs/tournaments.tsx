@@ -6,6 +6,8 @@ import type { Sport } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { EmptyPanel } from "../_components/empty-panel";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
 
 /* ── Status badge colors ── */
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -89,7 +91,6 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     bannerUrl: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // When sport is selected, pre-fill defaults from the sport blueprint
   const handleSportChange = (sportId: string) => {
@@ -107,11 +108,10 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
 
   const handleSubmit = async () => {
     if (!form.sportId || !form.name) {
-      setError("Sport and name are required");
+      toast.error("Sport and name are required");
       return;
     }
     setSubmitting(true);
-    setError(null);
     try {
       const res = await api.tournaments.createTournament({
         params: { organizationId: org.id },
@@ -123,12 +123,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         },
       });
       if (res.status === 201) {
+        toast.success("Tournament created");
         onCreated();
       } else {
-        setError((res.body as any)?.message || "Failed to create tournament");
+        toastApiError(res.body, "Failed to create tournament");
       }
     } catch {
-      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -142,12 +143,6 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>close</span>
         </button>
       </div>
-
-      {error && (
-        <div style={{ padding: "10px 14px", borderRadius: "6px", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)", fontSize: "12px", marginBottom: "16px" }}>
-          {error}
-        </div>
-      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "16px" }}>
         {/* Sport */}

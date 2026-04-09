@@ -2,7 +2,7 @@ import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import { SidebarItem } from "./sidebar-item";
 
 type OrgSection = "overview" | "tournaments" | "admin" | "config" | "tools";
-type TournamentPage = "overview" | "brackets" | "matches" | "standings" | "schedule" | "settings";
+type TournamentPage = "overview" | "lobby" | "brackets" | "matches" | "standings" | "schedule" | "settings";
 
 export function Sidebar({ org, section, page, navigateOrg, activeTournament, tournamentPage, navigateTournament, backToOrg, open, onClose, onBack }: {
   org: Organization;
@@ -84,6 +84,16 @@ export function Sidebar({ org, section, page, navigateOrg, activeTournament, tou
           <div className="dashboard-sidebar-section" style={{ paddingTop: "8px" }}>
             <SidebarItem icon="dashboard"      label="Overview"  active={tournamentPage === "overview"}  onClick={() => goTournament("overview")} />
           </div>
+
+          {activeTournament.status !== "draft" && (
+            <>
+              <div className="dashboard-sidebar-divider" />
+              <div className="dashboard-sidebar-section-title"><span>Registration</span></div>
+              <div className="dashboard-sidebar-section">
+                <SidebarItem icon="groups" label="Lobby" active={tournamentPage === "lobby"} onClick={() => goTournament("lobby")} />
+              </div>
+            </>
+          )}
 
           <div className="dashboard-sidebar-divider" />
           <div className="dashboard-sidebar-section-title"><span>Competition</span></div>

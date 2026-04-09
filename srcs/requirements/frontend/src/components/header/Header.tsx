@@ -40,10 +40,9 @@ export function Header() {
             <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <NavLink href="/dashboard" icon="dashboard" title="dashboard" />
               <NavLink href="/tournaments" icon="sports_esports" title="tournaments" />
+              <NavLink href="/friends" icon="group" title="friends" />
               <NavLink href="/leaderboard" icon="social_leaderboard" title="leaderboard" />
               <NavLink href="/chat" icon="chat" title="chat" />
-              <NavLink href="/friends" icon="group" title="friends" />
-              <NavLink href="/about" icon="info" title="about" />
               <NavLink href="/settings" icon="settings" title="settings" />
             </div>
           </div>
@@ -89,6 +88,10 @@ export function Header() {
             <span className="material-symbols-outlined">sports_esports</span>
             <span className="nav-link-text">tournaments</span>
           </Link>
+          <Link href="/friends" className="nav-link" onClick={() => setMobileOpen(false)}>
+            <span className="material-symbols-outlined">group</span>
+            <span className="nav-link-text">friends</span>
+          </Link>
           <Link href="/leaderboard" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">social_leaderboard</span>
             <span className="nav-link-text">leaderboard</span>
@@ -96,14 +99,6 @@ export function Header() {
           <Link href="/chat" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">chat</span>
             <span className="nav-link-text">chat</span>
-          </Link>
-          <Link href="/friends" className="nav-link" onClick={() => setMobileOpen(false)}>
-            <span className="material-symbols-outlined">group</span>
-            <span className="nav-link-text">friends</span>
-          </Link>
-          <Link href="/about" className="nav-link" onClick={() => setMobileOpen(false)}>
-            <span className="material-symbols-outlined">info</span>
-            <span className="nav-link-text">about</span>
           </Link>
           <Link href="/settings" className="nav-link" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">settings</span>

@@ -118,17 +118,6 @@ function LoginFormContent() {
           />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "1rem" }}>
-          <input
-            type="checkbox"
-            id="rememberMe"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            style={{ accentColor: "var(--primary)" }}
-          />
-          <label htmlFor="rememberMe" style={{ fontSize: "0.7rem", color: "var(--text-secondary)", cursor: "pointer" }}>REMEMBER SESSION</label>
-        </div>
-
         <div style={{ marginTop: "24px" }}>
           <button
             type="submit"

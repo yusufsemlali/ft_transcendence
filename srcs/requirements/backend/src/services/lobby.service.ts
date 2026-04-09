@@ -1,292 +1,461 @@
 import { db } from "@/dal/db";
 import { tournaments } from "@/dal/db/schemas/tournaments";
-import { sports } from "@/dal/db/schemas/sports";
 import { users } from "@/dal/db/schemas/users";
-import { tournamentPlayers, tournamentEntrants, entrantRosters, tournamentInvites } from "@/dal/db/schemas/lobby";
-import { eq, and, sql, count } from "drizzle-orm";
+import { lobby, competitors, rosters, invites } from "@/dal/db/schemas/lobby";
+import { eq, and, sql, count, inArray } from "drizzle-orm";
 import AppError from "@/utils/error";
+import { LobbyPolicy } from "@/policies/lobby.policy";
 
-export const joinLobby = async ({ tournamentId, userId }: { tournamentId: string; userId: string }) => {
-    // 1. Fetch Tournament details
+/**
+ * 1. JOIN LOBBY (Enter the Building)
+ */
+export const joinLobby = async ({ tournamentId, userId, isTO = false }: { tournamentId: string; userId: string; isTO?: boolean }) => {
+    // Fetch Tournament details
     const [tournament] = await db
-        .select({
-            status: tournaments.status,
-            maxTeamSize: tournaments.maxTeamSize,
-            maxParticipants: tournaments.maxParticipants,
-        })
+        .select()
         .from(tournaments)
         .where(eq(tournaments.id, tournamentId));
 
-    if (!tournament) {
-        throw new AppError(404, "Tournament not found");
-    }
+    if (!tournament) throw new AppError(404, "Tournament not found");
 
-    if (tournament.status !== 'registration') {
-        throw new AppError(403, "This tournament is not currently open for registration");
-    }
+    // POLICY: Check Phase Lock
+    LobbyPolicy.enforcePhaseLock(tournament.status, isTO);
 
-    // 2. Capacity Check: Count 'ready' Entrants
-    const [entrantCount] = await db
+    // Capacity Check
+    const [readyCount] = await db
         .select({ value: count() })
-        .from(tournamentEntrants)
+        .from(competitors)
         .where(and(
-            eq(tournamentEntrants.tournamentId, tournamentId),
-            eq(tournamentEntrants.status, 'ready')
+            eq(competitors.tournamentId, tournamentId),
+            eq(competitors.status, 'ready')
         ));
     
-    if ((entrantCount?.value || 0) >= tournament.maxParticipants) {
-        throw new AppError(403, "Tournament registration is full (Capacity reached)");
+    if ((readyCount?.value || 0) >= tournament.maxParticipants) {
+        throw new AppError(403, "Tournament registration is full");
     }
 
-    // 3. Check if already in the lobby
-    const [existingPlayer] = await db
-        .select({ id: tournamentPlayers.id })
-        .from(tournamentPlayers)
-        .where(and(
-            eq(tournamentPlayers.tournamentId, tournamentId),
-            eq(tournamentPlayers.userId, userId)
-        ));
+    // Check if already in the building
+    const [existing] = await db
+        .select()
+        .from(lobby)
+        .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, userId)));
 
-    if (existingPlayer) {
-        throw new AppError(409, "You are already in the lobby for this tournament");
-    }
+    if (existing) throw new AppError(409, "Already in the lobby");
 
-    // 3. User info for auto-registrations
     const [user] = await db.select({ username: users.username }).from(users).where(eq(users.id, userId));
 
-    // 4. TRANSACTION: Insert into Lobby. If 1v1, push directly to Entrant.
     return await db.transaction(async (tx: any) => {
-        await tx.insert(tournamentPlayers).values({
+        await tx.insert(lobby).values({
             tournamentId,
             userId,
             status: tournament.maxTeamSize === 1 ? 'rostered' : 'solo'
         });
 
         if (tournament.maxTeamSize === 1) {
-            // Auto-Promote to Bracket Entrant
-            const [newEntrant] = await tx.insert(tournamentEntrants).values({
+            // Auto-Promote (1v1 flow)
+            const [newComp] = await tx.insert(competitors).values({
                 tournamentId,
                 name: user?.username || 'Solo Player',
                 status: 'ready'
             }).returning();
 
-            await tx.insert(entrantRosters).values({
-                entrantId: newEntrant.id,
+            await tx.insert(rosters).values({
+                competitorId: newComp.id,
                 userId,
                 role: 'captain'
             });
-            return { state: 'READY_ENTRANT_CREATED' };
+            return { state: 'COMPETITOR_CREATED' };
         }
 
         return { state: 'LOBBY_JOINED' };
     });
 };
 
-export const createLobbyTeam = async ({ tournamentId, userId, name }: { tournamentId: string; userId: string; name: string }) => {
-    // 1. Validate they are actually in the lobby as solo
-    const [player] = await db
-        .select({ id: tournamentPlayers.id, status: tournamentPlayers.status })
-        .from(tournamentPlayers)
-        .where(and(
-            eq(tournamentPlayers.tournamentId, tournamentId),
-            eq(tournamentPlayers.userId, userId)
-        ));
+/**
+ * 2. FORM COMPETITOR (Form a group)
+ */
+export const createCompetitor = async ({ tournamentId, userId, name, isTO = false }: { tournamentId: string; userId: string; name: string; isTO?: boolean }) => {
+    const [tournament] = await db.select({ status: tournaments.status }).from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) throw new AppError(404, "Tournament not found");
 
-    if (!player) {
-        throw new AppError(403, "You must enter the Lobby before creating a team");
-    }
+    LobbyPolicy.enforcePhaseLock(tournament.status, isTO);
 
-    if (player.status !== 'solo') {
-        throw new AppError(409, "You are already part of an entrant or have a pending invite");
-    }
+    const [player] = await db.select().from(lobby).where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, userId)));
+    if (!player) throw new AppError(403, "Must join lobby first");
+    if (player.status !== 'solo') throw new AppError(409, "Already rostered");
 
-    // 2. TRANSACTION: Create Team, add as Captain, update Lobby status
     return await db.transaction(async (tx: any) => {
-        const [newTeam] = await tx.insert(tournamentEntrants).values({
+        const [newComp] = await tx.insert(competitors).values({
             tournamentId,
             name,
-            status: 'incomplete', // Not ready until minTeamSize is reached
+            status: 'incomplete', 
         }).returning();
 
-        await tx.insert(entrantRosters).values({
-            entrantId: newTeam.id,
+        await tx.insert(rosters).values({
+            competitorId: newComp.id,
             userId,
             role: 'captain'
         });
 
-        await tx.update(tournamentPlayers)
-            .set({ status: 'rostered' })
-            .where(eq(tournamentPlayers.id, player.id));
-
-        return { teamId: newTeam.id };
+        await tx.update(lobby).set({ status: 'rostered' }).where(eq(lobby.id, player.id));
+        return { competitorId: newComp.id };
     });
 };
 
+/**
+ * 3. GET LOBBY STATE (See the room)
+ */
 export const getLobbyState = async (tournamentId: string) => {
     const soloPlayers = await db
         .select({
             userId: users.id,
             username: users.username,
             avatarUrl: users.avatar,
-            status: tournamentPlayers.status,
-            joinedAt: tournamentPlayers.joinedAt,
+            status: lobby.status,
+            joinedAt: lobby.joinedAt,
         })
-        .from(tournamentPlayers)
-        .innerJoin(users, eq(tournamentPlayers.userId, users.id))
-        .where(and(
-            eq(tournamentPlayers.tournamentId, tournamentId),
-            sql`${tournamentPlayers.status} != 'rostered'`
-        ));
+        .from(lobby)
+        .innerJoin(users, eq(lobby.userId, users.id))
+        .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.status, 'solo')));
 
-    // 2. Fetch Teams and their Rosters
-    const entrants = await db
+    const compData = await db
         .select({
-            id: tournamentEntrants.id,
-            name: tournamentEntrants.name,
-            status: tournamentEntrants.status,
+            id: competitors.id,
+            name: competitors.name,
+            status: competitors.status,
             userId: users.id,
             username: users.username,
-            role: entrantRosters.role,
+            role: rosters.role,
         })
-        .from(tournamentEntrants)
-        .leftJoin(entrantRosters, eq(tournamentEntrants.id, entrantRosters.entrantId))
-        .leftJoin(users, eq(entrantRosters.userId, users.id))
-        .where(eq(tournamentEntrants.tournamentId, tournamentId));
+        .from(competitors)
+        .leftJoin(rosters, eq(competitors.id, rosters.competitorId))
+        .leftJoin(users, eq(rosters.userId, users.id))
+        .where(eq(competitors.tournamentId, tournamentId));
 
-    // 3. Group Rosters into Team Objects
-    const teamMap = new Map<string, any>();
-    for (const e of entrants) {
-        if (!teamMap.has(e.id)) {
-            teamMap.set(e.id, {
-                id: e.id,
-                name: e.name,
-                status: e.status,
-                roster: [],
-            });
+    const competitorMap = new Map<string, any>();
+    for (const c of compData) {
+        if (!competitorMap.has(c.id)) {
+            competitorMap.set(c.id, { id: c.id, name: c.name, status: c.status, roster: [] });
         }
-        if (e.userId) {
-            teamMap.get(e.id).roster.push({
-                userId: e.userId,
-                username: e.username,
-                role: e.role,
-            });
+        if (c.userId) {
+            competitorMap.get(c.id).roster.push({ userId: c.userId, username: c.username, role: c.role });
         }
     }
 
-    return {
-        soloPlayers,
-        teams: Array.from(teamMap.values()),
-    };
+    return { soloPlayers, competitors: Array.from(competitorMap.values()) };
 };
 
-export const inviteToTeam = async ({ tournamentId, teamId, captainId, targetUserId }: { tournamentId: string; teamId: string; captainId: string; targetUserId: string }) => {
-    // 1. Verify Captaincy
-    const [captainLink] = await db
-        .select()
-        .from(entrantRosters)
-        .where(and(
-            eq(entrantRosters.entrantId, teamId),
-            eq(entrantRosters.userId, captainId),
-            eq(entrantRosters.role, 'captain')
-        ));
-    
-    if (!captainLink) throw new AppError(403, "Only the team captain can invite players");
+/**
+ * 4. INVITE PLAYER
+ */
+export const inviteToCompetitor = async ({ tournamentId, competitorId, captainId, targetUserId, isTO = false }: any) => {
+    const [tournament] = await db.select({ status: tournaments.status }).from(tournaments).where(eq(tournaments.id, tournamentId));
+    LobbyPolicy.enforcePhaseLock(tournament?.status || 'draft', isTO);
 
-    // 2. Verify Target is in Lobby and Solo
-    const [target] = await db
-        .select()
-        .from(tournamentPlayers)
-        .where(and(
-            eq(tournamentPlayers.tournamentId, tournamentId),
-            eq(tournamentPlayers.userId, targetUserId),
-            eq(tournamentPlayers.status, 'solo')
-        ));
-    
-    if (!target) throw new AppError(404, "Target user is not available in the lobby");
+    // Verify Captaincy (unless TO)
+    if (!isTO) {
+        const [captain] = await db.select().from(rosters).where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, captainId), eq(rosters.role, 'captain')));
+        if (!captain) throw new AppError(403, "Not authorized");
+    }
 
-    // 3. Record Relational Invite
-    await db.insert(tournamentInvites).values({
-        tournamentId,
-        teamId,
-        inviterId: captainId,
-        targetUserId
+    const [target] = await db.select().from(lobby).where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, targetUserId), eq(lobby.status, 'solo')));
+    if (!target) throw new AppError(404, "Target not solo in lobby");
+
+    await db.insert(invites).values({ tournamentId, competitorId, inviterId: captainId, targetUserId, status: 'pending' })
+        .onConflictDoUpdate({ target: [invites.competitorId, invites.targetUserId], set: { status: 'pending' } });
+
+    return { message: "Invite sent" };
+};
+
+/**
+ * 5. JOIN COMPETITOR (Accept Invite)
+ */
+export const joinCompetitor = async ({ tournamentId, competitorId, userId, isTO = false }: any) => {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    LobbyPolicy.enforcePhaseLock(tournament?.status || 'draft', isTO);
+
+    const [invite] = await db.select().from(invites).where(and(eq(invites.competitorId, competitorId), eq(invites.targetUserId, userId), eq(invites.status, 'pending')));
+    if (!invite) throw new AppError(403, "No valid invite");
+
+    const [player] = await db.select().from(lobby).where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, userId)));
+    if (!player || player.status === 'rostered') throw new AppError(400, "Invalid player state");
+
+    return await db.transaction(async (tx: any) => {
+        // RACE CONDITION FIX: Count inside the transaction
+        const currentRoster = await tx.select().from(rosters).where(eq(rosters.competitorId, competitorId));
+        if (currentRoster.length >= (tournament?.maxTeamSize || 1)) {
+            throw new AppError(400, "Team is full");
+        }
+
+        await tx.insert(rosters).values({ competitorId, userId, role: 'player' });
+        await tx.update(lobby).set({ status: 'rostered' }).where(eq(lobby.id, player.id));
+        await tx.update(invites).set({ status: 'accepted' }).where(and(eq(invites.competitorId, competitorId), eq(invites.targetUserId, userId)));
+        await tx.delete(invites).where(and(eq(invites.targetUserId, userId), eq(invites.status, 'pending')));
+
+        if (currentRoster.length + 1 >= (tournament?.minTeamSize || 1)) {
+            await tx.update(competitors).set({ status: 'ready' }).where(eq(competitors.id, competitorId));
+        }
+        return { message: "Joined" };
     });
-
-    // 4. Update status to 'invited' (signifies they have pending probes)
-    await db.update(tournamentPlayers)
-        .set({ status: 'invited' })
-        .where(eq(tournamentPlayers.id, target.id));
-
-    return { message: "Invitation sent" };
 };
 
-export const joinTeam = async ({ tournamentId, teamId, userId }: { tournamentId: string; teamId: string; userId: string }) => {
-    // 1. Verify specific invitation exists (SECURITY FIX)
-    const [invite] = await db
-        .select()
-        .from(tournamentInvites)
-        .where(and(
-            eq(tournamentInvites.teamId, teamId),
-            eq(tournamentInvites.targetUserId, userId)
-        ));
-    
-    if (!invite) throw new AppError(403, "You have not been invited to this team");
+/**
+ * GOD MODE: FORCE READY
+ */
+export const forceReadyCompetitor = async (competitorId: string, isTO: boolean) => {
+    LobbyPolicy.canForceReady(isTO);
+    await db.update(competitors).set({ status: 'ready' }).where(eq(competitors.id, competitorId));
+    return { message: "Competitor forced to ready" };
+};
 
-    // 2. Verify Lobby presence
+/**
+ * GOD MODE: DIRECT ASSIGN
+ */
+export const assignToCompetitor = async (competitorId: string, userIds: string[], tournamentId: string, isTO: boolean) => {
+    LobbyPolicy.canAssignDirectly(isTO);
+    
+    return await db.transaction(async (tx: any) => {
+        for (const uid of userIds) {
+            const [player] = await tx.select().from(lobby).where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, uid)));
+            if (!player) throw new AppError(404, `User ${uid} not in lobby`);
+            
+            await tx.insert(rosters).values({ competitorId, userId: uid, role: 'player' }).onConflictDoNothing();
+            await tx.update(lobby).set({ status: 'rostered' }).where(eq(lobby.id, player.id));
+        }
+        // Cleanup invites for these users
+        await tx.delete(invites).where(inArray(invites.targetUserId, userIds));
+        
+        // Auto-Ready if they reached min (or just TO choice)
+        const [tournament] = await tx.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+        const currentRoster = await tx.select().from(rosters).where(eq(rosters.competitorId, competitorId));
+        if (currentRoster.length >= (tournament?.minTeamSize || 1)) {
+            await tx.update(competitors).set({ status: 'ready' }).where(eq(competitors.id, competitorId));
+        }
+    });
+};
+
+/**
+ * POLICY 4: LOBBY PURGE (Triggered on Start)
+ */
+export const purgeLobby = async (tournamentId: string) => {
+    return await db.transaction(async (tx: any) => {
+        // 1. Delete all pending invites
+        await tx.delete(invites).where(eq(invites.tournamentId, tournamentId));
+
+        // 2. Disqualify incomplete competitors
+        const disqualifiedComps = await tx.update(competitors)
+            .set({ status: 'disqualified' })
+            .where(and(eq(competitors.tournamentId, tournamentId), eq(competitors.status, 'incomplete')))
+            .returning({ id: competitors.id });
+
+        const disqualifiedIds = disqualifiedComps.map((c: any) => c.id);
+
+        if (disqualifiedIds.length > 0) {
+            // 2.5 Downgrade players on disqualified teams
+            const affectedRosters = await tx.select({ userId: rosters.userId }).from(rosters).where(inArray(rosters.competitorId, disqualifiedIds));
+            const affectedUserIds = affectedRosters.map((r: any) => r.userId);
+            
+            if (affectedUserIds.length > 0) {
+                await tx.update(lobby).set({ status: 'spectator' }).where(and(eq(lobby.tournamentId, tournamentId), inArray(lobby.userId, affectedUserIds)));
+            }
+        }
+
+        // 3. Downgrade solo players to spectators
+        await tx.update(lobby)
+            .set({ status: 'spectator' })
+            .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.status, 'solo')));
+    });
+};
+
+/**
+ * 6. LEAVE LOBBY (Drop out entirely)
+ */
+export const leaveLobby = async ({ tournamentId, userId, isTO = false }: any) => {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    LobbyPolicy.enforcePhaseLock(tournament?.status || 'draft', isTO);
+
+    const [player] = await db.select().from(lobby).where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, userId)));
+    if (!player) throw new AppError(404, "Not in lobby");
+
+    return await db.transaction(async (tx: any) => {
+        // If they were in a team, they must leaveCompetitor first (or we disband if captain)
+        const [userRoster] = await tx.select().from(rosters).innerJoin(competitors, eq(rosters.competitorId, competitors.id)).where(and(eq(competitors.tournamentId, tournamentId), eq(rosters.userId, userId)));
+        
+        if (userRoster) {
+            // Special case: if captain of an incomplete team, disband the whole thing
+            if (userRoster.rosters.role === 'captain' && userRoster.competitors.status === 'incomplete') {
+                await tx.delete(competitors).where(eq(competitors.id, userRoster.competitors.id));
+            } else {
+                // Otherwise they must explicitly leave the team first or we block them to prevent ghost rosters
+                throw new AppError(400, "Must leave your team/competitor before exiting the lobby");
+            }
+        }
+
+        await tx.delete(invites).where(eq(invites.targetUserId, userId));
+        await tx.delete(lobby).where(eq(lobby.id, player.id));
+        
+        return { message: "Left lobby successfully" };
+    });
+};
+
+/**
+ * 7. LEAVE COMPETITOR (Back to Solo)
+ */
+export const leaveCompetitor = async ({ tournamentId, competitorId, userId, isTO = false }: any) => {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    LobbyPolicy.enforcePhaseLock(tournament?.status || 'draft', isTO);
+
+    const [userRoster] = await db.select().from(rosters).where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, userId)));
+    if (!userRoster) throw new AppError(404, "Not on this roster");
+
+    return await db.transaction(async (tx: any) => {
+        await tx.delete(rosters).where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, userId)));
+        await tx.update(lobby).set({ status: 'solo' }).where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, userId)));
+
+        // Roster Re-evaluation
+        const remaining = await tx.select().from(rosters).where(eq(rosters.competitorId, competitorId));
+        
+        if (remaining.length === 0) {
+            await tx.delete(competitors).where(eq(competitors.id, competitorId));
+        } else {
+            // Reassign captaincy if the leaver was captain
+            if (userRoster.role === 'captain') {
+                await tx.update(rosters).set({ role: 'captain' }).where(eq(rosters.id, remaining[0].id));
+            }
+
+            // Check if now incomplete
+            if (remaining.length < (tournament?.minTeamSize || 1)) {
+                await tx.update(competitors).set({ status: 'incomplete' }).where(eq(competitors.id, competitorId));
+            }
+        }
+
+        return { message: "Left team successfully" };
+    });
+};
+
+/**
+ * TO: remove a user from a roster; they remain in the lobby as solo.
+ */
+export const removeUserFromCompetitor = async ({
+    tournamentId,
+    competitorId,
+    targetUserId,
+    isTO,
+}: {
+    tournamentId: string;
+    competitorId: string;
+    targetUserId: string;
+    isTO: boolean;
+}) => {
+    LobbyPolicy.canAssignDirectly(isTO);
+
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) throw new AppError(404, "Tournament not found");
+
+    LobbyPolicy.enforcePhaseLock(tournament.status, isTO);
+
+    const [comp] = await db
+        .select()
+        .from(competitors)
+        .where(and(eq(competitors.id, competitorId), eq(competitors.tournamentId, tournamentId)));
+
+    if (!comp) throw new AppError(404, "Competitor not found");
+
+    return await db.transaction(async (tx: any) => {
+        const [userRoster] = await tx
+            .select()
+            .from(rosters)
+            .where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, targetUserId)));
+
+        if (!userRoster) throw new AppError(404, "User not on this roster");
+
+        await tx.delete(rosters).where(and(eq(rosters.competitorId, competitorId), eq(rosters.userId, targetUserId)));
+        await tx
+            .update(lobby)
+            .set({ status: "solo" })
+            .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, targetUserId)));
+
+        const remaining = await tx.select().from(rosters).where(eq(rosters.competitorId, competitorId));
+
+        if (remaining.length === 0) {
+            await tx.delete(competitors).where(eq(competitors.id, competitorId));
+        } else {
+            if (userRoster.role === "captain") {
+                await tx.update(rosters).set({ role: "captain" }).where(eq(rosters.id, remaining[0].id));
+            }
+            if (remaining.length < (tournament.minTeamSize || 1)) {
+                await tx.update(competitors).set({ status: "incomplete" }).where(eq(competitors.id, competitorId));
+            }
+        }
+
+        return { message: "Removed from team" };
+    });
+};
+
+/**
+ * TO: fully remove a user from the tournament lobby (and roster if any).
+ */
+export const ejectUserFromLobby = async ({
+    tournamentId,
+    targetUserId,
+    isTO,
+}: {
+    tournamentId: string;
+    targetUserId: string;
+    isTO: boolean;
+}) => {
+    LobbyPolicy.canEjectUser(isTO);
+
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) throw new AppError(404, "Tournament not found");
+
+    LobbyPolicy.enforcePhaseLock(tournament.status, isTO);
+
     const [player] = await db
         .select()
-        .from(tournamentPlayers)
-        .where(and(
-            eq(tournamentPlayers.tournamentId, tournamentId),
-            eq(tournamentPlayers.userId, userId)
-        ));
-    
-    if (!player) throw new AppError(404, "You are not in the tournament lobby");
-    if (player.status === 'rostered') throw new AppError(400, "You are already in a team");
+        .from(lobby)
+        .where(and(eq(lobby.tournamentId, tournamentId), eq(lobby.userId, targetUserId)));
+    if (!player) throw new AppError(404, "Player not in lobby");
 
-    // 3. Tournament constraints (min/max size)
-    const [tournament] = await db
-        .select({
-            minParticipants: tournaments.minParticipants,
-            maxTeamSize: tournaments.maxTeamSize,
-            minTeamSize: tournaments.minTeamSize,
-        })
-        .from(tournaments)
-        .where(eq(tournaments.id, tournamentId));
-
-    // 3. Roster check
-    const currentRoster = await db
-        .select()
-        .from(entrantRosters)
-        .where(eq(entrantRosters.entrantId, teamId));
-    
-    if (currentRoster.length >= (tournament?.maxTeamSize || 1)) {
-        throw new AppError(400, "Team is full");
-    }
-
-    // 4. TRANSACTION: Move user to Roster and auto-ready team
     return await db.transaction(async (tx: any) => {
-        await tx.insert(entrantRosters).values({
-            entrantId: teamId,
-            userId,
-            role: 'player'
-        });
+        const rosterRows = await tx
+            .select()
+            .from(rosters)
+            .innerJoin(competitors, eq(rosters.competitorId, competitors.id))
+            .where(and(eq(competitors.tournamentId, tournamentId), eq(rosters.userId, targetUserId)));
 
-        await tx.update(tournamentPlayers)
-            .set({ status: 'rostered' })
-            .where(eq(tournamentPlayers.id, player.id));
-        
-        // 4. Cleanup pending invites for this user (they are now rostered)
-        await tx.delete(tournamentInvites)
-            .where(eq(tournamentInvites.targetUserId, userId));
+        const userRoster = rosterRows[0];
 
-        // 5. Check if now ready
-        if (currentRoster.length + 1 >= (tournament?.minTeamSize || 1)) {
-            await tx.update(tournamentEntrants)
-                .set({ status: 'ready' })
-                .where(eq(tournamentEntrants.id, teamId));
+        if (userRoster) {
+            const comp = userRoster.competitors;
+            const rosterRow = userRoster.rosters;
+
+            if (rosterRow.role === "captain" && comp.status === "incomplete") {
+                await tx.delete(competitors).where(eq(competitors.id, comp.id));
+            } else {
+                await tx
+                    .delete(rosters)
+                    .where(and(eq(rosters.competitorId, comp.id), eq(rosters.userId, targetUserId)));
+
+                const remaining = await tx.select().from(rosters).where(eq(rosters.competitorId, comp.id));
+                if (remaining.length === 0) {
+                    await tx.delete(competitors).where(eq(competitors.id, comp.id));
+                } else {
+                    if (rosterRow.role === "captain") {
+                        await tx.update(rosters).set({ role: "captain" }).where(eq(rosters.id, remaining[0].id));
+                    }
+                    if (remaining.length < (tournament.minTeamSize || 1)) {
+                        await tx.update(competitors).set({ status: "incomplete" }).where(eq(competitors.id, comp.id));
+                    }
+                }
+            }
         }
 
-        return { message: "Successfully joined team" };
+        await tx.delete(invites).where(eq(invites.targetUserId, targetUserId));
+        await tx.delete(lobby).where(eq(lobby.id, player.id));
+
+        return { message: "Player removed from lobby" };
     });
 };
+
+

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
 import type { Organization } from "@ft-transcendence/contracts";
+import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
 
 /* ── Create Org Form Fields ── */
 function OrgFormFields({ 
@@ -20,7 +22,6 @@ function OrgFormFields({
     visibility: "public" as "public" | "private",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [autoSlug, setAutoSlug] = useState(true);
 
   const toSlug = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -40,11 +41,10 @@ function OrgFormFields({
 
   const handleSubmit = async () => {
     if (!form.name || !form.slug) {
-      setError("Name and slug are required");
+      toast.error("Name and slug are required");
       return;
     }
     setSubmitting(true);
-    setError(null);
     try {
       const res = await api.organizations.createOrganization({
         body: {
@@ -55,12 +55,13 @@ function OrgFormFields({
         },
       });
       if (res.status === 201) {
+        toast.success("Organization created");
         onCreated(res.body.data);
       } else {
-        setError((res.body as any)?.message || "Failed to create organization");
+        toastApiError(res.body, "Failed to create organization");
       }
     } catch {
-      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -76,12 +77,6 @@ function OrgFormFields({
           Set up a professional environment for your tournaments.
         </p>
       </div>
-
-      {error && (
-        <div style={{ padding: "10px 14px", borderRadius: "6px", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)", fontSize: "12px", marginBottom: "16px" }}>
-          {error}
-        </div>
-      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "480px" }}>
         <label className="dashboard-field">

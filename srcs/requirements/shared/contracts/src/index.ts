@@ -16,7 +16,6 @@ import {
     TOURNAMENT_PHASES, 
     TOURNAMENT_STRUCTURAL_FIELDS
 } from "./constants/tournament_rules";
-import { PublicTournamentSchema, UpdateTournamentSchema } from "./schemas/tournaments";
 
 const c = initContract();
 
@@ -41,11 +40,25 @@ export const COMPATIBILITY_CHECK_HEADER = "X-Compatibility-Check";
 export { 
     TOURNAMENT_PHASES, 
     TOURNAMENT_STRUCTURAL_FIELDS,
-    PublicTournamentSchema,
-    UpdateTournamentSchema
 };
 
-export * from "./schemas/tournaments";
+export {
+    TournamentSchema,
+    PublicTournamentSchema,
+    PublicTournamentDiscoverySchema,
+    TournamentDiscoveryStatusSchema,
+    TOURNAMENT_DISCOVERY_STATUSES,
+    CreateTournamentSchema,
+    UpdateTournamentSchema,
+} from "./schemas/tournaments";
+
+export type {
+    Tournament,
+    PublicTournament,
+    PublicTournamentDiscovery,
+    CreateTournament,
+    UpdateTournament,
+} from "./schemas/tournaments";
 export * from "./schemas/auth";
 export * from "./schemas/users";
 export * from "./schemas/settings";

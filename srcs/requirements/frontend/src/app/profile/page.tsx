@@ -487,7 +487,12 @@ export default function ProfilePage() {
                     <label className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Platform_Node</label>
                     <Select value={selectedSportId} onValueChange={setSelectedSportId}>
                       <SelectTrigger className="capitalize h-10 border border-border/50 focus:border-primary/50">
-                        <SelectValue placeholder="Select Platform..." />
+                        <SelectValue placeholder="Select Platform...">
+                          {selectedSportId && (() => {
+                            const s = sports.find((sp: Sport) => sp.id === selectedSportId);
+                            return s?.name ?? null;
+                          })()}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {sports.map((sport: Sport) => (

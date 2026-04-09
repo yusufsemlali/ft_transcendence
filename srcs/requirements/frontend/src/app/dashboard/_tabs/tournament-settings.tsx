@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
+import { toastApiError } from "@/lib/api-error";
+import {
+  TournamentStatusActions,
+  TournamentCancelDangerZone,
+} from "../_components/tournament-status-actions";
 
 export function TournamentSettingsTab({ tournament, org, onUpdate }: {
   tournament: Tournament;
@@ -25,29 +31,44 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
     prizePool: tournament.prizePool || "",
     entryFee: tournament.entryFee || 0,
     bannerUrl: tournament.bannerUrl || "",
-    status: tournament.status,
     customSettings: JSON.stringify(tournament.customSettings, null, 2),
     matchConfigSchema: JSON.stringify(tournament.matchConfigSchema, null, 2),
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      name: tournament.name,
+      description: tournament.description || "",
+      bracketType: tournament.bracketType,
+      isPrivate: tournament.isPrivate,
+      mode: tournament.mode,
+      minTeamSize: tournament.minTeamSize,
+      maxTeamSize: tournament.maxTeamSize,
+      allowDraws: tournament.allowDraws,
+      requiredHandleType: tournament.requiredHandleType || "",
+      minParticipants: tournament.minParticipants,
+      maxParticipants: tournament.maxParticipants,
+      prizePool: tournament.prizePool || "",
+      entryFee: tournament.entryFee || 0,
+      bannerUrl: tournament.bannerUrl || "",
+      customSettings: JSON.stringify(tournament.customSettings, null, 2),
+      matchConfigSchema: JSON.stringify(tournament.matchConfigSchema, null, 2),
+    });
+  }, [tournament.id, tournament.updatedAt]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    setError(null);
-    setSuccess(false);
 
     try {
-      // Parse JSON fields
       let customSettings = {};
       let matchConfigSchema = {};
       try {
           customSettings = JSON.parse(form.customSettings);
           matchConfigSchema = JSON.parse(form.matchConfigSchema);
-      } catch (e) {
-          setError("Invalid JSON in Custom Settings or Match Config");
+      } catch {
+          toast.error("Invalid JSON in Custom Settings or Match Config");
           setSubmitting(false);
           return;
       }
@@ -55,24 +76,33 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
       const res = await api.tournaments.updateTournament({
         params: { organizationId: org.id, id: tournament.id },
         body: {
-          ...form,
+          name: form.name,
+          description: form.description || null,
+          bracketType: form.bracketType,
+          isPrivate: form.isPrivate,
+          mode: form.mode,
+          minTeamSize: form.minTeamSize,
+          maxTeamSize: form.maxTeamSize,
+          allowDraws: form.allowDraws,
+          requiredHandleType: form.requiredHandleType || null,
+          minParticipants: form.minParticipants,
+          maxParticipants: form.maxParticipants,
+          prizePool: form.prizePool || null,
+          entryFee: form.entryFee,
+          bannerUrl: form.bannerUrl || null,
           customSettings,
           matchConfigSchema,
-          requiredHandleType: form.requiredHandleType || null,
-          description: form.description || null,
-          prizePool: form.prizePool || null,
-          bannerUrl: form.bannerUrl || null,
         },
       });
 
       if (res.status === 200) {
-        setSuccess(true);
+        toast.success("Changes saved successfully");
         onUpdate(res.body.data);
       } else {
-        setError((res.body as any)?.message || "Failed to update tournament");
+        toastApiError(res.body, "Failed to update tournament");
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+    } catch {
+      toast.error("An unexpected error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -80,23 +110,16 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
 
   return (
     <div className="animate-fade-in" style={{ width: "100%" }}>
+      <TournamentStatusActions
+        tournament={tournament}
+        org={org}
+        onUpdate={onUpdate}
+        variant="settings"
+      />
+
       <div className="glass-card" style={{ padding: "32px" }}>
         <h3 style={{ fontSize: "18px", fontWeight: "600", color: "var(--text-primary)", marginBottom: "8px" }}>General Settings</h3>
         <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "24px" }}>Manage your tournament profile, rules, and visibility.</p>
-
-        {error && (
-            <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(var(--destructive-rgb), 0.1)", color: "var(--destructive)", fontSize: "13px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>error</span>
-                {error}
-            </div>
-        )}
-
-        {success && (
-            <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(var(--accent-success-rgb), 0.1)", color: "var(--accent-success)", fontSize: "13px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>check_circle</span>
-                Changes saved successfully!
-            </div>
-        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
           {/* Tournament Name */}
@@ -118,21 +141,6 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             />
-          </label>
-
-          {/* Status */}
-          <label className="dashboard-field">
-            <span className="dashboard-field-label">Tournament Status</span>
-            <Select value={form.status} onValueChange={(val: any) => setForm(f => ({ ...f, status: val }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["draft", "registration", "upcoming", "ongoing", "completed", "cancelled"].map(s => (
-                  <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </label>
 
           {/* Bracket Type */}
@@ -248,12 +256,53 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
         </div>
       </div>
       
-      <div className="glass-card" style={{ padding: "24px", marginTop: "24px", border: "1px solid rgba(var(--destructive-rgb), 0.2)" }}>
-           <h4 style={{ color: "var(--destructive)", fontSize: "14px", fontWeight: "600", marginBottom: "8px" }}>Danger Zone</h4>
-           <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>Permanently delete this tournament and all its data. This cannot be undone.</p>
-           <button className="btn btn-secondary" style={{ color: "var(--destructive)", borderColor: "rgba(var(--destructive-rgb), 0.2)" }}>
-               Delete Tournament
-           </button>
+      <div
+        className="glass-card"
+        style={{
+          marginTop: "24px",
+          padding: 0,
+          overflow: "hidden",
+          borderColor: "color-mix(in srgb, var(--destructive) 22%, var(--border-color))",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-md)",
+            padding: "var(--spacing-5)",
+            background: "color-mix(in srgb, var(--destructive) 5%, transparent)",
+            borderBottom: "1px solid color-mix(in srgb, var(--destructive) 12%, var(--border-color))",
+          }}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: "22px", color: "var(--destructive)", flexShrink: 0 }}
+          >
+            gpp_maybe
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--destructive)" }}>
+              Danger zone
+            </span>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0", lineHeight: 1.5 }}>
+              Irreversible or high-impact actions for this tournament.
+            </p>
+          </div>
+        </div>
+        <div style={{ padding: "var(--spacing-5)" }}>
+          <TournamentCancelDangerZone tournament={tournament} org={org} onUpdate={onUpdate} />
+          <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 12px" }}>
+            Permanently delete this tournament and all its data. This cannot be undone.
+          </p>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ color: "var(--destructive)", borderColor: "color-mix(in srgb, var(--destructive) 25%, transparent)" }}
+          >
+            Delete tournament
+          </button>
+        </div>
       </div>
     </div>
   );

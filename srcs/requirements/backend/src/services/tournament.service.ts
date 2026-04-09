@@ -1,16 +1,21 @@
 import { db } from "@/dal/db";
 import { tournaments } from "@/dal/db/schemas/tournaments";
 import { sports } from "@/dal/db/schemas/sports";
+import { organizationMembers } from "@/dal/db/schemas/organizations";
 import AppError from "@/utils/error";
 import { 
     CreateTournament, 
     UpdateTournament, 
     UpdateTournamentSchema,
-    PublicTournamentSchema 
+    PublicTournamentDiscoverySchema,
 } from "@ft-transcendence/contracts";
-import { eq, and, or, sql, desc, ilike } from "drizzle-orm";
+import { eq, ne, and, or, sql, desc, ilike, count, isNull, getTableColumns } from "drizzle-orm";
+import { organizations } from "@/dal/db/schemas/organizations";
+import { lobby as lobbyTable, competitors, invites } from "@/dal/db/schemas/lobby";
+import { matches } from "@/dal/db/schemas/matches";
 import { generateUniqueSlug } from "@/utils/slug";
 import { TournamentPolicy } from "@/policies/tournament.policy";
+import * as LobbyService from "@/services/lobby.service";
 
 export const createTournament = async (organizationId: string, data: Omit<CreateTournament, 'organizationId'>) => {
     const [sportBlueprint] = await db
@@ -67,6 +72,46 @@ export const createTournament = async (organizationId: string, data: Omit<Create
     }
 };
 
+async function assertNoMatches(tournamentId: string) {
+    const [row] = await db
+        .select({ n: count() })
+        .from(matches)
+        .where(eq(matches.tournamentId, tournamentId));
+    const n = Number(row?.n ?? 0);
+    if (n > 0) {
+        throw new AppError(
+            409,
+            "This action is only allowed before any matches exist for this tournament.",
+        );
+    }
+}
+
+async function assertLobbyEmptyForDraftRevert(tournamentId: string) {
+    const [lobbyRow] = await db
+        .select({ n: count() })
+        .from(lobbyTable)
+        .where(eq(lobbyTable.tournamentId, tournamentId));
+    const [compRow] = await db
+        .select({ n: count() })
+        .from(competitors)
+        .where(eq(competitors.tournamentId, tournamentId));
+    const [inviteRow] = await db
+        .select({ n: count() })
+        .from(invites)
+        .where(eq(invites.tournamentId, tournamentId));
+
+    const lobbyCount = Number(lobbyRow?.n ?? 0);
+    const compCount = Number(compRow?.n ?? 0);
+    const inviteCount = Number(inviteRow?.n ?? 0);
+
+    if (lobbyCount > 0 || compCount > 0 || inviteCount > 0) {
+        throw new AppError(
+            409,
+            "Cannot revert to draft while the lobby has players, teams, or invites. Clear the lobby first."
+        );
+    }
+}
+
 export const updateTournament = async (id: string, data: any) => {
     const validatedData = UpdateTournamentSchema.parse(data);
 
@@ -77,8 +122,34 @@ export const updateTournament = async (id: string, data: any) => {
 
     if (!current) throw new AppError(404, "Tournament not found");
 
-    TournamentPolicy.enforceUpdateRules(current.status, validatedData);
+    TournamentPolicy.enforceUpdateRules(current.status, validatedData, {
+        mode: current.mode,
+        minTeamSize: current.minTeamSize,
+        maxTeamSize: current.maxTeamSize,
+        allowDraws: current.allowDraws,
+        bracketType: current.bracketType,
+        matchConfigSchema: current.matchConfigSchema,
+    });
+
+    const newStatus = validatedData.status;
+    if (newStatus !== undefined && newStatus !== current.status) {
+        if (newStatus === "draft" && current.status === "registration") {
+            await assertLobbyEmptyForDraftRevert(id);
+        } else if (
+            current.status === "cancelled" &&
+            (newStatus === "draft" || newStatus === "registration")
+        ) {
+            await assertNoMatches(id);
+            if (newStatus === "draft") {
+                await assertLobbyEmptyForDraftRevert(id);
+            }
+            TournamentPolicy.enforceStatusTransition(current.status, newStatus);
+        } else {
+            TournamentPolicy.enforceStatusTransition(current.status, newStatus);
+        }
+    }
     
+    // TODO: Real registration count
     const mockRegistrationCount = 0; 
     TournamentPolicy.enforceCapacityRules(validatedData.maxParticipants, mockRegistrationCount);
 
@@ -91,6 +162,11 @@ export const updateTournament = async (id: string, data: any) => {
             })
             .where(eq(tournaments.id, id))
             .returning();
+
+        // POLICY: If transitioning to 'ongoing', purge the lobby
+        if (validatedData.status === 'ongoing' && current.status !== 'ongoing') {
+            await LobbyService.purgeLobby(id);
+        }
 
         return { data: updated };
     } catch (error: any) {
@@ -141,14 +217,52 @@ export const getTournamentById = async (id: string) => {
     return { data: tournament };
 };
 
-export const discoverTournamentById = async (id: string) => {
-    const response = await getTournamentById(id);
+export const isTournamentAdmin = async (userId: string, organizationId: string) => {
+    const [membership] = await db
+        .select({ role: organizationMembers.role })
+        .from(organizationMembers)
+        .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.organizationId, organizationId)));
     
-    if (response.data.isPrivate) {
+    return membership && (membership.role === 'owner' || membership.role === 'admin');
+};
+
+export const isOrgMember = async (userId: string, organizationId: string) => {
+    const [membership] = await db
+        .select({ role: organizationMembers.role })
+        .from(organizationMembers)
+        .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.organizationId, organizationId)));
+    
+    return !!membership;
+};
+
+export const discoverTournamentById = async (id: string) => {
+    const [row] = await db
+        .select({
+            ...getTableColumns(tournaments),
+            sportName: sports.name,
+            organizationName: organizations.name,
+            organizationSlug: organizations.slug,
+        })
+        .from(tournaments)
+        .innerJoin(sports, eq(tournaments.sportId, sports.id))
+        .innerJoin(organizations, eq(tournaments.organizationId, organizations.id))
+        .where(
+            and(eq(tournaments.id, id), isNull(organizations.deletedAt)),
+        );
+
+    if (!row) {
         throw new AppError(404, "Tournament not found");
     }
 
-    const sanitizedData = PublicTournamentSchema.parse(response.data);
+    if (row.isPrivate) {
+        throw new AppError(404, "Tournament not found");
+    }
+
+    if (row.status === "draft") {
+        throw new AppError(404, "Tournament not found");
+    }
+
+    const sanitizedData = PublicTournamentDiscoverySchema.parse(row);
     return { data: sanitizedData };
 };
 
@@ -172,6 +286,7 @@ export const getTournaments = async (query: {
 
     const filters = [];
     filters.push(eq(tournaments.isPrivate, false));
+    filters.push(ne(tournaments.status, 'draft'));
 
     if (search) {
         filters.push(
@@ -187,19 +302,30 @@ export const getTournaments = async (query: {
     const whereClause = and(...filters);
 
     const tournamentList = await db
-        .select()
+        .select({
+            ...getTableColumns(tournaments),
+            sportName: sports.name,
+            organizationName: organizations.name,
+            organizationSlug: organizations.slug,
+        })
         .from(tournaments)
-        .where(whereClause)
+        .innerJoin(sports, eq(tournaments.sportId, sports.id))
+        .innerJoin(organizations, eq(tournaments.organizationId, organizations.id))
+        .where(and(whereClause, isNull(organizations.deletedAt)))
         .limit(pageSize)
         .offset(offset)
         .orderBy(desc(tournaments.createdAt));
 
-    const sanitizedTournaments = tournamentList.map(t => PublicTournamentSchema.parse(t));
+    const sanitizedTournaments = tournamentList.map((t) =>
+        PublicTournamentDiscoverySchema.parse(t),
+    );
 
     const [totalCount] = await db
         .select({ value: sql`count(*)`.mapWith(Number) })
         .from(tournaments)
-        .where(whereClause);
+        .innerJoin(sports, eq(tournaments.sportId, sports.id))
+        .innerJoin(organizations, eq(tournaments.organizationId, organizations.id))
+        .where(and(whereClause, isNull(organizations.deletedAt)));
 
     const total = totalCount?.value || 0;
 
@@ -211,3 +337,4 @@ export const getTournaments = async (query: {
         totalPages: Math.ceil(total / pageSize),
     };
 };
+

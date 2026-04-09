@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import type { UserInfo } from "@/lib/types/user";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface UserMenuProps {
   user: UserInfo;
@@ -10,165 +17,61 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user, onLogout }: UserMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+  const pathname = usePathname();
+  const showAdminLink = user.role === "admin" || user.role === "moderator";
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const items: { href: string; icon: string; label: string; adminOnly?: boolean }[] = [
+    { href: "/profile", icon: "person", label: "Profile" },
+    { href: "/friends", icon: "group", label: "Friends" },
+    { href: "/account-settings", icon: "manage_accounts", label: "Account settings" },
+    { href: "/admin", icon: "admin_panel_settings", label: "Admin panel", adminOnly: true },
+  ];
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`nav-user-btn ${isOpen ? "active" : ""}`}
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="nav-user-btn"
         title="user menu"
         style={{ padding: "0.25rem 0.5rem", gap: "0.5rem" }}
       >
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: "22px", color: "var(--text-muted)" }}
-        >
-          person
-        </span>
+        <div style={{ width: "24px", height: "24px", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.1)" }}>
+          {user.avatar ? (
+            <img src={user.avatar} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <span style={{ fontSize: "10px", fontWeight: "700", color: "var(--primary)" }}>
+              {(user.username || "U").charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
         <span
           className="nav-username"
-          style={{ fontWeight: "500", color: "rgba(255,255,255,0.5)" }}
+          style={{ fontWeight: "600", color: "rgba(255,255,255,0.8)", fontSize: "13px" }}
         >
           {user.username}
         </span>
-        {/* <span
-          className="nav-level"
-          title="Current User Level"
-          style={{
-            background: "rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.6)",
-          }}
-        >
-          {user.level}
-        </span> */}
-      </button>
+      </DropdownMenuTrigger>
 
-      {isOpen && (
-        <div
-          data-slot="card"
-          className="absolute right-0 top-full mt-3 z-50 animate-fade-in min-w-[190px]"
-          style={{
-            padding: "0.4rem",
-            overflow: "hidden",
-          }}
-        >
-          <Link
-            href="/stats"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
+      <DropdownMenuContent align="end" sideOffset={8}>
+        {items.map((item) => {
+          if (item.adminOnly && !showAdminLink) return null;
+          const active = pathname === item.href;
+          return (
+            <DropdownMenuItem
+              key={item.href}
+              render={<Link href={item.href} />}
+              className={active ? "dropdown-menu-item--active" : ""}
             >
-              query_stats
-            </span>
-            <span className="font-bold uppercase tracking-wider">
-              User stats
-            </span>
-          </Link>
-          <Link
-            href="/friends"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              group
-            </span>
-            <span className="font-bold uppercase tracking-wider">Friends</span>
-          </Link>
-          <Link
-            href="/profile"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-              background: "oklch(0.623 0.226 344 / 0.15)",
-              color: "white",
-              borderRadius: "6px",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", color: "var(--primary)" }}
-            >
-              public
-            </span>
-            <span className="font-black uppercase tracking-widest">
-              Public profile
-            </span>
-          </Link>
-          <Link
-            href="/account-settings"
-            className="dropdown-item"
-            onClick={() => setIsOpen(false)}
-            style={{
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              settings
-            </span>
-            <span className="font-bold uppercase tracking-wider">
-              Account settings
-            </span>
-          </Link>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onLogout();
-            }}
-            className="dropdown-item"
-            style={{
-              width: "100%",
-              textAlign: "left",
-              fontSize: "11px",
-              gap: "0.6rem",
-              padding: "0.4rem 0.6rem",
-            }}
-          >
-            <span
-              className="material-symbols-outlined shrink-0"
-              style={{ fontSize: "16px", opacity: 0.8 }}
-            >
-              logout
-            </span>
-            <span className="font-bold uppercase tracking-wider">Sign out</span>
-          </button>
-        </div>
-      )}
-    </div>
+              <span className="material-symbols-outlined">{item.icon}</span>
+              {item.label}
+            </DropdownMenuItem>
+          );
+        })}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={onLogout}>
+          <span className="material-symbols-outlined">logout</span>
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

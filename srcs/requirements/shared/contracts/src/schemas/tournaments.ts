@@ -49,8 +49,27 @@ export const PublicTournamentSchema = TournamentSchema.pick({
     createdAt: true,
 });
 
+/** Status values allowed when filtering public discovery (excludes draft). */
+export const TOURNAMENT_DISCOVERY_STATUSES = [
+    "registration",
+    "upcoming",
+    "ongoing",
+    "completed",
+    "cancelled",
+] as const;
+
+export const TournamentDiscoveryStatusSchema = z.enum(TOURNAMENT_DISCOVERY_STATUSES);
+
+/** Public list + detail payload with host and sport labels (joined server-side). */
+export const PublicTournamentDiscoverySchema = PublicTournamentSchema.extend({
+    sportName: z.string(),
+    organizationName: z.string(),
+    organizationSlug: z.string(),
+});
+
 export type Tournament = z.infer<typeof TournamentSchema>;
 export type PublicTournament = z.infer<typeof PublicTournamentSchema>;
+export type PublicTournamentDiscovery = z.infer<typeof PublicTournamentDiscoverySchema>;
 
 export const CreateTournamentSchema = z.object({
     sportId: z.string().uuid(),
