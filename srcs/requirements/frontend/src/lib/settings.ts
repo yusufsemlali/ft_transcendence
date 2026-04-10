@@ -90,16 +90,27 @@ export function clearLocalSettings(): void {
     localStorage.removeItem(SETTINGS_KEY);
 }
 
-// Get the effective background URL (local takes priority)
-export async function getEffectiveBackground(settings: UserSettings): Promise<string | null> {
-    // Local image takes priority
-    const localBg = await getLocalBackground();
-    if (localBg) {
-        return localBg;
+/** Whether a string can be used as a custom background image src (http(s), data/blob, or same-origin path). */
+export function isValidBackgroundImageUrl(url: string): boolean {
+    const u = url.trim();
+    if (!u) return false;
+    if (u.startsWith("data:") || u.startsWith("blob:")) return true;
+    if (u.startsWith("/") && u.length > 1 && !u.startsWith("//")) return true;
+    try {
+        const parsed = new URL(u);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+        return false;
     }
+}
 
-    // Fall back to URL from settings
-    return settings.customBackground;
+// Server-stored URL is canonical; IndexedDB is legacy fallback only.
+export async function getEffectiveBackground(settings: UserSettings): Promise<string | null> {
+    const server = settings.customBackground?.trim();
+    if (server) {
+        return server;
+    }
+    return getLocalBackground();
 }
 
 // Apply background settings to DOM
@@ -109,21 +120,10 @@ export async function applyBackgroundSettings(settings: UserSettings): Promise<v
     const bgElement = document.querySelector(".custom-background") as HTMLElement | null;
     const effectiveBg = await getEffectiveBackground(settings);
 
-    // Only apply if the URL is valid — prevents partial strings from triggering 404s
-    const isValidBgUrl = (url: string): boolean => {
-        if (url.startsWith("data:") || url.startsWith("blob:")) return true;
-        try {
-            const parsed = new URL(url);
-            return parsed.protocol === "http:" || parsed.protocol === "https:";
-        } catch {
-            return false;
-        }
-    };
-
-    if (effectiveBg && isValidBgUrl(effectiveBg) && bgElement) {
+    if (effectiveBg && isValidBackgroundImageUrl(effectiveBg) && bgElement) {
         const img = bgElement.querySelector("img") as HTMLImageElement | null;
         if (img) {
-            img.src = effectiveBg;
+            img.src = effectiveBg.trim();
 
             // Background size
             img.style.objectFit = settings.customBackgroundSize === "max"

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { MatchCard } from "./MatchCard";
+import { RoundHeader } from "./RoundHeader";
 import type { BracketRound, BracketViewProps } from "../types";
 
 interface RoundColumnProps {
@@ -24,18 +25,13 @@ export function RoundColumn({
 }: RoundColumnProps) {
     return (
         <div className={cn("flex flex-col items-center shrink-0", className)}>
-            {/* Round header */}
-            <div className="mb-3 text-center">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    {round.label}
-                </h3>
-                <span className="text-[10px] text-muted-foreground/60 font-mono">
-                    {round.matches.length} match{round.matches.length !== 1 ? "es" : ""}
-                </span>
-            </div>
+            <RoundHeader
+                roundNumber={round.number}
+                label={round.label}
+                meta={`${round.matches.length} match${round.matches.length !== 1 ? "es" : ""}`}
+            />
 
-            {/* Matches */}
-            <div className="flex flex-col gap-4 justify-around flex-1">
+            <div className={cn("bracket-match-col justify-around flex-1")}>
                 {round.matches.map((match) => (
                     <MatchCard
                         key={match.id}

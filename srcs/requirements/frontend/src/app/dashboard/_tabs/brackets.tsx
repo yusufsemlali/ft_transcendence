@@ -1,18 +1,20 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import api from "@/lib/api/api";
 import { toast } from "@/components/ui/sonner";
 import { BracketView } from "@/components/brackets";
 import type { BracketState } from "@ft-transcendence/contracts";
 import type { Tournament, Organization } from "@ft-transcendence/contracts";
+import { CompetitorSeedBoard } from "../_components/competitor-seed-board";
 
 interface BracketsTabProps {
     tournament: Tournament;
     org: Organization;
 }
 
-export function BracketsTab({ tournament, org }: BracketsTabProps) {
+export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
     const queryClient = useQueryClient();
 
     const bracketQuery = useQuery<BracketState>({
@@ -26,6 +28,64 @@ export function BracketsTab({ tournament, org }: BracketsTabProps) {
         },
     });
 
+    const lobbyQuery = useQuery({
+        queryKey: ["lobby-state", tournament.id],
+        queryFn: async () => {
+            const res = await api.tournaments.getLobbyState({
+                params: { id: tournament.id },
+            });
+            if (res.status !== 200) throw new Error("Failed to load lobby");
+            return res.body;
+        },
+    });
+
+    const [seedOrder, setSeedOrder] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (!lobbyQuery.data) return;
+        const ready = lobbyQuery.data.competitors.filter((c) => c.status === "ready");
+        if (ready.length === 0) {
+            setSeedOrder([]);
+            return;
+        }
+        const readySet = new Set(ready.map((c) => c.id));
+        setSeedOrder((prev) => {
+            if (prev.length === 0 && ready.length > 0) {
+                const sorted = [...ready].sort((a, b) => {
+                    const sa = a.seed ?? 999999;
+                    const sb = b.seed ?? 999999;
+                    if (sa !== sb) return sa - sb;
+                    return a.name.localeCompare(b.name);
+                });
+                return sorted.map((c) => c.id);
+            }
+            const kept = prev.filter((id) => readySet.has(id));
+            for (const c of ready) {
+                if (!kept.includes(c.id)) kept.push(c.id);
+            }
+            return kept;
+        });
+    }, [lobbyQuery.data]);
+
+    const seedMutation = useMutation({
+        mutationFn: async (order: string[]) => {
+            const res = await api.tournaments.setCompetitorSeeds({
+                params: { id: tournament.id },
+                body: { order },
+            });
+            if (res.status !== 200) {
+                const body = res.body as { message?: string };
+                throw new Error(body?.message ?? "Failed to save seed order");
+            }
+            return res.body;
+        },
+        onSuccess: () => {
+            toast.success("Seeding order saved");
+            queryClient.invalidateQueries({ queryKey: ["lobby-state", tournament.id] });
+        },
+        onError: (e: Error) => toast.error(e.message),
+    });
+
     const generateMutation = useMutation({
         mutationFn: async () => {
             const res = await api.matches.generateBracket({
@@ -33,7 +93,7 @@ export function BracketsTab({ tournament, org }: BracketsTabProps) {
                 body: {},
             });
             if (res.status !== 201) {
-                const body = res.body as any;
+                const body = res.body as { message?: string };
                 throw new Error(body?.message ?? "Failed to generate bracket");
             }
             return res.body;
@@ -51,7 +111,7 @@ export function BracketsTab({ tournament, org }: BracketsTabProps) {
                 params: { tournamentId: tournament.id },
             });
             if (res.status !== 200) {
-                const body = res.body as any;
+                const body = res.body as { message?: string };
                 throw new Error(body?.message ?? "Failed to reset bracket");
             }
             return res.body;
@@ -66,6 +126,16 @@ export function BracketsTab({ tournament, org }: BracketsTabProps) {
     const hasMatches = bracketQuery.data && bracketQuery.data.rounds.length > 0;
     const canGenerate = tournament.status === "upcoming" || tournament.status === "ongoing";
     const canReset = tournament.status !== "completed" && hasMatches;
+
+    const labelMap = useMemo(() => {
+        const m = new Map<string, string>();
+        for (const c of lobbyQuery.data?.competitors ?? []) {
+            m.set(c.id, c.name);
+        }
+        return m;
+    }, [lobbyQuery.data]);
+
+    const seedingLocked = Boolean(hasMatches);
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -106,6 +176,45 @@ export function BracketsTab({ tournament, org }: BracketsTabProps) {
                     <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                         Move tournament to &quot;upcoming&quot; or &quot;ongoing&quot; to generate the bracket.
                     </span>
+                )}
+            </div>
+
+            {/* Manual seeding — before bracket exists */}
+            <div className="glass-card" style={{ padding: "16px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
+                    <span className="material-symbols-outlined text-primary" style={{ fontSize: "20px" }}>format_list_numbered</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px" }}>Manual seeding</h3>
+                        <p style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.45 }}>
+                            Drag competitors to set bracket order (1 = top seed). Applies when you generate the bracket.
+                            {seedingLocked && (
+                                <>
+                                    {" "}
+                                    <strong className="text-foreground">Seeding is locked</strong> while matches exist — reset the
+                                    bracket to change seeds.
+                                </>
+                            )}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ fontSize: "11px", padding: "6px 16px" }}
+                        disabled={seedingLocked || seedMutation.isPending || seedOrder.length === 0 || lobbyQuery.isPending}
+                        onClick={() => seedMutation.mutate(seedOrder)}
+                    >
+                        {seedMutation.isPending ? "Saving…" : "Save seed order"}
+                    </button>
+                </div>
+                {lobbyQuery.isPending ? (
+                    <p className="text-xs text-muted-foreground">Loading lobby…</p>
+                ) : (
+                    <CompetitorSeedBoard
+                        order={seedOrder}
+                        getLabel={(id) => labelMap.get(id) ?? id.slice(0, 8)}
+                        disabled={seedingLocked || seedMutation.isPending}
+                        onOrderChange={setSeedOrder}
+                    />
                 )}
             </div>
 

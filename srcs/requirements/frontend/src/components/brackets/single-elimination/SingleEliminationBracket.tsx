@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { MatchCard, BracketConnector } from "../shared";
+import { MatchCard, BracketConnector, RoundHeader } from "../shared";
 import type { BracketViewProps, BracketMatch } from "../types";
 
 export function SingleEliminationBracket({
@@ -40,7 +40,7 @@ export function SingleEliminationBracket({
 
     if (rounds.length === 0) {
         return (
-            <div className={cn("text-center py-12 text-muted-foreground", className)}>
+            <div className={cn("ds-empty-state", className)}>
                 No bracket generated yet.
             </div>
         );
@@ -49,12 +49,9 @@ export function SingleEliminationBracket({
     return (
         <div
             ref={containerRef}
-            className={cn(
-                "relative overflow-x-auto overflow-y-hidden pb-4",
-                className,
-            )}
+            className={cn("relative overflow-x-auto overflow-y-hidden", className)}
         >
-            <div className="flex gap-8 min-w-max px-4 py-4 items-stretch relative">
+            <div className="bracket-rounds-row py-6 items-stretch relative">
                 <BracketConnector
                     containerRef={containerRef}
                     matchElements={matchRefs.current}
@@ -63,12 +60,8 @@ export function SingleEliminationBracket({
 
                 {rounds.map((round) => (
                     <div key={round.number} className="flex flex-col items-center shrink-0">
-                        <div className="mb-3 text-center">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                                {round.label}
-                            </h3>
-                        </div>
-                        <div className="flex flex-col gap-4 justify-around flex-1">
+                        <RoundHeader roundNumber={round.number} label={round.label} />
+                        <div className="bracket-match-col justify-around flex-1">
                             {round.matches.map((match) => (
                                 <div
                                     key={match.id}

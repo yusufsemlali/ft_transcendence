@@ -77,6 +77,7 @@ seed:
 	docker exec -it ft_backend pnpm seed:fake
 
 seed-args:
-	docker exec -it ft_backend pnpm seed:fake -- --users $(or $(USERS),50) --tournaments $(or $(TOURNAMENTS),10) --lobby $(or $(LOBBY),8)
+	docker exec -it ft_backend pnpm seed:fake -- --users $(or $(USERS),32) --tournaments $(or $(TOURNAMENTS),1) --teams $(or $(TEAMS),0) --sport $(or $(SPORT),cs2)
 
 .PHONY: seed seed-args
+

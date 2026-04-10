@@ -33,6 +33,8 @@ export interface BracketViewProps {
 export interface MatchCardProps {
     match: BracketMatch;
     variant?: "default" | "compact";
+    /** Emphasize grand-final style (gradient border, slot padding). */
+    final?: boolean;
     onClick?: (match: BracketMatch) => void;
     onParticipantClick?: (participant: BracketParticipant) => void;
     renderParticipant?: BracketViewProps["renderParticipant"];

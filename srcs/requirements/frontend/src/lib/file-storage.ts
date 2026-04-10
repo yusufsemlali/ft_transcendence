@@ -32,21 +32,6 @@ async function getDB(): Promise<IDBDatabase> {
 }
 
 /**
- * Store a file as base64 data URL
- */
-export async function storeFile(key: string, dataUrl: string): Promise<void> {
-    const database = await getDB();
-    return new Promise((resolve, reject) => {
-        const transaction = database.transaction([STORE_NAME], "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.put(dataUrl, key);
-
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve();
-    });
-}
-
-/**
  * Get a stored file
  */
 export async function getFile(key: string): Promise<string | null> {
@@ -93,68 +78,10 @@ export async function getLocalBackground(): Promise<string | null> {
     }
 }
 
-export async function setLocalBackground(dataUrl: string): Promise<void> {
-    return storeFile(LOCAL_BG_KEY, dataUrl);
-}
-
 export async function removeLocalBackground(): Promise<void> {
     return deleteFile(LOCAL_BG_KEY);
 }
 
 export async function hasLocalBackground(): Promise<boolean> {
     return hasFile(LOCAL_BG_KEY);
-}
-
-/**
- * Handle file upload and convert to data URL
- */
-export function handleImageUpload(
-    onSuccess: (dataUrl: string) => void,
-    onError: (error: string) => void
-): void {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/png,image/jpeg,image/jpg,image/gif,image/webp";
-    input.style.display = "none";
-    document.body.appendChild(input);
-
-    const cleanup = () => {
-        document.body.removeChild(input);
-    };
-
-    input.onchange = (event) => {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (!file) {
-            cleanup();
-            return;
-        }
-
-        // Validate file type
-        if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/)) {
-            onError("Unsupported image format. Use PNG, JPG, GIF, or WebP.");
-            cleanup();
-            return;
-        }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            onError("Image too large. Maximum size is 5MB.");
-            cleanup();
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (readerEvent) => {
-            const dataUrl = readerEvent.target?.result as string;
-            onSuccess(dataUrl);
-            cleanup();
-        };
-        reader.onerror = () => {
-            onError("Failed to read file.");
-            cleanup();
-        };
-        reader.readAsDataURL(file);
-    };
-
-    input.click();
 }

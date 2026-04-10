@@ -18,51 +18,46 @@ export function ParticipantSlot({
     return (
         <div
             className={cn(
-                "flex items-center gap-2 px-3 py-2 min-w-0 transition-colors",
-                isCompleted && isWinner && "bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]",
-                isCompleted && isLoser && "opacity-50",
-                participant && onClick && "cursor-pointer hover:bg-accent/50",
+                "match-card-slot",
+                isCompleted && isWinner && "is-winner",
+                isCompleted && isLoser && "is-loser",
+                participant && onClick && "is-clickable",
                 className,
             )}
             onClick={() => participant && onClick?.(participant)}
         >
-            {/* Seed badge */}
             {participant?.seed != null && (
-                <span className="text-[10px] font-mono text-muted-foreground w-4 text-right shrink-0">
+                <span className="match-card-seed">
                     {participant.seed}
                 </span>
             )}
 
-            {/* Name */}
             <span
                 className={cn(
-                    "text-sm truncate flex-1 min-w-0",
-                    isTBD && "text-muted-foreground italic",
-                    isCompleted && isWinner && "font-semibold text-foreground",
-                    isCompleted && isLoser && "text-muted-foreground",
-                    !isCompleted && participant && "text-foreground",
+                    "match-card-name",
+                    isTBD && "is-tbd",
+                    isCompleted && isWinner && "is-winner",
+                    isCompleted && isLoser && "is-loser",
                 )}
             >
                 {participant?.name ?? "TBD"}
             </span>
 
-            {/* Score */}
             {matchStatus !== "pending" && (
                 <span
                     className={cn(
-                        "text-sm font-mono font-bold tabular-nums w-6 text-center shrink-0",
-                        isCompleted && isWinner && "text-primary",
-                        isCompleted && isLoser && "text-muted-foreground",
-                        matchStatus === "ongoing" && "text-foreground",
+                        "match-card-score",
+                        isCompleted && isWinner && "is-winner",
+                        isCompleted && isLoser && "is-loser",
+                        matchStatus === "ongoing" && "is-live",
                     )}
                 >
                     {score}
                 </span>
             )}
 
-            {/* Win indicator */}
             {isCompleted && isWinner && (
-                <div className="w-1 h-full absolute right-0 top-0 bg-primary rounded-r" />
+                <div className="match-card-win-bar" />
             )}
         </div>
     );

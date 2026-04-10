@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import type { Sport } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
@@ -8,6 +8,7 @@ import { EmptyPanel } from "../_components/empty-panel";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { toastApiError } from "@/lib/api-error";
+import { uploadFile } from "@/lib/upload";
 
 /* ── Status badge colors ── */
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -91,6 +92,8 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     bannerUrl: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // When sport is selected, pre-fill defaults from the sport blueprint
   const handleSportChange = (sportId: string) => {
@@ -104,6 +107,32 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
       maxTeamSize: sport?.defaultMaxTeamSize ?? prev.maxTeamSize,
       requiredHandleType: sport?.requiredHandleType ?? null,
     }));
+  };
+
+  const pickBanner = () => bannerInputRef.current?.click();
+
+  const onBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5MB or less.");
+      return;
+    }
+    setBannerUploading(true);
+    try {
+      const result = await uploadFile(file);
+      setForm((prev) => ({ ...prev, bannerUrl: result.url }));
+      toast.success("Banner uploaded");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBannerUploading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -177,17 +206,55 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           />
         </label>
 
-        {/* Banner URL */}
-        <label className="dashboard-field">
-          <span className="dashboard-field-label">Banner Image URL</span>
-          <input
-            type="text"
-            value={form.bannerUrl}
-            onChange={e => setForm(prev => ({ ...prev, bannerUrl: e.target.value }))}
-            placeholder="https://example.com/banner.jpg"
-            className="dashboard-input"
-          />
-        </label>
+        {/* Banner upload */}
+        <div className="dashboard-field">
+          <span className="dashboard-field-label">Tournament banner</span>
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap", marginTop: 8 }}>
+            {form.bannerUrl ? (
+              <div
+                style={{
+                  width: 200,
+                  height: 80,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                  border: "1px solid var(--border-subtle)",
+                  flexShrink: 0,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.bannerUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            ) : null}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                style={{ display: "none" }}
+                onChange={onBannerFile}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={pickBanner}
+                disabled={bannerUploading}
+                style={{ alignSelf: "flex-start" }}
+              >
+                {bannerUploading ? "Uploading…" : "Upload banner"}
+              </button>
+              {form.bannerUrl ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ fontSize: 12, alignSelf: "flex-start" }}
+                  onClick={() => setForm((prev) => ({ ...prev, bannerUrl: "" }))}
+                >
+                  Remove banner
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
 
         {/* Bracket Type */}
         <label className="dashboard-field">

@@ -25,7 +25,7 @@ export const rootRateLimiter = rateLimit({
 // Upload rate limiter
 export const uploadRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 5, // 5 uploads per minute
+  max: 20, // uploads per minute (banners, avatars, backgrounds)
   handler: customHandler,
 });
 

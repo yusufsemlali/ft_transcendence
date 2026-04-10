@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { MatchCard, StandingsTable } from "../shared";
+import { MatchCard, RoundHeader, StandingsTable } from "../shared";
 import type { BracketViewProps, BracketParticipant } from "../types";
 
 type ViewMode = "matrix" | "rounds";
@@ -21,13 +21,10 @@ export function RoundRobinBracket({
         const participants = data.participants.filter((p) => p.status !== "disqualified");
         const pMap = new Map(participants.map((p) => [p.id, p]));
 
-        // Build NxN result matrix
         const matrix = new Map<string, Map<string, { score1: number; score2: number; status: string } | null>>();
         for (const p of participants) {
             const row = new Map<string, { score1: number; score2: number; status: string } | null>();
-            for (const q of participants) {
-                row.set(q.id, null);
-            }
+            for (const q of participants) row.set(q.id, null);
             matrix.set(p.id, row);
         }
 
@@ -36,16 +33,8 @@ export function RoundRobinBracket({
                 if (!match.participant1 || !match.participant2) continue;
                 const p1 = match.participant1.id;
                 const p2 = match.participant2.id;
-                matrix.get(p1)?.set(p2, {
-                    score1: match.score1,
-                    score2: match.score2,
-                    status: match.status,
-                });
-                matrix.get(p2)?.set(p1, {
-                    score1: match.score2,
-                    score2: match.score1,
-                    status: match.status,
-                });
+                matrix.get(p1)?.set(p2, { score1: match.score1, score2: match.score2, status: match.status });
+                matrix.get(p2)?.set(p1, { score1: match.score2, score2: match.score1, status: match.status });
             }
         }
 
@@ -54,19 +43,16 @@ export function RoundRobinBracket({
 
     if (data.rounds.length === 0) {
         return (
-            <div className={cn("text-center py-12 text-muted-foreground", className)}>
+            <div className={cn("ds-empty-state", className)}>
                 No bracket generated yet.
             </div>
         );
     }
 
     return (
-        <div className={cn("space-y-6", className)}>
-            {/* Standings */}
-            <div className="glass-card p-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                    Standings
-                </h3>
+        <div className={cn("bracket-shell", className)}>
+            <div className="glass-card bracket-section">
+                <h3 className="bracket-section-title">Standings</h3>
                 <StandingsTable
                     standings={data.standings}
                     bracketType={data.bracketType}
@@ -75,43 +61,33 @@ export function RoundRobinBracket({
                 />
             </div>
 
-            {/* View toggle */}
-            <div className="flex gap-1 p-1 bg-muted/30 rounded-lg w-fit">
+            <div className="bracket-view-toggle">
                 <button
-                    className={cn(
-                        "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
-                        viewMode === "rounds" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                    )}
+                    className={cn("ds-tab", viewMode === "rounds" && "is-active")}
                     onClick={() => setViewMode("rounds")}
                 >
-                    <span className="material-symbols-outlined mr-1" style={{ fontSize: "14px", verticalAlign: "middle" }}>
-                        view_list
-                    </span>
+                    <span className="material-symbols-outlined text-sm">view_list</span>
                     Rounds
                 </button>
                 <button
-                    className={cn(
-                        "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
-                        viewMode === "matrix" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                    )}
+                    className={cn("ds-tab", viewMode === "matrix" && "is-active")}
                     onClick={() => setViewMode("matrix")}
                 >
-                    <span className="material-symbols-outlined mr-1" style={{ fontSize: "14px", verticalAlign: "middle" }}>
-                        grid_on
-                    </span>
+                    <span className="material-symbols-outlined text-sm">grid_on</span>
                     Matrix
                 </button>
             </div>
 
-            {/* Round-by-round view */}
             {viewMode === "rounds" && (
-                <div className="space-y-6">
+                <div className="bracket-shell">
                     {data.rounds.map((round) => (
                         <div key={round.number}>
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                                {round.label}
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <RoundHeader
+                                roundNumber={round.number}
+                                label={round.label}
+                                align="left"
+                            />
+                            <div className="match-grid match-grid-3col">
                                 {round.matches.map((match) => (
                                     <MatchCard
                                         key={match.id}
@@ -128,19 +104,14 @@ export function RoundRobinBracket({
                 </div>
             )}
 
-            {/* Matrix view */}
             {viewMode === "matrix" && (
-                <div className="glass-card p-4 overflow-x-auto">
-                    <table className="w-full text-xs">
+                <div className="glass-card bracket-section overflow-x-auto">
+                    <table className="standings-table">
                         <thead>
                             <tr>
-                                <th className="text-left py-2 px-2 text-muted-foreground font-bold" />
+                                <th className="standings-th is-left" />
                                 {matrixData.participants.map((p) => (
-                                    <th
-                                        key={p.id}
-                                        className="py-2 px-2 text-center font-medium truncate max-w-[80px]"
-                                        title={p.name}
-                                    >
+                                    <th key={p.id} className="standings-th" title={p.name}>
                                         <span className="text-[10px]">{p.name.slice(0, 6)}</span>
                                     </th>
                                 ))}
@@ -148,25 +119,15 @@ export function RoundRobinBracket({
                         </thead>
                         <tbody>
                             {matrixData.participants.map((rowP) => (
-                                <tr key={rowP.id} className="border-t border-border/20">
-                                    <td className="py-2 px-2 font-medium truncate max-w-[100px]">
-                                        {rowP.name}
-                                    </td>
+                                <tr key={rowP.id} className="standings-row">
+                                    <td className="standings-td is-left font-medium">{rowP.name}</td>
                                     {matrixData.participants.map((colP) => {
                                         if (rowP.id === colP.id) {
-                                            return (
-                                                <td key={colP.id} className="py-2 px-2 text-center bg-muted/20">
-                                                    —
-                                                </td>
-                                            );
+                                            return <td key={colP.id} className="standings-td bg-muted/20">—</td>;
                                         }
                                         const result = matrixData.matrix.get(rowP.id)?.get(colP.id);
                                         if (!result || result.status === "pending") {
-                                            return (
-                                                <td key={colP.id} className="py-2 px-2 text-center text-muted-foreground">
-                                                    ·
-                                                </td>
-                                            );
+                                            return <td key={colP.id} className="standings-td text-muted-foreground">·</td>;
                                         }
                                         const won = result.score1 > result.score2;
                                         const draw = result.score1 === result.score2;
@@ -174,7 +135,7 @@ export function RoundRobinBracket({
                                             <td
                                                 key={colP.id}
                                                 className={cn(
-                                                    "py-2 px-2 text-center font-mono",
+                                                    "standings-td",
                                                     won && "text-green-400",
                                                     !won && !draw && "text-red-400",
                                                     draw && "text-muted-foreground",

@@ -9,12 +9,8 @@ import {
   hexToHSL,
   hslToHex,
 } from "@/lib/settings";
-import {
-  handleImageUpload,
-  setLocalBackground,
-  removeLocalBackground,
-  hasLocalBackground,
-} from "@/lib/file-storage";
+import { removeLocalBackground, hasLocalBackground } from "@/lib/file-storage";
+import { uploadFile } from "@/lib/upload";
 import api from "@/lib/api/api";
 import { FontPicker } from "@/components/settings";
 import { toast } from "@/components/ui/sonner";
@@ -53,21 +49,26 @@ function computeSecondaryHex(hex: string, harmony: string): string {
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [saving, setSaving] = useState(false);
-  const [hasLocalBg, setHasLocalBg] = useState(false);
-
+  const [hasCustomBg, setHasCustomBg] = useState(false);
+  const [legacyIndexedOnly, setLegacyIndexedOnly] = useState(false);
+  const [bgUploading, setBgUploading] = useState(false);
+  const bgFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const local = getLocalSettings();
     setSettings(local);
     applyAllSettings(local);
-    checkLocalBackground();
     fetchSettings();
   }, []);
 
-  const checkLocalBackground = async () => {
-    const has = await hasLocalBackground();
-    setHasLocalBg(has);
-  };
+  useEffect(() => {
+    void (async () => {
+      const legacy = await hasLocalBackground();
+      const server = Boolean(settings.customBackground?.trim());
+      setHasCustomBg(server || legacy);
+      setLegacyIndexedOnly(legacy && !server);
+    })();
+  }, [settings.customBackground]);
 
   const fetchSettings = async () => {
     try {
@@ -102,7 +103,6 @@ export default function SettingsPage() {
         await api.settings.updateSettings({
           body: { [key]: value },
         });
-        toast.success(`Updated ${String(key)}`);
       } catch (error) {
         toast.error(`Failed to save ${String(key)}`);
       } finally {
@@ -125,7 +125,6 @@ export default function SettingsPage() {
       setSaving(true);
       try {
         await api.settings.updateSettings({ body: updates });
-        toast.success("Theme updated");
       } catch (error) {
         toast.error("Failed to save theme");
       } finally {
@@ -134,25 +133,48 @@ export default function SettingsPage() {
     }, 500);
   };
 
-  const handleLocalImageUpload = () => {
-    handleImageUpload(
-      async (dataUrl) => {
-        await setLocalBackground(dataUrl);
-        setHasLocalBg(true);
-        await applyAllSettings(settings);
-        toast.success("Local background image set");
-      },
-      (error) => {
-        toast.error(error);
-      },
-    );
+  const pickBackgroundFile = () => bgFileRef.current?.click();
+
+  const onBackgroundFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5MB or less.");
+      return;
+    }
+    setBgUploading(true);
+    try {
+      await removeLocalBackground();
+      const result = await uploadFile(file);
+      await updateSetting("customBackground", result.url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBgUploading(false);
+    }
   };
 
-  const handleRemoveLocalImage = async () => {
+  const handleRemoveBackground = async () => {
     await removeLocalBackground();
-    setHasLocalBg(false);
-    await applyAllSettings(settings);
-    toast.success("Local background removed");
+    const updated = { ...settings, customBackground: null };
+    setSettings(updated);
+    setLocalSettings(updated);
+    await applyAllSettings(updated);
+    setHasCustomBg(false);
+    setLegacyIndexedOnly(false);
+    setSaving(true);
+    try {
+      await api.settings.updateSettings({ body: { customBackground: null } });
+    } catch {
+      toast.error("Failed to remove background");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const selectPreset = (preset: ThemePreset) => {
@@ -235,29 +257,45 @@ export default function SettingsPage() {
             </p>
 
             <div className="stack-md">
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button onClick={handleLocalImageUpload} className="btn btn-secondary" style={{ flex: 1 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "16px", marginRight: "8px" }}>upload</span>
-                  LOCAL IMAGE
+              {legacyIndexedOnly ? (
+                <p
+                  className="section-description"
+                  style={{ marginBottom: "12px", fontSize: "13px", color: "var(--text-muted)" }}
+                >
+                  You have a background stored only on this device. Upload an image to sync it to your account, or remove it.
+                </p>
+              ) : null}
+              <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                <input
+                  ref={bgFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: "none" }}
+                  onChange={onBackgroundFile}
+                />
+                <button
+                  type="button"
+                  onClick={pickBackgroundFile}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, minWidth: "160px" }}
+                  disabled={bgUploading}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px", marginRight: "8px" }}>
+                    upload
+                  </span>
+                  {bgUploading ? "Uploading…" : "Upload background image"}
                 </button>
-                {hasLocalBg && (
-                  <button onClick={handleRemoveLocalImage} className="btn btn-ghost" style={{ color: "var(--destructive-foreground)" }}>
+                {hasCustomBg ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBackground}
+                    className="btn btn-ghost"
+                    style={{ color: "var(--destructive-foreground)" }}
+                    disabled={saving}
+                  >
                     <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>delete</span>
                   </button>
-                )}
-              </div>
-
-              <div className="divider">OR</div>
-
-              <div>
-                <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>IMAGE URL</label>
-                <input
-                  type="url"
-                  value={settings.customBackground || ""}
-                  onChange={(e) => updateSetting("customBackground", e.target.value || null)}
-                  placeholder="https://example.com/bg.jpg"
-                  className="input"
-                />
+                ) : null}
               </div>
 
               <div className="button-group" style={{ width: "100%" }}>

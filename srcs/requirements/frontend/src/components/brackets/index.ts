@@ -4,5 +4,5 @@ export { DoubleEliminationBracket } from "./double-elimination/DoubleElimination
 export { RoundRobinBracket } from "./round-robin/RoundRobinBracket";
 export { SwissBracket } from "./swiss/SwissBracket";
 export { FreeForAllBracket } from "./free-for-all/FreeForAllBracket";
-export { MatchCard, ParticipantSlot, RoundColumn, BracketConnector, StandingsTable } from "./shared";
+export { MatchCard, ParticipantSlot, RoundHeader, RoundColumn, BracketConnector, StandingsTable } from "./shared";
 export type { BracketViewProps, MatchCardProps, ParticipantSlotProps, StandingsTableProps } from "./types";

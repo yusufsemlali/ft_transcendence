@@ -1,7 +1,12 @@
 import { initContract } from "@ts-rest/core";
 import { z } from "zod";
-import { MatchSchema, UpdateMatchSchema } from "../schemas/matches";
-import { BracketStateSchema, ReportScoreSchema, StandingsEntrySchema } from "../schemas/bracket";
+import { MatchSchema, AdminMatchUpdateSchema } from "../schemas/matches";
+import {
+    BracketStateSchema,
+    PatchMatchScoresSchema,
+    FinalizeMatchSchema,
+    StandingsEntrySchema,
+} from "../schemas/bracket";
 
 const c = initContract();
 
@@ -20,7 +25,7 @@ export const matchesContract = c.router({
         method: "PATCH",
         path: "/matches/:id",
         pathParams: z.object({ id: z.string().uuid() }),
-        body: UpdateMatchSchema,
+        body: AdminMatchUpdateSchema,
         responses: {
             200: z.object({ message: z.string(), data: MatchSchema }),
             400: z.object({ message: z.string() }),
@@ -74,14 +79,27 @@ export const matchesContract = c.router({
         method: "POST",
         path: "/matches/:id/report",
         pathParams: z.object({ id: z.string().uuid() }),
-        body: ReportScoreSchema,
+        body: PatchMatchScoresSchema,
         responses: {
             200: z.object({ message: z.string(), data: MatchSchema }),
             400: z.object({ message: z.string() }),
             404: z.object({ message: z.string() }),
             409: z.object({ message: z.string() }),
         },
-        summary: "Report scores for a match and auto-advance winner",
+        summary: "Update match scores only (does not complete the match or advance the bracket)",
+    },
+    finalizeMatch: {
+        method: "POST",
+        path: "/matches/:id/finalize",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: FinalizeMatchSchema,
+        responses: {
+            200: z.object({ message: z.string(), data: MatchSchema }),
+            400: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Finalize match result: complete, advance winner, elimination side-effects",
     },
     getStandings: {
         method: "GET",

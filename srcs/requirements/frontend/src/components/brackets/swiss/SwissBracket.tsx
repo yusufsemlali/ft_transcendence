@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { MatchCard, StandingsTable } from "../shared";
+import { MatchCard, RoundHeader, StandingsTable } from "../shared";
 import type { BracketViewProps } from "../types";
 
 export function SwissBracket({
@@ -19,7 +19,7 @@ export function SwissBracket({
 
     if (data.rounds.length === 0) {
         return (
-            <div className={cn("text-center py-12 text-muted-foreground", className)}>
+            <div className={cn("ds-empty-state", className)}>
                 No bracket generated yet.
             </div>
         );
@@ -28,66 +28,64 @@ export function SwissBracket({
     const currentRound = data.rounds.find((r) => r.number === activeRound) ?? data.rounds[0];
 
     return (
-        <div className={cn("space-y-6", className)}>
-            {/* Layout: rounds + standings side by side on desktop, stacked on mobile */}
-            <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left: Rounds */}
-                <div className="flex-1 min-w-0">
-                    {/* Round tabs */}
-                    <div className="flex gap-1 p-1 bg-muted/30 rounded-lg overflow-x-auto mb-4">
-                        {data.rounds.map((round) => {
-                            const allComplete = round.matches.every(
-                                (m) => m.status === "completed" || m.status === "cancelled",
-                            );
-                            const hasOngoing = round.matches.some((m) => m.status === "ongoing");
-                            return (
-                                <button
-                                    key={round.number}
-                                    className={cn(
-                                        "px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0",
-                                        activeRound === round.number
-                                            ? "bg-primary text-primary-foreground"
-                                            : "text-muted-foreground hover:text-foreground",
-                                    )}
-                                    onClick={() => setActiveRound(round.number)}
-                                >
-                                    {round.label}
-                                    {hasOngoing && (
-                                        <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-primary inline-block animate-pulse" />
-                                    )}
-                                    {allComplete && (
-                                        <span className="material-symbols-outlined ml-1" style={{ fontSize: "12px", verticalAlign: "middle" }}>
-                                            check_circle
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
+        <div className={cn("bracket-shell", className)}>
+            <div className="swiss-layout">
+                <div className="swiss-main">
+                    <div className="swiss-round-tabs">
+                        <div className="ds-tabs-wrap">
+                            <div className="ds-tabs-list">
+                                {data.rounds.map((round) => {
+                                    const allComplete = round.matches.every(
+                                        (m) => m.status === "completed" || m.status === "cancelled",
+                                    );
+                                    const hasOngoing = round.matches.some((m) => m.status === "ongoing");
+                                    return (
+                                        <button
+                                            key={round.number}
+                                            className={cn("ds-tab", activeRound === round.number && "is-active")}
+                                            onClick={() => setActiveRound(round.number)}
+                                        >
+                                            {round.label}
+                                            {hasOngoing && (
+                                                <span className="ml-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                                            )}
+                                            {allComplete && (
+                                                <span className="material-symbols-outlined ml-1 text-xs">check_circle</span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Match grid for active round */}
                     {currentRound && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {currentRound.matches.map((match) => (
-                                <MatchCard
-                                    key={match.id}
-                                    match={match}
-                                    variant={compact ? "compact" : "default"}
-                                    onClick={onMatchClick}
-                                    onParticipantClick={onParticipantClick}
-                                    renderParticipant={renderParticipant}
-                                />
-                            ))}
-                        </div>
+                        <>
+                            <RoundHeader
+                                roundNumber={currentRound.number}
+                                label={currentRound.label}
+                                align="left"
+                                className="swiss-round-header"
+                            />
+                            <div className="match-grid">
+                                {currentRound.matches.map((match) => (
+                                    <MatchCard
+                                        key={match.id}
+                                        match={match}
+                                        variant={compact ? "compact" : "default"}
+                                        onClick={onMatchClick}
+                                        onParticipantClick={onParticipantClick}
+                                        renderParticipant={renderParticipant}
+                                    />
+                                ))}
+                            </div>
+                        </>
                     )}
                 </div>
 
-                {/* Right: Standings */}
-                <div className="lg:w-[360px] shrink-0">
-                    <div className="glass-card p-4 lg:sticky lg:top-4">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                            Standings
-                        </h3>
+                <div className="swiss-side">
+                    <div className="glass-card bracket-section lg:sticky lg:top-4">
+                        <h3 className="bracket-section-title">Standings</h3>
                         <StandingsTable
                             standings={data.standings}
                             bracketType={data.bracketType}

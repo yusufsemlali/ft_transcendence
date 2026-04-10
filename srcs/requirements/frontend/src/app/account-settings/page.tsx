@@ -3,7 +3,11 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
+import { uploadFile } from "@/lib/upload";
 import { UpdateUser, User } from "@ft-transcendence/contracts";
+
+const DEFAULT_AVATAR_URL =
+  "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 function AccountSettingsContent() {
   const { refreshUser } = useAuth();
@@ -24,8 +28,10 @@ function AccountSettingsContent() {
   const displayNameRef = useRef<HTMLInputElement>(null);
   const taglineRef = useRef<HTMLInputElement>(null);
   const bioRef = useRef<HTMLTextAreaElement>(null);
-  const avatarRef = useRef<HTMLInputElement>(null);
-  const bannerRef = useRef<HTMLInputElement>(null);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const bannerFileRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -94,6 +100,82 @@ function AccountSettingsContent() {
         }
       }
     } catch (err) {
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const runImageUpload = async (
+    file: File,
+    field: "avatar" | "banner",
+    setUploading: (v: boolean) => void,
+  ) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5MB or less.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const result = await uploadFile(file);
+      const res = await api.users.updateMe({
+        body: field === "avatar" ? { avatar: result.url } : { banner: result.url },
+      });
+      if (res.status === 200) {
+        setProfile((p) => ({ ...p, [field]: result.url }));
+        setFullUser(res.body);
+        toast.success(field === "avatar" ? "Avatar updated" : "Banner updated");
+        refreshUser();
+      } else {
+        const errorData = res.body as { message?: string };
+        toast.error(errorData.message || "Failed to save");
+      }
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await runImageUpload(file, "avatar", setAvatarUploading);
+  };
+
+  const onBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await runImageUpload(file, "banner", setBannerUploading);
+  };
+
+  const clearVisual = async (field: "avatar" | "banner") => {
+    setIsLoading(true);
+    try {
+      const body =
+        field === "avatar"
+          ? { avatar: DEFAULT_AVATAR_URL }
+          : { banner: null };
+      const res = await api.users.updateMe({ body });
+      if (res.status === 200) {
+        setProfile((p) => ({
+          ...p,
+          [field]: field === "avatar" ? DEFAULT_AVATAR_URL : "",
+        }));
+        setFullUser(res.body);
+        toast.success(field === "avatar" ? "Avatar reset" : "Banner removed");
+        refreshUser();
+      } else {
+        const errorData = res.body as { message?: string };
+        toast.error(errorData.message || "Failed to update");
+      }
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -331,35 +413,70 @@ function AccountSettingsContent() {
               <span className="section-title">VISUALS</span>
             </div>
 
-            <form onSubmit={handleUpdateProfile} className="stack-md">
-               <div>
-                  <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>AVATAR URL</label>
+            <div className="stack-md">
+              <div>
+                <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>AVATAR</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
                   <input
-                    ref={avatarRef}
-                    className="input"
-                    value={profile.avatar ?? ""}
-                    onChange={(e) => { setProfile({ ...profile, avatar: e.target.value }); clearValidity(avatarRef); }}
-                    placeholder="https://example.com/avatar.png"
-                    disabled={isLoading}
+                    ref={avatarFileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    style={{ display: "none" }}
+                    onChange={onAvatarFile}
                   />
-               </div>
-               <div>
-                 <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>BANNER URL</label>
-                 <input
-                   ref={bannerRef}
-                   className="input"
-                   value={profile.banner ?? ""}
-                   onChange={(e) => { setProfile({ ...profile, banner: e.target.value }); clearValidity(bannerRef); }}
-                   placeholder="https://example.com/banner.png"
-                   disabled={isLoading}
-                 />
-               </div>
-               <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "8px" }}>
-                  <button type="submit" className="btn btn-primary" style={{ padding: "10px 24px" }} disabled={isLoading}>
-                    Save Visuals
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => avatarFileRef.current?.click()}
+                    disabled={isLoading || avatarUploading}
+                  >
+                    {avatarUploading ? "Uploading…" : "Upload avatar"}
                   </button>
-               </div>
-            </form>
+                  {profile.avatar && profile.avatar !== DEFAULT_AVATAR_URL ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{ fontSize: "13px", color: "var(--destructive-foreground)" }}
+                      onClick={() => clearVisual("avatar")}
+                      disabled={isLoading || avatarUploading}
+                    >
+                      Reset to default
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>PROFILE BANNER</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
+                  <input
+                    ref={bannerFileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    style={{ display: "none" }}
+                    onChange={onBannerFile}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => bannerFileRef.current?.click()}
+                    disabled={isLoading || bannerUploading}
+                  >
+                    {bannerUploading ? "Uploading…" : "Upload banner"}
+                  </button>
+                  {profile.banner ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{ fontSize: "13px", color: "var(--destructive-foreground)" }}
+                      onClick={() => clearVisual("banner")}
+                      disabled={isLoading || bannerUploading}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Security & Access Card */}

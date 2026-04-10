@@ -21,7 +21,7 @@ export function BracketView(props: BracketViewProps) {
 
     if (!Renderer) {
         return (
-            <div className={cn("text-center py-12 text-muted-foreground", props.className)}>
+            <div className={cn("ds-empty-state", props.className)}>
                 Unsupported bracket type: {props.data.bracketType}
             </div>
         );
@@ -29,7 +29,7 @@ export function BracketView(props: BracketViewProps) {
 
     if (props.data.rounds.length === 0) {
         return (
-            <div className={cn("text-center py-12", props.className)}>
+            <div className={cn("ds-empty-state", props.className)}>
                 <span
                     className="material-symbols-outlined text-muted-foreground/30"
                     style={{ fontSize: "48px" }}
@@ -43,5 +43,9 @@ export function BracketView(props: BracketViewProps) {
         );
     }
 
-    return <Renderer {...props} />;
+    return (
+        <div className="bracket-outer">
+            <Renderer {...props} />
+        </div>
+    );
 }

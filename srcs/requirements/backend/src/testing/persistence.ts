@@ -176,6 +176,7 @@ export async function populateLobby(
 export async function populateTeamLobby(
     tournamentId: string,
     teams: { name: string; userIds: string[] }[],
+    soloUserIds: string[] = [],
 ): Promise<LobbyGraph> {
     const lobbyRows: any[] = [];
     const competitorRows: any[] = [];
@@ -184,6 +185,12 @@ export async function populateTeamLobby(
     const allUserIds = teams.flatMap((t) => t.userIds);
     for (const userId of allUserIds) {
         const lobbyData = makeLobbyInsert(tournamentId, userId, { status: 'rostered' });
+        const [lobbyRow] = await db.insert(lobby).values(lobbyData).returning();
+        lobbyRows.push(lobbyRow);
+    }
+
+    for (const userId of soloUserIds) {
+        const lobbyData = makeLobbyInsert(tournamentId, userId, { status: 'solo' });
         const [lobbyRow] = await db.insert(lobby).values(lobbyData).returning();
         lobbyRows.push(lobbyRow);
     }

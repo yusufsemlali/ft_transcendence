@@ -93,7 +93,41 @@ export function useResetBracket(tournamentId: string) {
     });
 }
 
+/** Updates score1/score2 only — does not complete the match. */
 export function useReportScore() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            matchId,
+            score1,
+            score2,
+        }: {
+            matchId: string;
+            score1: number;
+            score2: number;
+        }) => {
+            const res = await api.matches.reportScore({
+                params: { id: matchId },
+                body: { score1, score2 },
+            });
+            if (res.status !== 200) {
+                const body = res.body as { message?: string };
+                throw new Error(body?.message ?? "Failed to save scores");
+            }
+            return res.body;
+        },
+        onSuccess: () => {
+            toast.success("Scores saved");
+            queryClient.invalidateQueries({ queryKey: ["bracket-state"] });
+            queryClient.invalidateQueries({ queryKey: ["standings"] });
+            queryClient.invalidateQueries({ queryKey: ["tournament-matches"] });
+        },
+        onError: (e: Error) => toast.error(e.message),
+    });
+}
+
+/** Completes the match and runs bracket advancement. */
+export function useFinalizeMatch() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({
@@ -107,18 +141,18 @@ export function useReportScore() {
             score2: number;
             winnerId?: string;
         }) => {
-            const res = await api.matches.reportScore({
+            const res = await api.matches.finalizeMatch({
                 params: { id: matchId },
-                body: { score1, score2, winnerId },
+                body: { score1, score2, ...(winnerId !== undefined ? { winnerId } : {}) },
             });
             if (res.status !== 200) {
-                const body = res.body as any;
-                throw new Error(body?.message ?? "Failed to report score");
+                const body = res.body as { message?: string };
+                throw new Error(body?.message ?? "Failed to finalize match");
             }
             return res.body;
         },
         onSuccess: () => {
-            toast.success("Score reported");
+            toast.success("Match finalized");
             queryClient.invalidateQueries({ queryKey: ["bracket-state"] });
             queryClient.invalidateQueries({ queryKey: ["standings"] });
             queryClient.invalidateQueries({ queryKey: ["tournament-matches"] });
