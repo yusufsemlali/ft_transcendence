@@ -40,18 +40,18 @@ export default function Home() {
       fontFamily: "var(--font-sans)",
       backgroundColor: "transparent",
     }}>
-      
+
       {/* Cinematic Hero: The Command Center */}
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))", 
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))",
         gap: "40px",
         alignItems: "center",
         padding: "clamp(40px, 8vw, 80px) 0",
         position: "relative",
         overflow: "hidden"
       }}>
-        
+
         <div className="stack-xl" style={{ position: "relative", zIndex: 2 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
             <span className="badge" style={{ backgroundColor: "var(--accent-secondary)", color: "white" }}>INFRASTRUCTURE_V2</span>
@@ -69,9 +69,9 @@ export default function Home() {
             Orchestrate<br />Excellence.
           </h2>
 
-          <p style={{ 
-            fontSize: "clamp(1rem, 2vw, 1.25rem)", 
-            color: "var(--text-secondary)", 
+          <p style={{
+            fontSize: "clamp(1rem, 2vw, 1.25rem)",
+            color: "var(--text-secondary)",
             marginBottom: "40px",
             lineHeight: "1.6",
             maxWidth: "500px"
@@ -120,7 +120,7 @@ export default function Home() {
                 <div style={{ width: "48px", height: "4px", borderRadius: "2px", background: "var(--border-color)" }}></div>
               </div>
             </div>
-            
+
             <div className="stack-lg">
               <div style={{ background: "rgba(255,255,255,0.03)", height: "40px", borderRadius: "8px", border: "1px solid var(--border-color)", padding: "12px", display: "flex", alignItems: "center" }}>
                  <div style={{ width: "20%", height: "8px", background: "var(--primary)", borderRadius: "4px" }}></div>
@@ -136,17 +136,17 @@ export default function Home() {
           </div>
 
           {/* Background Glow */}
-          <div style={{ 
-            position: "absolute", 
-            top: "50%", 
-            left: "50%", 
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
             transform: "translate(-50%, -50%)",
-            width: "400px", 
-            height: "400px", 
-            background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)", 
+            width: "400px",
+            height: "400px",
+            background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)",
             opacity: 0.2,
             filter: "blur(60px)",
-            zIndex: 1 
+            zIndex: 1
           }} />
         </div>
       </div>
@@ -158,10 +158,10 @@ export default function Home() {
           <div style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: "300", color: "var(--text-primary)" }}>Coordination Workflow.</div>
         </div>
 
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", 
-          gap: "24px" 
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+          gap: "24px"
         }}>
           {workflow.map((p, i) => (
             <div key={i} className="glass-card" style={{ padding: "clamp(24px, 4vw, 40px)", border: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -203,6 +203,8 @@ export default function Home() {
       <footer className="footer" style={{ marginTop: "clamp(60px, 10vw, 120px)" }}>
         <Link href="/" className="footer-link">home</Link>
         <Link href="/tournaments" className="footer-link">tournaments</Link>
+        <Link href="/terms" className="footer-link">terms</Link>
+        <Link href="/privacy" className="footer-link">privacy</Link>
         <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-link">github</a>
         <Link href="/settings" className="footer-link">settings</Link>
         <Link href="/profile" className="footer-link">profile</Link>

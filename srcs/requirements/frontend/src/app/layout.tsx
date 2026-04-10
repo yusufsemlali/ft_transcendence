@@ -38,12 +38,12 @@ export default async function RootLayout({
                   var root = document.documentElement;
                   root.classList.add('dark');
                   root.style.colorScheme = 'dark';
-                  
+
                   if (s.themeColor) root.style.setProperty('--theme-color', s.themeColor);
                   if (s.borderRadius !== undefined) root.style.setProperty('--radius-base', s.borderRadius + 'px');
                   if (s.glassBlur !== undefined) root.style.setProperty('--glass-blur', s.glassBlur + 'px');
                   if (s.glassOpacity !== undefined) root.style.setProperty('--glass-opacity', s.glassOpacity);
-                  
+
                   if (s.customTheme && s.customThemeColors) {
                     var c = s.customThemeColors;
                     if (c.bgPrimary) {
