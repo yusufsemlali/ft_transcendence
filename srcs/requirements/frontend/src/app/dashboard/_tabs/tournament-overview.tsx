@@ -217,7 +217,7 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
           <StatWidget 
             icon="group" 
             label="PARTICIPANTS" 
-            value={`${stats.participants} / ${tournament.maxParticipants}`} 
+            value={`${stats.participants} / ${tournament.lobbyCapacity}`} 
             accent="var(--accent-info)" 
           />
           <StatWidget 

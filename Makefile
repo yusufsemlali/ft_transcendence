@@ -1,4 +1,4 @@
-COMPOSE = docker compose --env-file srcs/.env -f srcs/docker-compose.yml
+﻿COMPOSE = docker compose --env-file srcs/.env -f srcs/docker-compose.yml
 
 all:
 	$(COMPOSE) up --build -d

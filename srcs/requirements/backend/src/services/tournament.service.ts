@@ -44,7 +44,7 @@ export const createTournament = async (organizationId: string, data: Omit<Create
             allowDraws: data.allowDraws,
             requiredHandleType: data.requiredHandleType,
             minParticipants: data.minParticipants,
-            maxParticipants: data.maxParticipants,
+            lobbyCapacity: data.lobbyCapacity,
             prizePool: data.prizePool,
             entryFee: data.entryFee,
             bannerUrl: data.bannerUrl,
@@ -151,7 +151,7 @@ export const updateTournament = async (id: string, data: any) => {
     
     // TODO: Real registration count
     const mockRegistrationCount = 0; 
-    TournamentPolicy.enforceCapacityRules(validatedData.maxParticipants, mockRegistrationCount);
+    TournamentPolicy.enforceCapacityRules(validatedData.lobbyCapacity, mockRegistrationCount);
 
     try {
         const [updated] = await db

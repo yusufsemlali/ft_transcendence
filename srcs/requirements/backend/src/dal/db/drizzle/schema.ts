@@ -87,7 +87,7 @@ export const tournaments = pgTable("tournaments", {
 	allowDraws: boolean("allow_draws").notNull(),
 	requiredHandleType: varchar("required_handle_type", { length: 50 }),
 	minParticipants: integer("min_participants").default(2).notNull(),
-	maxParticipants: integer("max_participants").notNull(),
+	lobbyCapacity: integer("lobby_capacity").notNull(),
 	status: tournamentStatus().default('draft').notNull(),
 	bracketType: bracketType("bracket_type").default('single_elimination').notNull(),
 	isPrivate: boolean("is_private").default(false).notNull(),

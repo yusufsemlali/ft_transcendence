@@ -27,7 +27,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
     allowDraws: tournament.allowDraws,
     requiredHandleType: tournament.requiredHandleType || "",
     minParticipants: tournament.minParticipants,
-    maxParticipants: tournament.maxParticipants,
+    lobbyCapacity: tournament.lobbyCapacity,
     prizePool: tournament.prizePool || "",
     entryFee: tournament.entryFee || 0,
     bannerUrl: tournament.bannerUrl || "",
@@ -49,7 +49,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
       allowDraws: tournament.allowDraws,
       requiredHandleType: tournament.requiredHandleType || "",
       minParticipants: tournament.minParticipants,
-      maxParticipants: tournament.maxParticipants,
+      lobbyCapacity: tournament.lobbyCapacity,
       prizePool: tournament.prizePool || "",
       entryFee: tournament.entryFee || 0,
       bannerUrl: tournament.bannerUrl || "",
@@ -86,7 +86,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
           allowDraws: form.allowDraws,
           requiredHandleType: form.requiredHandleType || null,
           minParticipants: form.minParticipants,
-          maxParticipants: form.maxParticipants,
+          lobbyCapacity: form.lobbyCapacity,
           prizePool: form.prizePool || null,
           entryFee: form.entryFee,
           bannerUrl: form.bannerUrl || null,
@@ -207,8 +207,8 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
             <input type="number" className="dashboard-input" value={form.minParticipants} onChange={e => setForm(f => ({ ...f, minParticipants: +e.target.value }))} />
           </label>
           <label className="dashboard-field">
-            <span className="dashboard-field-label">Max Capacity</span>
-            <input type="number" className="dashboard-input" value={form.maxParticipants} onChange={e => setForm(f => ({ ...f, maxParticipants: +e.target.value }))} />
+            <span className="dashboard-field-label">Lobby Capacity</span>
+            <input type="number" min={2} max={200} className="dashboard-input" value={form.lobbyCapacity} onChange={e => setForm(f => ({ ...f, lobbyCapacity: +e.target.value }))} />
           </label>
 
           <div style={{ borderTop: "1px solid var(--border-subtle)", gridColumn: "1 / -1", margin: "12px 0" }} />

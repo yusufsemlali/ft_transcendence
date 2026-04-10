@@ -28,7 +28,7 @@ export const tournaments = pgTable('tournaments', {
 
     // --- CAPACITIES ---
     minParticipants: integer('min_participants').default(2).notNull(),
-    maxParticipants: integer('max_participants').notNull(),
+    lobbyCapacity: integer('lobby_capacity').notNull(),
 
     // --- LOGISTICS & ACCESS ---
     status: tournamentStatusEnum('status').default('draft').notNull(),

@@ -204,7 +204,7 @@ export function TournamentDetailClient({ id }: { id: string }) {
                         <span className="text-xs text-muted-foreground font-mono">{t.mode}</span>
                         <span className="text-xs text-muted-foreground">•</span>
                         <span className="text-xs text-muted-foreground font-mono">
-                            {t.minParticipants}–{t.maxParticipants} participants
+                            {t.minParticipants}–{t.lobbyCapacity} participants
                         </span>
                         {t.prizePool && (
                             <>
@@ -365,7 +365,7 @@ function OverviewContent({ tournament: t }: { tournament: any }) {
                     </div>
                     <div>
                         <dt className="text-muted-foreground text-xs mb-1">Participants</dt>
-                        <dd className="font-semibold">{t.minParticipants}–{t.maxParticipants}</dd>
+                        <dd className="font-semibold">{t.minParticipants}–{t.lobbyCapacity}</dd>
                     </div>
                     <div>
                         <dt className="text-muted-foreground text-xs mb-1">Prize</dt>

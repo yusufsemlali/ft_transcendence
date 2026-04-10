@@ -32,7 +32,7 @@ export const joinLobby = async ({ tournamentId, userId, isTO = false }: { tourna
             eq(competitors.status, 'ready')
         ));
     
-    if ((readyCount?.value || 0) >= tournament.maxParticipants) {
+    if ((readyCount?.value || 0) >= tournament.lobbyCapacity) {
         throw new AppError(403, "Tournament registration is full");
     }
 

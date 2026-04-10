@@ -9,7 +9,7 @@ interface LobbyTournament {
   id: string;
   status: string;
   maxTeamSize: number;
-  maxParticipants: number;
+  lobbyCapacity: number;
 }
 import api from "@/lib/api/api";
 import { useAuth } from "@/lib/store/hooks";
@@ -1288,7 +1288,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
     <div className="animate-fade-in">
       {/* Capacity: organizer-only (filling the bracket is not a player concern) */}
       {isTO && (
-        <LobbyCapacityBar readyCount={readyCount} max={tournament.maxParticipants} registrationOpen={registrationOpen} />
+        <LobbyCapacityBar readyCount={readyCount} max={tournament.lobbyCapacity} registrationOpen={registrationOpen} />
       )}
 
       {/* Phase Lock Banner */}

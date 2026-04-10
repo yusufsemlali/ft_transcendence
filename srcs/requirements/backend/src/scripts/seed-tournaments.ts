@@ -34,7 +34,7 @@ async function seed() {
             allowDraws: true,
             requiredHandleType: "riot_id",
             minParticipants: 2,
-            maxParticipants: Math.floor(Math.random() * 100) + 2, // Random capacity
+            lobbyCapacity: Math.floor(Math.random() * 100) + 2, // Random capacity
             status: "draft" as const,
             bracketType: "single_elimination" as const,
             isPrivate: Math.random() > 0.9, // Make ~10% of them private to test your privacy filter!

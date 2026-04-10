@@ -41,7 +41,7 @@ export function makeTournamentInsert(
         allowDraws: faker.datatype.boolean(),
         requiredHandleType: is1v1 ? 'riot_id' : null,
         minParticipants: 2,
-        maxParticipants: faker.helpers.arrayElement([8, 16, 32, 64, 128]),
+        lobbyCapacity: faker.helpers.arrayElement([8, 16, 32, 64, 128]),
         status: 'draft',
         bracketType: faker.helpers.arrayElement([...BRACKET_TYPES]),
         isPrivate: faker.datatype.boolean({ probability: 0.1 }),

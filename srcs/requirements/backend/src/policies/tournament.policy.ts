@@ -80,15 +80,18 @@ export class TournamentPolicy {
         }
     }
 
-    static enforceCapacityRules(newMaxParticipants: number | undefined, currentRegistrationCount: number) {
-        if (newMaxParticipants !== undefined) {
-            if (newMaxParticipants < 2) {
-                throw new AppError(400, "Maximum participants cannot be less than 2.");
+    static enforceCapacityRules(newLobbyCapacity: number | undefined, currentRegistrationCount: number) {
+        if (newLobbyCapacity !== undefined) {
+            if (newLobbyCapacity < 2) {
+                throw new AppError(400, "Lobby capacity cannot be less than 2.");
             }
-            if (newMaxParticipants < currentRegistrationCount) {
+            if (newLobbyCapacity > 200) {
+                throw new AppError(400, "Lobby capacity cannot exceed 200.");
+            }
+            if (newLobbyCapacity < currentRegistrationCount) {
                 throw new AppError(
                     409, 
-                    `Cannot lower maximum participants (${newMaxParticipants}) below the current number of registered participants (${currentRegistrationCount}).`,
+                    `Cannot lower lobby capacity (${newLobbyCapacity}) below the current number of registered participants (${currentRegistrationCount}).`,
                 );
             }
         }

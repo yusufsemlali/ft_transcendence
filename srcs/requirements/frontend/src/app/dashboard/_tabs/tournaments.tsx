@@ -53,7 +53,7 @@ function TournamentRow({ t, onSelect }: { t: Tournament; onSelect: () => void })
           <span className="tournament-row-sep">·</span>
           <span>{t.mode}</span>
           <span className="tournament-row-sep">·</span>
-          <span>{t.minParticipants}–{t.maxParticipants} players</span>
+          <span>{t.minParticipants}–{t.lobbyCapacity} players</span>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "relative", zIndex: 1 }}>
@@ -84,7 +84,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     allowDraws: false,
     requiredHandleType: null as string | null,
     minParticipants: 2,
-    maxParticipants: 16,
+    lobbyCapacity: 16,
     isPrivate: false,
     prizePool: "",
     entryFee: 0,
@@ -237,8 +237,8 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <input type="number" min={2} value={form.minParticipants} onChange={e => setForm(prev => ({ ...prev, minParticipants: +e.target.value }))} className="dashboard-input" />
         </label>
         <label className="dashboard-field">
-          <span className="dashboard-field-label">Max Participants</span>
-          <input type="number" min={2} value={form.maxParticipants} onChange={e => setForm(prev => ({ ...prev, maxParticipants: +e.target.value }))} className="dashboard-input" />
+          <span className="dashboard-field-label">Lobby Capacity</span>
+          <input type="number" min={2} max={200} value={form.lobbyCapacity} onChange={e => setForm(prev => ({ ...prev, lobbyCapacity: +e.target.value }))} className="dashboard-input" />
         </label>
 
         {/* Team Size (visible when team mode) */}
