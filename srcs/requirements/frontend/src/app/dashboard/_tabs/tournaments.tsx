@@ -24,7 +24,6 @@ const BRACKET_LABELS: Record<string, string> = {
   single_elimination: "Single Elim",
   double_elimination: "Double Elim",
   round_robin:        "Round Robin",
-  swiss:              "Swiss",
   free_for_all:       "FFA",
 };
 
@@ -267,7 +266,6 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
               <SelectItem value="single_elimination">Single Elimination</SelectItem>
               <SelectItem value="double_elimination">Double Elimination</SelectItem>
               <SelectItem value="round_robin">Round Robin</SelectItem>
-              <SelectItem value="swiss">Swiss</SelectItem>
               <SelectItem value="free_for_all">Free for All</SelectItem>
             </SelectContent>
           </Select>

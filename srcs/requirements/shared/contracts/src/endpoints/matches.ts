@@ -111,16 +111,4 @@ export const matchesContract = c.router({
         },
         summary: "Get computed standings for a tournament",
     },
-    advanceSwissRound: {
-        method: "POST",
-        path: "/tournaments/:tournamentId/bracket/advance-swiss",
-        pathParams: z.object({ tournamentId: z.string().uuid() }),
-        body: z.object({}).optional(),
-        responses: {
-            201: z.object({ message: z.string(), round: z.number().int() }),
-            400: z.object({ message: z.string() }),
-            409: z.object({ message: z.string() }),
-        },
-        summary: "Generate the next Swiss round pairings after current round completes",
-    },
 });

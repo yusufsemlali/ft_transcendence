@@ -183,7 +183,6 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
                 <SelectItem value="single_elimination">Single Elimination</SelectItem>
                 <SelectItem value="double_elimination">Double Elimination</SelectItem>
                 <SelectItem value="round_robin">Round Robin</SelectItem>
-                <SelectItem value="swiss">Swiss</SelectItem>
                 <SelectItem value="free_for_all">Free for All</SelectItem>
               </SelectContent>
             </Select>

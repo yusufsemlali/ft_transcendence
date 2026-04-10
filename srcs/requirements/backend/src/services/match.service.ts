@@ -17,7 +17,6 @@ import type {
 
 function getRoundLabel(round: number, totalRounds: number, bracketType: string): string {
     if (bracketType === "round_robin") return `Round ${round}`;
-    if (bracketType === "swiss") return `Round ${round}`;
     if (bracketType === "free_for_all") return `Group ${round}`;
 
     if (round >= 200) return "Grand Finals";
@@ -402,18 +401,6 @@ function computeStandings(
         }
     }
 
-    // Buchholz tiebreaker for Swiss
-    const buchholzMap = new Map<string, number>();
-    if (bracketType === "swiss") {
-        for (const [id, s] of stats) {
-            let buchholz = 0;
-            for (const oppId of s.opponents) {
-                const opp = stats.get(oppId);
-                if (opp) buchholz += opp.points;
-            }
-            buchholzMap.set(id, buchholz);
-        }
-    }
 
     const participantMap = new Map(allCompetitors.map((c) => [c.id, c]));
 
@@ -433,7 +420,6 @@ function computeStandings(
             draws: s.draws,
             points: s.points,
             matchesPlayed: s.matchesPlayed,
-            ...(bracketType === "swiss" && { buchholz: buchholzMap.get(id) ?? 0 }),
             ...(["round_robin", "free_for_all"].includes(bracketType) && {
                 goalsFor: s.goalsFor,
                 goalsAgainst: s.goalsAgainst,
@@ -445,7 +431,6 @@ function computeStandings(
     // Sort: points desc, then tiebreakers
     entries.sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
-        if (bracketType === "swiss") return (b.buchholz ?? 0) - (a.buchholz ?? 0);
         if (b.wins !== a.wins) return b.wins - a.wins;
         const gdA = (a.goalDifference ?? 0);
         const gdB = (b.goalDifference ?? 0);

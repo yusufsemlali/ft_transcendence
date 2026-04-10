@@ -101,12 +101,4 @@ export const matchesController = s.router(contract.matches, {
         return { status: 200 as const, body: standings as any };
     },
 
-    advanceSwissRound: async ({ params, req }: any) => {
-        await requireTournamentAdmin(req, params.tournamentId);
-        const round = await BracketService.generateNextSwissRound(params.tournamentId);
-        return {
-            status: 201 as const,
-            body: { message: `Swiss round ${round} generated`, round },
-        };
-    },
 });

@@ -784,6 +784,7 @@ export const setCompetitorSeedOrder = async ({
         .select({ n: count() })
         .from(matchesTable)
         .where(eq(matchesTable.tournamentId, tournamentId));
+    
     if (Number(matchCountRow?.n ?? 0) > 0) {
         throw new AppError(
             409,

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { SingleEliminationBracket } from "./single-elimination/SingleEliminationBracket";
 import { DoubleEliminationBracket } from "./double-elimination/DoubleEliminationBracket";
 import { RoundRobinBracket } from "./round-robin/RoundRobinBracket";
-import { SwissBracket } from "./swiss/SwissBracket";
 import { FreeForAllBracket } from "./free-for-all/FreeForAllBracket";
 import type { BracketViewProps } from "./types";
 
@@ -12,7 +11,6 @@ const RENDERERS: Record<string, React.ComponentType<BracketViewProps>> = {
     single_elimination: SingleEliminationBracket,
     double_elimination: DoubleEliminationBracket,
     round_robin: RoundRobinBracket,
-    swiss: SwissBracket,
     free_for_all: FreeForAllBracket,
 };
 

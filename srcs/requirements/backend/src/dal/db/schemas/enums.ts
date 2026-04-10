@@ -30,7 +30,6 @@ export const bracketTypeEnum = pgEnum('bracket_type', [
     'single_elimination',
     'double_elimination',
     'round_robin',
-    'swiss',
     'free_for_all', 
 ]);
 

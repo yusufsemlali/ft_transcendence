@@ -76,6 +76,7 @@
   --radius-base: 0.625rem;
   --glass-blur: 12px;
   --glass-opacity: 0.1;
+  --main-padding: 2px; 
 
   /* --- LIGHT THEME (Default) --- */
   --background: oklch(0.99 0 0);
@@ -148,6 +149,13 @@
 
   --transition-speed: 0.2s;
 }
+
+
+/* Apply padding to all common containers and components */
+body, section, div, article, aside, nav, header, footer {
+  padding: var(--main-padding);
+}
+
 
 .dark {
   /* --- DARK THEME --- */
@@ -785,67 +793,6 @@ a {
   overflow-wrap: anywhere;
 }
 
-/* Swiss bracket layout utilities */
-.swiss-shell {
-  display: grid;
-  gap: var(--space-lg);
-}
-
-.swiss-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
-@media (min-width: 1024px) {
-  .swiss-layout {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-}
-
-.swiss-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.swiss-round-tabs {
-  margin-bottom: var(--space-lg);
-}
-
-.swiss-round-header {
-  margin-bottom: var(--space-md);
-}
-
-.swiss-round-tabs .ds-tabs-wrap {
-  border-top: none;
-  padding: var(--space-sm);
-  background: color-mix(in srgb, var(--bg-secondary) 30%, transparent);
-  border-radius: var(--radius);
-}
-
-.swiss-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-md);
-}
-
-@media (min-width: 640px) {
-  .swiss-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.swiss-side {
-  width: 100%;
-  flex-shrink: 0;
-}
-
-@media (min-width: 1024px) {
-  .swiss-side {
-    width: 380px;
-  }
-}
 
 
 /* ── Match card ── */
@@ -1048,7 +995,7 @@ a {
   .bracket-shell { gap: var(--space-md); padding: 0; }
 }
 
-/* ── Match grid — responsive card grid (Swiss / RR / FFA: wider match gaps) ── */
+/* ── Match grid — responsive card grid (RR / FFA: wider match gaps) ── */
 .match-grid {
   display: grid;
   grid-template-columns: 1fr;

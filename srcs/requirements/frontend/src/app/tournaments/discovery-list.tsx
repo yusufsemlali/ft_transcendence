@@ -508,7 +508,7 @@ export function DiscoveryList() {
         </div>
       )}
 
-      <Link href="/tournaments/create" style={{ textDecoration: "none" }}>
+      <Link href="/dashboard" style={{ textDecoration: "none" }}>
         <div
           style={{
             border: "1px dashed var(--border-color)",

@@ -115,24 +115,6 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
         onError: (e: Error) => toast.error(e.message),
     });
 
-    const advanceSwissMutation = useMutation({
-        mutationFn: async () => {
-            const res = await api.matches.advanceSwissRound({
-                params: { tournamentId: tournament.id },
-                body: {},
-            });
-            if (res.status !== 201) {
-                const body = res.body as { message?: string };
-                throw new Error(body?.message ?? "Failed to advance");
-            }
-            return res.body;
-        },
-        onSuccess: (body: { message: string }) => {
-            toast.success(body.message);
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
-        },
-        onError: (e: Error) => toast.error(e.message),
-    });
 
     const allMatches: Row[] = useMemo(
         () =>
@@ -194,20 +176,6 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {tournament.bracketType === "swiss" && (
-                <div className="glass-card" style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontSize: "13px", fontWeight: 600, flex: 1 }}>Swiss Rounds</span>
-                    <button
-                        className="btn btn-primary"
-                        style={{ fontSize: "11px", padding: "6px 16px" }}
-                        disabled={advanceSwissMutation.isPending}
-                        onClick={() => advanceSwissMutation.mutate()}
-                    >
-                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>skip_next</span>
-                        {advanceSwissMutation.isPending ? "Generating…" : "Next Round"}
-                    </button>
-                </div>
-            )}
 
             {/* Live focus */}
             {liveMatches.length > 0 && (

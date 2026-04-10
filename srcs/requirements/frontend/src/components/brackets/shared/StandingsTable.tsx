@@ -10,9 +10,8 @@ export function StandingsTable({
     className,
     compact = false,
 }: StandingsTableProps) {
-    const showBuchholz = bracketType === "swiss";
     const showGoals = bracketType === "round_robin" || bracketType === "free_for_all";
-    const showDraws = bracketType === "round_robin" || bracketType === "swiss" || bracketType === "free_for_all";
+    const showDraws = bracketType === "round_robin" || bracketType === "free_for_all";
 
     if (standings.length === 0) {
         return (
@@ -40,7 +39,6 @@ export function StandingsTable({
                                 <th className="standings-th">GD</th>
                             </>
                         )}
-                        {showBuchholz && !compact && <th className="standings-th">Buch.</th>}
                         <th className="standings-th">Pts</th>
                     </tr>
                 </thead>
@@ -82,9 +80,6 @@ export function StandingsTable({
                                         {(entry.goalDifference ?? 0) > 0 ? "+" : ""}{entry.goalDifference ?? 0}
                                     </td>
                                 </>
-                            )}
-                            {showBuchholz && !compact && (
-                                <td className="standings-td text-muted-foreground">{entry.buchholz ?? 0}</td>
                             )}
                             <td className="standings-td font-bold text-primary">{entry.points}</td>
                         </tr>

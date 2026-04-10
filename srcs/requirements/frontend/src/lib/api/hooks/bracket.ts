@@ -161,26 +161,3 @@ export function useFinalizeMatch() {
     });
 }
 
-export function useAdvanceSwissRound(tournamentId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async () => {
-            const res = await api.matches.advanceSwissRound({
-                params: { tournamentId },
-                body: {},
-            });
-            if (res.status !== 201) {
-                const body = res.body as any;
-                throw new Error(body?.message ?? "Failed to advance Swiss round");
-            }
-            return res.body;
-        },
-        onSuccess: (body) => {
-            toast.success(body.message);
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournamentId] });
-            queryClient.invalidateQueries({ queryKey: ["standings", tournamentId] });
-            queryClient.invalidateQueries({ queryKey: ["tournament-matches", tournamentId] });
-        },
-        onError: (e: Error) => toast.error(e.message),
-    });
-}

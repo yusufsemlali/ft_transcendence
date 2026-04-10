@@ -4,7 +4,6 @@ export const BRACKET_TYPES = [
     "single_elimination",
     "double_elimination",
     "round_robin",
-    "swiss",
     "free_for_all",
 ] as const;
 
@@ -65,7 +64,6 @@ export const StandingsEntrySchema = z.object({
     draws: z.number().int(),
     points: z.number(),
     matchesPlayed: z.number().int(),
-    buchholz: z.number().optional(),
     goalsFor: z.number().int().optional(),
     goalsAgainst: z.number().int().optional(),
     goalDifference: z.number().int().optional(),

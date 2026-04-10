@@ -86,6 +86,7 @@ export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
         onError: (e: Error) => toast.error(e.message),
     });
 
+
     const generateMutation = useMutation({
         mutationFn: async () => {
             const res = await api.matches.generateBracket({
@@ -123,7 +124,7 @@ export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
         onError: (e: Error) => toast.error(e.message),
     });
 
-    const hasMatches = bracketQuery.data && bracketQuery.data.rounds.length > 0;
+    const hasMatches = Boolean(bracketQuery.data && bracketQuery.data.rounds.length > 0);
     const canGenerate = tournament.status === "upcoming" || tournament.status === "ongoing";
     const canReset = tournament.status !== "completed" && hasMatches;
 
@@ -155,6 +156,7 @@ export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
                         {generateMutation.isPending ? "Generating…" : "Generate Bracket"}
                     </button>
                 )}
+
 
                 {canReset && (
                     <button
