@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import type { Organization } from "@ft-transcendence/contracts";
 import { ORG_ROLES } from "@ft-transcendence/contracts";
 import type { OrgRole } from "@ft-transcendence/contracts";
@@ -57,7 +58,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
       opacity: isPending ? 0.7 : 1,
     }}>
       {/* Avatar */}
-      <div style={{ position: "relative", flexShrink: 0 }}>
+      <Link href={`/profile/${member.id}`} style={{ position: "relative", flexShrink: 0, textDecoration: "none" }}>
         <div style={{
           width: "36px",
           height: "36px",
@@ -65,6 +66,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
           overflow: "hidden",
           backgroundColor: "var(--bg-secondary)",
           filter: isPending ? "grayscale(1)" : "none",
+          cursor: "pointer",
         }}>
           {member.avatar ? (
             <img
@@ -98,14 +100,14 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
             boxShadow: "0 0 6px #22c55e80",
           }} />
         )}
-      </div>
+      </Link>
 
       {/* Name & info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
+          <Link href={`/profile/${member.id}`} style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", textDecoration: "none" }} className="hover:underline">
             {member.displayName || member.username}
-          </span>
+          </Link>
           {isSelf && (
             <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.5px" }}>(YOU)</span>
           )}

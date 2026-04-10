@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
 import { toast } from "react-hot-toast";
@@ -376,9 +377,12 @@ export default function FriendsPage() {
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {u.avatar ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
                     </div>
-                    <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</div>
+                    <Link href={`/profile/${u.id}`} style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)", textDecoration: "none" }} className="hover:underline">{u.displayName || u.username}</Link>
                   </div>
-                  <button onClick={() => handleSendRequest(u.id)} disabled={sendingTo === u.id} className="btn btn-primary" style={{ padding: "4px 12px", fontSize: "11px" }}>{sendingTo === u.id ? "..." : "Add"}</button>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <Link href={`/profile/${u.id}`} className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: "11px" }}><span className="material-symbols-outlined" style={{ fontSize: "14px" }}>visibility</span></Link>
+                    <button onClick={() => handleSendRequest(u.id)} disabled={sendingTo === u.id} className="btn btn-primary" style={{ padding: "4px 12px", fontSize: "11px" }}>{sendingTo === u.id ? "..." : "Add"}</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -404,13 +408,13 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
 
   return (
     <div className="glass-card friend-card" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px" }}>
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Link href={`/profile/${friend.id}`} style={{ position: "relative", flexShrink: 0 }}>
+        <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
           {friend.avatar ? <img src={friend.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--text-muted)" }}>person</span>}
         </div>
-      </div>
+      </Link>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{friend.displayName || friend.username}</div>
+        <Link href={`/profile/${friend.id}`} style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)", textDecoration: "none" }} className="hover:underline">{friend.displayName || friend.username}</Link>
         <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>@{friend.username}</div>
       </div>
       <div style={{ display: "flex", gap: "6px" }}>
@@ -425,6 +429,7 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
         <DropdownMenu>
           <DropdownMenuTrigger className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}><span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="glass w-40">
+            <DropdownMenuItem onClick={() => window.location.href = `/profile/${friend.id}`}><span className="material-symbols-outlined mr-2">visibility</span>View Profile</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)} className="text-destructive"><span className="material-symbols-outlined mr-2">person_remove</span>Remove</DropdownMenuItem>
             <DropdownMenuItem onClick={() => onBlock(friend.id)}><span className="material-symbols-outlined mr-2">block</span>Block</DropdownMenuItem>
           </DropdownMenuContent>
