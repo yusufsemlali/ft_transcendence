@@ -68,12 +68,10 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
         // The key trick: ALWAYS return 200 to the browser.
         // The real status is sent via a custom header so the ts-rest adapter
         // can reconstruct the correct status for application logic.
-        // This prevents the browser from printing red errors for 4xx/5xx.
         responseHeaders.set("X-BFF-Status", String(backendResponse.status));
 
-        const body = await backendResponse.arrayBuffer();
-
-        return new NextResponse(body, {
+        // Use backendResponse.body directly to support streaming (SSE)
+        return new NextResponse(backendResponse.body, {
             status: 200,
             headers: responseHeaders,
         });

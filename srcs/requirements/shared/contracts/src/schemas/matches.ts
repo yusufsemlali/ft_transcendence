@@ -20,5 +20,14 @@ export const MatchSchema = z.object({
 
 export const UpdateMatchSchema = MatchSchema.partial().omit({ id: true, tournamentId: true }).strict();
 
+/** Admin PATCH body: schedule and non-result match status only (use /report to complete). */
+export const AdminMatchUpdateSchema = z
+    .object({
+        scheduledAt: z.coerce.date().nullable().optional(),
+        status: z.enum(["pending", "ongoing", "cancelled", "disputed"]).optional(),
+    })
+    .strict();
+
 export type Match = z.infer<typeof MatchSchema>;
 export type UpdateMatch = z.infer<typeof UpdateMatchSchema>;
+export type AdminMatchUpdate = z.infer<typeof AdminMatchUpdateSchema>;

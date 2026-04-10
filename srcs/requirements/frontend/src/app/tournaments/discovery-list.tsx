@@ -2,17 +2,18 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import { fetchDiscoveryThunk } from "@/lib/store/tournamentSlice";
 import api from "@/lib/api/api";
 import {
-  type PublicTournamentDiscovery,
   TOURNAMENT_DISCOVERY_STATUSES,
   type Sport,
 } from "@ft-transcendence/contracts";
 import { toastApiError } from "@/lib/api-error";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -97,25 +98,36 @@ export function DiscoveryList() {
     return () => clearTimeout(t);
   }, [searchDraft, q, setParams]);
 
-  const listQuery = useQuery({
-    queryKey: ["public-tournaments", page, pageSize, q, sportId, status],
-    queryFn: async () => {
-      const res = await api.tournaments.getTournaments({
-        query: {
-          page,
-          pageSize,
-          search: q || undefined,
-          sportId,
-          status,
-        },
-      });
-      if (res.status !== 200) {
-        toastApiError(res.body, "Failed to fetch tournaments");
-        throw new Error("Failed to load tournaments");
-      }
-      return res.body;
-    },
-  });
+  const dispatch = useAppDispatch();
+  const { items: tournaments, isLoading: loading, error, totalPages } = useAppSelector(s => s.tournament.discovery);
+
+  const fetchDiscovery = useCallback(() => {
+    dispatch(fetchDiscoveryThunk({
+      page,
+      pageSize,
+      search: q || undefined,
+      sportId,
+      status,
+    }));
+  }, [dispatch, page, pageSize, q, sportId, status]);
+
+  useEffect(() => {
+    fetchDiscovery();
+  }, [fetchDiscovery]);
+
+  /* ── Real-time Hydration (SSE) ── */
+  useEffect(() => {
+    const streamUrl = `${process.env.NEXT_PUBLIC_API_URL || "/api"}/tournaments/discovery/stream`;
+    const eventSource = new EventSource(streamUrl, { withCredentials: true });
+
+    eventSource.addEventListener("discovery_update", () => {
+      fetchDiscovery();
+    });
+
+    return () => {
+      eventSource.close();
+    };
+  }, [fetchDiscovery]);
 
   const sportsQuery = useQuery({
     queryKey: ["sports", "discovery"],
@@ -129,9 +141,6 @@ export function DiscoveryList() {
     },
   });
 
-  const tournaments: PublicTournamentDiscovery[] = listQuery.data?.tournaments ?? [];
-  const totalPages = listQuery.data?.totalPages ?? 0;
-  const loading = listQuery.isPending;
   const sports = sportsQuery.data ?? [];
 
   return (
@@ -255,19 +264,19 @@ export function DiscoveryList() {
         </div>
       </div>
 
-      {loading && (
+      {loading && tournaments.length === 0 && (
         <div style={{ textAlign: "center", opacity: 0.6, padding: "48px" }}>
           Loading tournaments…
         </div>
       )}
 
-      {listQuery.isError && !loading && (
+      {error && !loading && tournaments.length === 0 && (
         <div style={{ textAlign: "center", padding: "48px", color: "var(--accent-error)" }}>
-          Could not load tournaments. Try again later.
+          {error}
         </div>
       )}
 
-      {!loading && !listQuery.isError && tournaments.length === 0 && (
+      {!loading && !error && tournaments.length === 0 && (
         <div
           className="glass-card"
           style={{
@@ -285,13 +294,15 @@ export function DiscoveryList() {
         </div>
       )}
 
-      {!loading && !listQuery.isError && tournaments.length > 0 && (
+      {tournaments.length > 0 && (
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))",
             gap: "24px",
             marginBottom: "32px",
+            opacity: loading ? 0.6 : 1,
+            transition: "opacity 0.2s ease",
           }}
         >
           {tournaments.map((t) => {
@@ -473,7 +484,7 @@ export function DiscoveryList() {
         </div>
       )}
 
-      {!loading && !listQuery.isError && totalPages > 1 && (
+      {!loading && !error && totalPages > 1 && (
         <div
           style={{
             display: "flex",
@@ -508,7 +519,7 @@ export function DiscoveryList() {
         </div>
       )}
 
-      <Link href="/tournaments/create" style={{ textDecoration: "none" }}>
+      <Link href="/dashboard" style={{ textDecoration: "none" }}>
         <div
           style={{
             border: "1px dashed var(--border-color)",

@@ -1,85 +1,143 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api/api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import { fetchTournamentDetailThunk, reportScoreThunk, finalizeMatchThunk } from "@/lib/store/tournamentSlice";
 import { toast } from "@/components/ui/sonner";
+import { useMutation } from "@tanstack/react-query";
+import api from "@/lib/api/api";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { Match, Tournament, Organization } from "@ft-transcendence/contracts";
-import type { BracketState } from "@ft-transcendence/contracts";
+import type { BracketMatch, Tournament, Organization } from "@ft-transcendence/contracts";
 
 interface MatchesTabProps {
     tournament: Tournament;
     org: Organization;
 }
 
-export function MatchesTab({ tournament, org }: MatchesTabProps) {
-    const queryClient = useQueryClient();
+type Filter = "all" | "live" | "pending" | "completed" | "issues";
+
+type Row = BracketMatch & { roundLabel: string };
+
+export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
+    const dispatch = useAppDispatch();
+    const detailState = useAppSelector(s => s.tournament.details[tournament.id]);
+    const bracketData = detailState?.bracket;
+
     const [editingMatch, setEditingMatch] = useState<string | null>(null);
     const [score1, setScore1] = useState(0);
     const [score2, setScore2] = useState(0);
+    const [filter, setFilter] = useState<Filter>("all");
 
-    const bracketQuery = useQuery<BracketState>({
-        queryKey: ["bracket-state", tournament.id],
-        queryFn: async () => {
-            const res = await api.matches.getBracketState({
-                params: { tournamentId: tournament.id },
-            });
-            if (res.status !== 200) throw new Error("Failed to load bracket");
-            return res.body as BracketState;
-        },
-    });
+    const fetchDetail = useCallback(() => {
+        dispatch(fetchTournamentDetailThunk(tournament.id));
+    }, [dispatch, tournament.id]);
 
-    const reportMutation = useMutation({
-        mutationFn: async ({ matchId, s1, s2 }: { matchId: string; s1: number; s2: number }) => {
-            const res = await api.matches.reportScore({
+    useEffect(() => {
+        if (!detailState) {
+            fetchDetail();
+        }
+    }, [detailState, fetchDetail]);
+
+    /* ── Real-time Hydration (SSE) ── */
+    useEffect(() => {
+        // We FORCE /bff to use our streaming-enabled proxy fix
+        const streamUrl = "/bff/tournaments/" + tournament.id + "/lobby/stream";
+        const eventSource = new EventSource(streamUrl, { withCredentials: true });
+
+        eventSource.addEventListener("lobby_changed", () => {
+             fetchDetail();
+        });
+
+        return () => {
+            eventSource.close();
+        };
+    }, [tournament.id, fetchDetail]);
+
+    const handleSaveScores = async (matchId: string, s1: number, s2: number) => {
+        try {
+            await dispatch(reportScoreThunk({ matchId, tournamentId: tournament.id, s1, s2 })).unwrap();
+            toast.success("Scores saved");
+        } catch (e: any) {
+            toast.error(e.message || "Failed to save scores");
+        }
+    };
+
+    const handleFinalize = async (matchId: string, s1: number, s2: number) => {
+        try {
+            await dispatch(finalizeMatchThunk({ matchId, tournamentId: tournament.id, s1, s2 })).unwrap();
+            toast.success("Match finalized");
+            setEditingMatch(null);
+        } catch (e: any) {
+            toast.error(e.message || "Failed to finalize match");
+        }
+    };
+
+    const patchMutation = useMutation({
+        mutationFn: async ({
+            matchId,
+            body,
+        }: {
+            matchId: string;
+            body: { status?: "pending" | "ongoing" | "cancelled" | "disputed"; scheduledAt?: Date | null };
+        }) => {
+            const res = await api.matches.updateMatch({
                 params: { id: matchId },
-                body: { score1: s1, score2: s2 },
+                body,
             });
             if (res.status !== 200) {
-                const body = res.body as any;
-                throw new Error(body?.message ?? "Failed to report score");
+                const body = res.body as { message?: string };
+                throw new Error(body?.message ?? "Failed to update match");
             }
             return res.body;
         },
-        onSuccess: () => {
-            toast.success("Score reported");
-            setEditingMatch(null);
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
+        onSuccess: (
+            _: unknown,
+            variables: { matchId: string; body: { status?: string } },
+        ) => {
+            const st = variables.body?.status;
+            const label =
+                st === "ongoing"
+                    ? "Match marked live"
+                    : st === "pending"
+                      ? "Match updated"
+                      : st === "cancelled"
+                        ? "Match cancelled"
+                        : st === "disputed"
+                          ? "Match flagged disputed"
+                          : "Match updated";
+            toast.success(label);
+            fetchDetail();
         },
         onError: (e: Error) => toast.error(e.message),
     });
 
-    // Swiss advancement
-    const advanceSwissMutation = useMutation({
-        mutationFn: async () => {
-            const res = await api.matches.advanceSwissRound({
-                params: { tournamentId: tournament.id },
-                body: {},
-            });
-            if (res.status !== 201) {
-                const body = res.body as any;
-                throw new Error(body?.message ?? "Failed to advance");
-            }
-            return res.body;
-        },
-        onSuccess: (body) => {
-            toast.success(body.message);
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
-        },
-        onError: (e: Error) => toast.error(e.message),
-    });
-
-    const allMatches = bracketQuery.data?.rounds.flatMap((r) =>
-        r.matches.map((m) => ({ ...m, roundLabel: r.label })),
-    ) ?? [];
-
-    const participantMap = new Map(
-        bracketQuery.data?.participants.map((p) => [p.id, p]) ?? [],
+    const allMatches: Row[] = useMemo(
+        () =>
+            bracketData?.rounds.flatMap((r) =>
+                r.matches.map((m) => ({ ...m, roundLabel: r.label })),
+            ) ?? [],
+        [bracketData],
     );
 
-    if (bracketQuery.isPending) {
+    const liveMatches = useMemo(() => allMatches.filter((m) => m.status === "ongoing"), [allMatches]);
+
+    const filteredMatches = useMemo(() => {
+        switch (filter) {
+            case "live":
+                return allMatches.filter((m) => m.status === "ongoing");
+            case "pending":
+                return allMatches.filter((m) => m.status === "pending");
+            case "completed":
+                return allMatches.filter((m) => m.status === "completed");
+            case "issues":
+                return allMatches.filter((m) => m.status === "disputed" || m.status === "cancelled");
+            default:
+                return allMatches;
+        }
+    }, [allMatches, filter]);
+
+    if (detailState?.isLoading && !bracketData) {
         return (
             <div className="glass-card" style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
                 Loading matches…
@@ -104,125 +162,429 @@ export function MatchesTab({ tournament, org }: MatchesTabProps) {
         cancelled: { label: "Cancelled", variant: "outline" },
     };
 
+    const filters: { id: Filter; label: string }[] = [
+        { id: "all", label: "All" },
+        { id: "live", label: `Live (${liveMatches.length})` },
+        { id: "pending", label: "Pending" },
+        { id: "completed", label: "Completed" },
+        { id: "issues", label: "Issues" },
+    ];
+
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* Swiss advance button */}
-            {tournament.bracketType === "swiss" && (
-                <div className="glass-card" style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontSize: "13px", fontWeight: 600, flex: 1 }}>Swiss Rounds</span>
-                    <button
-                        className="btn btn-primary"
-                        style={{ fontSize: "11px", padding: "6px 16px" }}
-                        disabled={advanceSwissMutation.isPending}
-                        onClick={() => advanceSwissMutation.mutate()}
-                    >
-                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>skip_next</span>
-                        {advanceSwissMutation.isPending ? "Generating…" : "Next Round"}
-                    </button>
+
+            {/* Live focus */}
+            {liveMatches.length > 0 && (
+                <div className="glass-card border-primary/25" style={{ padding: "16px", background: "color-mix(in srgb, var(--primary) 6%, transparent)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                        <span className="material-symbols-outlined text-primary" style={{ fontSize: "22px" }}>podcasts</span>
+                        <span style={{ fontSize: "14px", fontWeight: 700 }}>Live now</span>
+                        <span className="ml-1 inline-flex h-2 w-2 animate-pulse rounded-full bg-primary" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {liveMatches.map((match) => (
+                            <LiveMatchCard
+                                key={match.id}
+                                match={match}
+                                statusBadge={STATUS_BADGE[match.status] ?? STATUS_BADGE.pending}
+                                patchMutation={patchMutation}
+                                handleSaveScores={handleSaveScores}
+                                handleFinalize={handleFinalize}
+                                editingMatch={editingMatch}
+                                setEditingMatch={setEditingMatch}
+                                score1={score1}
+                                score2={score2}
+                                setScore1={setScore1}
+                                setScore2={setScore2}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 
+            {/* Filters */}
+            <div className="glass-card flex flex-wrap gap-2 p-3">
+                {filters.map((f) => (
+                    <button
+                        key={f.id}
+                        type="button"
+                        className={cn(
+                            "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors",
+                            filter === f.id
+                                ? "border-primary bg-primary/15 text-primary"
+                                : "border-border/60 bg-background/40 text-muted-foreground hover:bg-accent/40",
+                        )}
+                        onClick={() => setFilter(f.id)}
+                    >
+                        {f.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Match table */}
             <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b border-border/50">
-                            <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Round</th>
-                            <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Participant 1</th>
-                            <th className="text-center py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-24">Score</th>
-                            <th className="text-right py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Participant 2</th>
-                            <th className="text-center py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20">Status</th>
-                            <th className="text-center py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-28">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {allMatches.map((match) => {
-                            const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.pending;
-                            const isEditing = editingMatch === match.id;
-                            const p1Name = match.participant1?.name ?? "TBD";
-                            const p2Name = match.participant2?.name ?? "TBD";
-                            const p1Winner = match.winnerId === match.participant1?.id;
-                            const p2Winner = match.winnerId === match.participant2?.id;
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[960px] text-sm">
+                        <thead>
+                            <tr className="border-b border-border/50">
+                                <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Round</th>
+                                <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Participant 1</th>
+                                <th className="text-center py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-28">Score</th>
+                                <th className="text-right py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Participant 2</th>
+                                <th className="text-center py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-24">Status</th>
+                                <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground min-w-[280px]">Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredMatches.map((match) => {
+                                const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.pending;
+                                const isEditing = editingMatch === match.id;
+                                const p1Name = match.participant1?.name ?? "TBD";
+                                const p2Name = match.participant2?.name ?? "TBD";
+                                const p1Winner = match.winnerId === match.participant1?.id;
+                                const p2Winner = match.winnerId === match.participant2?.id;
+                                const canScore =
+                                    match.status !== "completed" &&
+                                    match.status !== "cancelled" &&
+                                    match.participant1 &&
+                                    match.participant2;
 
-                            return (
-                                <tr key={match.id} className="border-b border-border/20 hover:bg-accent/20 transition-colors">
-                                    <td className="py-2.5 px-4 text-xs text-muted-foreground">{match.roundLabel}</td>
-                                    <td className={cn("py-2.5 px-4 text-xs", p1Winner && "font-bold text-primary")}>
-                                        {p1Name}
-                                    </td>
-                                    <td className="py-2.5 px-4 text-center">
-                                        {isEditing ? (
-                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-                                                <input
-                                                    type="number"
-                                                    min={0}
-                                                    value={score1}
-                                                    onChange={(e) => setScore1(Number(e.target.value))}
-                                                    className="w-10 text-center bg-muted/50 border border-border/50 rounded px-1 py-0.5 text-xs font-mono"
-                                                />
-                                                <span className="text-muted-foreground text-xs">–</span>
-                                                <input
-                                                    type="number"
-                                                    min={0}
-                                                    value={score2}
-                                                    onChange={(e) => setScore2(Number(e.target.value))}
-                                                    className="w-10 text-center bg-muted/50 border border-border/50 rounded px-1 py-0.5 text-xs font-mono"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <span className="font-mono text-xs">
-                                                {match.status === "pending" ? "— – —" : `${match.score1} – ${match.score2}`}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className={cn("py-2.5 px-4 text-xs text-right", p2Winner && "font-bold text-primary")}>
-                                        {p2Name}
-                                    </td>
-                                    <td className="py-2.5 px-4 text-center">
-                                        <Badge variant={badge.variant}>{badge.label}</Badge>
-                                    </td>
-                                    <td className="py-2.5 px-4 text-center">
-                                        {match.status !== "completed" && match.status !== "cancelled" && match.participant1 && match.participant2 && (
-                                            <>
-                                                {isEditing ? (
-                                                    <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                                                        <button
-                                                            className="btn btn-primary"
-                                                            style={{ fontSize: "10px", padding: "3px 10px" }}
-                                                            disabled={reportMutation.isPending}
-                                                            onClick={() => reportMutation.mutate({ matchId: match.id, s1: score1, s2: score2 })}
-                                                        >
-                                                            Save
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-secondary"
-                                                            style={{ fontSize: "10px", padding: "3px 10px" }}
-                                                            onClick={() => setEditingMatch(null)}
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </div>
-                                                ) : (
+                                return (
+                                    <tr key={match.id} className="border-b border-border/20 hover:bg-accent/20 transition-colors">
+                                        <td className="py-2.5 px-4 text-xs text-muted-foreground whitespace-nowrap">{match.roundLabel}</td>
+                                        <td className={cn("py-2.5 px-4 text-xs", p1Winner && "font-bold text-primary")}>{p1Name}</td>
+                                        <td className="py-2.5 px-4 text-center">
+                                            {isEditing ? (
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={score1}
+                                                        onChange={(e) => setScore1(Number(e.target.value))}
+                                                        className="w-11 text-center bg-muted/50 border border-border/50 rounded px-1 py-0.5 text-xs font-mono"
+                                                    />
+                                                    <span className="text-muted-foreground text-xs">–</span>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={score2}
+                                                        onChange={(e) => setScore2(Number(e.target.value))}
+                                                        className="w-11 text-center bg-muted/50 border border-border/50 rounded px-1 py-0.5 text-xs font-mono"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <span className="font-mono text-xs">
+                                                    {match.score1} – {match.score2}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className={cn("py-2.5 px-4 text-xs text-right", p2Winner && "font-bold text-primary")}>{p2Name}</td>
+                                        <td className="py-2.5 px-4 text-center">
+                                            <Badge variant={badge.variant}>{badge.label}</Badge>
+                                        </td>
+                                        <td className="py-2 px-4">
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                {canScore && !isEditing && (
                                                     <button
+                                                        type="button"
                                                         className="btn btn-secondary"
-                                                        style={{ fontSize: "10px", padding: "3px 10px" }}
+                                                        style={{ fontSize: "10px", padding: "3px 8px" }}
                                                         onClick={() => {
                                                             setEditingMatch(match.id);
                                                             setScore1(match.score1);
                                                             setScore2(match.score2);
                                                         }}
                                                     >
-                                                        Report
+                                                        Edit scores
                                                     </button>
                                                 )}
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                                {canScore && !isEditing && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-primary"
+                                                        style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                        onClick={() => handleFinalize(match.id, match.score1, match.score2)}
+                                                    >
+                                                        Finalize match
+                                                    </button>
+                                                )}
+                                                {isEditing && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-secondary"
+                                                            style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                            onClick={() => handleSaveScores(match.id, score1, score2)}
+                                                        >
+                                                            Save scores
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-primary"
+                                                            style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                            onClick={() => handleFinalize(match.id, score1, score2)}
+                                                        >
+                                                            Finalize match
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-secondary"
+                                                            style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                            onClick={() => setEditingMatch(null)}
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {match.status === "pending" && match.participant1 && match.participant2 && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary"
+                                                        style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                        disabled={patchMutation.isPending}
+                                                        onClick={() =>
+                                                            patchMutation.mutate({
+                                                                matchId: match.id,
+                                                                body: { status: "ongoing" },
+                                                            })
+                                                        }
+                                                    >
+                                                        Go live
+                                                    </button>
+                                                )}
+                                                {match.status === "ongoing" && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary"
+                                                        style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                        disabled={patchMutation.isPending}
+                                                        onClick={() =>
+                                                            patchMutation.mutate({
+                                                                matchId: match.id,
+                                                                body: { status: "pending" },
+                                                            })
+                                                        }
+                                                    >
+                                                        Pause
+                                                    </button>
+                                                )}
+                                                {(match.status === "pending" || match.status === "ongoing") && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary"
+                                                        style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                        disabled={patchMutation.isPending}
+                                                        onClick={() => {
+                                                            if (confirm("Cancel this match?")) {
+                                                                patchMutation.mutate({
+                                                                    matchId: match.id,
+                                                                    body: { status: "cancelled" },
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
+                                                        Cancel match
+                                                    </button>
+                                                )}
+                                                {match.status === "disputed" ? (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary"
+                                                        style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                        disabled={patchMutation.isPending}
+                                                        onClick={() =>
+                                                            patchMutation.mutate({
+                                                                matchId: match.id,
+                                                                body: { status: "pending" },
+                                                            })
+                                                        }
+                                                    >
+                                                        Clear dispute
+                                                    </button>
+                                                ) : (
+                                                    match.status !== "cancelled" && (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-secondary"
+                                                            style={{ fontSize: "10px", padding: "3px 8px" }}
+                                                            disabled={patchMutation.isPending}
+                                                            onClick={() =>
+                                                                patchMutation.mutate({
+                                                                    matchId: match.id,
+                                                                    body: { status: "disputed" },
+                                                                })
+                                                            }
+                                                        >
+                                                            Dispute
+                                                        </button>
+                                                    )
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+type PatchFn = (args: {
+    matchId: string;
+    body: { status?: "pending" | "ongoing" | "cancelled" | "disputed" };
+}) => void;
+
+function LiveMatchCard({
+    match,
+    statusBadge,
+    patchMutation,
+    handleSaveScores,
+    handleFinalize,
+    editingMatch,
+    setEditingMatch,
+    score1,
+    score2,
+    setScore1,
+    setScore2,
+}: {
+    match: Row;
+    statusBadge: { label: string; variant: "default" | "outline" | "secondary" | "destructive" | "success" };
+    patchMutation: { isPending: boolean; mutate: PatchFn };
+    handleSaveScores: (matchId: string, s1: number, s2: number) => void;
+    handleFinalize: (matchId: string, s1: number, s2: number) => void;
+    editingMatch: string | null;
+    setEditingMatch: (id: string | null) => void;
+    score1: number;
+    score2: number;
+    setScore1: (n: number) => void;
+    setScore2: (n: number) => void;
+}) {
+    const isEditing = editingMatch === match.id;
+    const p1 = match.participant1?.name ?? "TBD";
+    const p2 = match.participant2?.name ?? "TBD";
+    const canScore = match.participant1 && match.participant2;
+
+    return (
+        <div
+            className="rounded-lg border border-border/50 bg-background/50 p-3"
+            style={{ boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent)" }}
+        >
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{match.roundLabel}</span>
+                <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+            </div>
+            <div className="mb-3 text-sm font-semibold">
+                <span className="text-primary">{p1}</span>
+                <span className="mx-1.5 text-muted-foreground font-normal">vs</span>
+                <span className="text-primary">{p2}</span>
+            </div>
+            {isEditing && canScore ? (
+                <div className="mb-2 flex items-center gap-2">
+                    <input
+                        type="number"
+                        min={0}
+                        className="w-14 rounded border border-border/60 bg-background px-2 py-1 text-center font-mono text-sm"
+                        value={score1}
+                        onChange={(e) => setScore1(Number(e.target.value))}
+                    />
+                    <span className="text-muted-foreground">–</span>
+                    <input
+                        type="number"
+                        min={0}
+                        className="w-14 rounded border border-border/60 bg-background px-2 py-1 text-center font-mono text-sm"
+                        value={score2}
+                        onChange={(e) => setScore2(Number(e.target.value))}
+                    />
+                </div>
+            ) : (
+                <div className="mb-2 font-mono text-lg">
+                    {match.score1} <span className="text-muted-foreground">–</span> {match.score2}
+                </div>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+                {canScore && !isEditing && (
+                    <>
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ fontSize: "10px", padding: "4px 10px" }}
+                            onClick={() => {
+                                setEditingMatch(match.id);
+                                setScore1(match.score1);
+                                setScore2(match.score2);
+                            }}
+                        >
+                            Edit scores
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ fontSize: "10px", padding: "4px 10px" }}
+                            onClick={() => handleFinalize(match.id, match.score1, match.score2)}
+                        >
+                            Finalize match
+                        </button>
+                    </>
+                )}
+                {isEditing && canScore && (
+                    <>
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ fontSize: "10px", padding: "4px 10px" }}
+                            onClick={() => handleSaveScores(match.id, score1, score2)}
+                        >
+                            Save scores
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ fontSize: "10px", padding: "4px 10px" }}
+                            onClick={() => handleFinalize(match.id, score1, score2)}
+                        >
+                            Finalize match
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ fontSize: "10px", padding: "4px 10px" }}
+                            onClick={() => setEditingMatch(null)}
+                        >
+                            Close
+                        </button>
+                    </>
+                )}
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: "10px", padding: "4px 10px" }}
+                    disabled={patchMutation.isPending}
+                    onClick={() =>
+                        patchMutation.mutate({
+                            matchId: match.id,
+                            body: { status: "pending" },
+                        })
+                    }
+                >
+                    Pause
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: "10px", padding: "4px 10px" }}
+                    disabled={patchMutation.isPending}
+                    onClick={() =>
+                        patchMutation.mutate({
+                            matchId: match.id,
+                            body: { status: "disputed" },
+                        })
+                    }
+                >
+                    Flag dispute
+                </button>
             </div>
         </div>
     );

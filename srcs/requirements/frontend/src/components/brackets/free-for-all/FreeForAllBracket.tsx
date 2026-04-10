@@ -13,7 +13,6 @@ export function FreeForAllBracket({
     className,
     compact,
 }: BracketViewProps) {
-    // Group standings by group number (round in FFA = group)
     const groupData = useMemo(() => {
         const groups: Array<{
             groupNumber: number;
@@ -21,7 +20,6 @@ export function FreeForAllBracket({
             standings: StandingsEntry[];
         }> = [];
 
-        // Each round represents a group in FFA
         const groupNumbers = [...new Set(data.rounds.map((r) => r.number))].sort((a, b) => a - b);
 
         for (const groupNum of groupNumbers) {
@@ -37,11 +35,7 @@ export function FreeForAllBracket({
                 .filter((s) => participantIds.has(s.participant.id))
                 .map((s, i) => ({ ...s, rank: i + 1 }));
 
-            groups.push({
-                groupNumber: groupNum,
-                rounds: groupRounds,
-                standings: groupStandings,
-            });
+            groups.push({ groupNumber: groupNum, rounds: groupRounds, standings: groupStandings });
         }
 
         return groups;
@@ -49,19 +43,16 @@ export function FreeForAllBracket({
 
     if (data.rounds.length === 0) {
         return (
-            <div className={cn("text-center py-12 text-muted-foreground", className)}>
+            <div className={cn("ds-empty-state", className)}>
                 No bracket generated yet.
             </div>
         );
     }
 
     return (
-        <div className={cn("space-y-6", className)}>
-            {/* Overall standings */}
-            <div className="glass-card p-4">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                    Overall Standings
-                </h3>
+        <div className={cn("bracket-shell", className)}>
+            <div className="glass-card bracket-section">
+                <h3 className="bracket-section-title">Overall Standings</h3>
                 <StandingsTable
                     standings={data.standings}
                     bracketType={data.bracketType}
@@ -70,22 +61,17 @@ export function FreeForAllBracket({
                 />
             </div>
 
-            {/* Group cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {groupData.map((group) => (
-                    <div key={group.groupNumber} className="glass-card p-4 space-y-4">
-                        {/* Group header */}
-                        <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-primary" style={{ fontSize: "18px" }}>
-                                groups
-                            </span>
+                    <div key={group.groupNumber} className="glass-card group-card">
+                        <div className="group-card-header">
+                            <span className="material-symbols-outlined text-primary text-lg">groups</span>
                             <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">
                                 Group {group.groupNumber}
                             </h3>
-                            <div className="flex-1 h-px bg-border/30" />
+                            <div className="group-card-rule" />
                         </div>
 
-                        {/* Group standings mini table */}
                         <StandingsTable
                             standings={group.standings}
                             bracketType={data.bracketType}
@@ -93,25 +79,20 @@ export function FreeForAllBracket({
                             compact
                         />
 
-                        {/* Group matches */}
-                        <div className="space-y-2">
-                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Matches
-                            </h4>
-                            <div className="grid grid-cols-1 gap-2">
-                                {group.rounds.flatMap((r) =>
-                                    r.matches.map((match) => (
-                                        <MatchCard
-                                            key={match.id}
-                                            match={match}
-                                            variant="compact"
-                                            onClick={onMatchClick}
-                                            onParticipantClick={onParticipantClick}
-                                            renderParticipant={renderParticipant}
-                                        />
-                                    )),
-                                )}
-                            </div>
+                        <h4 className="group-card-matches-title">Matches</h4>
+                        <div className="match-grid">
+                            {group.rounds.flatMap((r) =>
+                                r.matches.map((match) => (
+                                    <MatchCard
+                                        key={match.id}
+                                        match={match}
+                                        variant="compact"
+                                        onClick={onMatchClick}
+                                        onParticipantClick={onParticipantClick}
+                                        renderParticipant={renderParticipant}
+                                    />
+                                )),
+                            )}
                         </div>
                     </div>
                 ))}

@@ -3,6 +3,8 @@ import { contract } from "@ft-transcendence/contracts";
 import { db } from "@/dal/db";
 import { sports } from "@/dal/db/schemas/sports";
 import { eq } from "drizzle-orm";
+import { RequestWithContext } from "@/api/types";
+import { requireGlobalRole } from "@/utils/rbac";
 import AppError from "@/utils/error";
 
 const s = initServer();
@@ -26,7 +28,13 @@ export const sportsController = s.router(contract.sports, {
             body: sport as any,
         };
     },
-    create: async ({ body }) => {
+    create: async ({ body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        await requireGlobalRole(userId, ["admin"]);
+
         // Double check for duplicate name
         const existing = await db.query.sports.findFirst({
             where: eq(sports.name, body.name),
@@ -48,7 +56,13 @@ export const sportsController = s.router(contract.sports, {
             body: newSport as any,
         };
     },
-    update: async ({ params, body }) => {
+    update: async ({ params, body, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        await requireGlobalRole(userId, ["admin"]);
+
         const [updated] = await db
             .update(sports)
             .set({
@@ -65,7 +79,13 @@ export const sportsController = s.router(contract.sports, {
             body: updated as any,
         };
     },
-    delete: async ({ params }) => {
+    delete: async ({ params, req }: any) => {
+        const contextReq = req as unknown as RequestWithContext;
+        const userId = contextReq.ctx?.decodedToken?.id;
+        if (!userId) throw new AppError(401, "Unauthorized");
+
+        await requireGlobalRole(userId, ["admin"]);
+
         const result = await db
             .delete(sports)
             .where(eq(sports.id, params.id))

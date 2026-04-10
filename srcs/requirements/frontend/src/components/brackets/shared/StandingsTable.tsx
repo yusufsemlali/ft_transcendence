@@ -10,13 +10,12 @@ export function StandingsTable({
     className,
     compact = false,
 }: StandingsTableProps) {
-    const showBuchholz = bracketType === "swiss";
     const showGoals = bracketType === "round_robin" || bracketType === "free_for_all";
-    const showDraws = bracketType === "round_robin" || bracketType === "swiss" || bracketType === "free_for_all";
+    const showDraws = bracketType === "round_robin" || bracketType === "free_for_all";
 
     if (standings.length === 0) {
         return (
-            <div className={cn("text-center py-8 text-muted-foreground text-sm", className)}>
+            <div className={cn("ds-empty-state", className)}>
                 No standings available yet.
             </div>
         );
@@ -24,52 +23,23 @@ export function StandingsTable({
 
     return (
         <div className={cn("overflow-x-auto", className)}>
-            <table className="w-full text-sm">
+            <table className="standings-table">
                 <thead>
                     <tr className="border-b border-border/50">
-                        <th className="text-left py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-8">
-                            #
-                        </th>
-                        <th className="text-left py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                            Participant
-                        </th>
-                        {!compact && (
-                            <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10">
-                                MP
-                            </th>
-                        )}
-                        <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-8">
-                            W
-                        </th>
-                        {showDraws && (
-                            <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-8">
-                                D
-                            </th>
-                        )}
-                        <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-8">
-                            L
-                        </th>
+                        <th className="standings-th is-left" style={{ width: 32 }}>#</th>
+                        <th className="standings-th is-left">Participant</th>
+                        {!compact && <th className="standings-th">MP</th>}
+                        <th className="standings-th">W</th>
+                        {showDraws && <th className="standings-th">D</th>}
+                        <th className="standings-th">L</th>
                         {showGoals && !compact && (
                             <>
-                                <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10">
-                                    GF
-                                </th>
-                                <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10">
-                                    GA
-                                </th>
-                                <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10">
-                                    GD
-                                </th>
+                                <th className="standings-th">GF</th>
+                                <th className="standings-th">GA</th>
+                                <th className="standings-th">GD</th>
                             </>
                         )}
-                        {showBuchholz && !compact && (
-                            <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10">
-                                Buch.
-                            </th>
-                        )}
-                        <th className="text-center py-2 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-10">
-                            Pts
-                        </th>
+                        <th className="standings-th">Pts</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,69 +47,41 @@ export function StandingsTable({
                         <tr
                             key={entry.participant.id}
                             className={cn(
-                                "border-b border-border/20 transition-colors",
-                                onParticipantClick && "cursor-pointer hover:bg-accent/30",
-                                entry.rank <= 3 && "bg-primary/[0.03]",
+                                "standings-row",
+                                onParticipantClick && "is-clickable",
+                                entry.rank <= 3 && "is-top3",
                             )}
                             onClick={() => onParticipantClick?.(entry.participant)}
                         >
-                            <td className="py-2 px-2 font-mono text-muted-foreground text-xs">
-                                {entry.rank}
-                            </td>
-                            <td className="py-2 px-2">
+                            <td className="standings-td is-left text-muted-foreground">{entry.rank}</td>
+                            <td className="standings-td is-left">
                                 <div className="flex items-center gap-2 min-w-0">
                                     {entry.participant.seed != null && (
                                         <span className="text-[10px] font-mono text-muted-foreground">
                                             [{entry.participant.seed}]
                                         </span>
                                     )}
-                                    <span className="truncate font-medium">
-                                        {entry.participant.name}
-                                    </span>
+                                    <span className="truncate font-medium">{entry.participant.name}</span>
                                 </div>
                             </td>
-                            {!compact && (
-                                <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
-                                    {entry.matchesPlayed}
-                                </td>
-                            )}
-                            <td className="py-2 px-2 text-center font-mono text-xs text-green-400">
-                                {entry.wins}
-                            </td>
-                            {showDraws && (
-                                <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
-                                    {entry.draws}
-                                </td>
-                            )}
-                            <td className="py-2 px-2 text-center font-mono text-xs text-red-400">
-                                {entry.losses}
-                            </td>
+                            {!compact && <td className="standings-td text-muted-foreground">{entry.matchesPlayed}</td>}
+                            <td className="standings-td text-green-400">{entry.wins}</td>
+                            {showDraws && <td className="standings-td text-muted-foreground">{entry.draws}</td>}
+                            <td className="standings-td text-red-400">{entry.losses}</td>
                             {showGoals && !compact && (
                                 <>
-                                    <td className="py-2 px-2 text-center font-mono text-xs">
-                                        {entry.goalsFor ?? 0}
-                                    </td>
-                                    <td className="py-2 px-2 text-center font-mono text-xs">
-                                        {entry.goalsAgainst ?? 0}
-                                    </td>
+                                    <td className="standings-td">{entry.goalsFor ?? 0}</td>
+                                    <td className="standings-td">{entry.goalsAgainst ?? 0}</td>
                                     <td className={cn(
-                                        "py-2 px-2 text-center font-mono text-xs font-bold",
+                                        "standings-td font-bold",
                                         (entry.goalDifference ?? 0) > 0 && "text-green-400",
                                         (entry.goalDifference ?? 0) < 0 && "text-red-400",
                                     )}>
-                                        {(entry.goalDifference ?? 0) > 0 ? "+" : ""}
-                                        {entry.goalDifference ?? 0}
+                                        {(entry.goalDifference ?? 0) > 0 ? "+" : ""}{entry.goalDifference ?? 0}
                                     </td>
                                 </>
                             )}
-                            {showBuchholz && !compact && (
-                                <td className="py-2 px-2 text-center font-mono text-xs text-muted-foreground">
-                                    {entry.buchholz ?? 0}
-                                </td>
-                            )}
-                            <td className="py-2 px-2 text-center font-mono text-xs font-bold text-primary">
-                                {entry.points}
-                            </td>
+                            <td className="standings-td font-bold text-primary">{entry.points}</td>
                         </tr>
                     ))}
                 </tbody>

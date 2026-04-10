@@ -76,6 +76,7 @@
   --radius-base: 0.625rem;
   --glass-blur: 12px;
   --glass-opacity: 0.1;
+  --main-padding: 2px; 
 
   /* --- LIGHT THEME (Default) --- */
   --background: oklch(0.99 0 0);
@@ -123,6 +124,17 @@
   --space-xl: var(--spacing-8);
   --space-2xl: var(--spacing-12);
 
+  /* Public tournament layout tokens */
+  --tournament-shell-gap: var(--spacing-8);
+  --tournament-card-gap: var(--spacing-6);
+  --tournament-hero-content-x: var(--spacing-8);
+  --tournament-hero-content-y: var(--spacing-6);
+  --tournament-tabs-x: var(--spacing-6);
+  --tournament-tabs-y: var(--spacing-4);
+  --tournament-tab-gap: var(--spacing-2);
+  --tournament-tab-px: var(--spacing-4);
+  --tournament-tab-py: var(--spacing-2);
+
   /* Legacy vars support - Mapped for Light Mode */
   --bg-primary: var(--background);
   --bg-secondary: color-mix(in srgb, var(--theme-color) 10%, transparent);
@@ -137,6 +149,13 @@
 
   --transition-speed: 0.2s;
 }
+
+
+/* Apply padding to all common containers and components */
+body, section, div, article, aside, nav, header, footer {
+  padding: var(--main-padding);
+}
+
 
 .dark {
   /* --- DARK THEME --- */
@@ -526,6 +545,21 @@ a {
   text-decoration: none;
 }
 
+.btn-size-sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.72rem;
+}
+
+.btn-size-md {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.btn-size-lg {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.88rem;
+}
+
 .btn-primary {
   background: var(--primary);
   color: var(--background);
@@ -551,6 +585,540 @@ a {
 
 .btn-ghost:hover {
   color: var(--text-primary);
+}
+
+/* Reusable DS surface/content tokens */
+.ds-stack-md > * + * {
+  margin-top: var(--space-md);
+}
+
+.ds-stack-lg > * + * {
+  margin-top: var(--space-lg);
+}
+
+.ds-panel {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.ds-panel-card {
+  padding: var(--space-lg) var(--space-xl) !important;
+}
+
+.ds-panel-card-sm {
+  padding: var(--space-md) var(--space-lg) !important;
+}
+
+@media (max-width: 768px) {
+  .ds-panel-card {
+    padding: var(--space-md) var(--space-lg) !important;
+  }
+
+  .ds-panel-card-sm {
+    padding: var(--space-sm) var(--space-md) !important;
+  }
+}
+
+.ds-panel-title {
+  margin-bottom: var(--space-md);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ds-copy {
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  line-height: 1.85;
+}
+
+.ds-empty-state {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  padding: var(--space-2xl) var(--space-md);
+}
+
+.ds-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.ds-select-compact {
+  min-width: 180px;
+  font-size: var(--text-xs);
+}
+
+.ds-grid-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+
+@media (min-width: 640px) {
+  .ds-grid-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ds-grid-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Reusable DS tabs */
+.ds-tabs-wrap {
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.ds-tabs-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  overflow-x: auto;
+}
+
+.ds-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: color var(--transition-speed), background var(--transition-speed);
+  white-space: nowrap;
+}
+
+.ds-tab:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-secondary) 45%, transparent);
+}
+
+.ds-tab.is-active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* Public tournament page utilities */
+.tournament-shell {
+  max-width: 1200px;
+  padding-bottom: var(--space-2xl);
+}
+
+.tournament-shell > * + * {
+  margin-top: var(--tournament-shell-gap);
+}
+
+.tournament-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  transition: color var(--transition-speed);
+}
+
+.tournament-back-link:hover {
+  color: var(--text-primary);
+}
+
+.tournament-hero-media {
+  position: relative;
+  height: clamp(220px, 32vw, 300px);
+  background: color-mix(in srgb, var(--bg-secondary) 20%, transparent);
+}
+
+.tournament-hero-content {
+  padding:
+    var(--tournament-hero-content-y)
+    var(--tournament-hero-content-x);
+}
+
+.tournament-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.tournament-meta-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.tournament-stack > * + * {
+  margin-top: var(--tournament-card-gap);
+}
+
+.tournament-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg) var(--space-xl);
+}
+
+@media (min-width: 768px) {
+  .tournament-details-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tournament-details-item {
+  min-width: 0;
+}
+
+.tournament-details-label {
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.tournament-details-value {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+
+
+/* ── Match card ── */
+.match-card {
+  background: linear-gradient(145deg, oklch(100% 0 0 / var(--glass-opacity)) 0%, oklch(100% 0 0 / calc(var(--glass-opacity) / 2)) 100%);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  transition: all var(--transition-speed);
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+.match-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border-color));
+}
+
+.match-card.is-live {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+.match-card.match-card-final {
+  border: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent),
+    0 8px 32px color-mix(in srgb, var(--primary) 14%, transparent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--primary) 7%, oklch(100% 0 0 / var(--glass-opacity))) 0%,
+    oklch(100% 0 0 / calc(var(--glass-opacity) / 2)) 100%
+  );
+}
+
+.match-card-final .match-card-slot {
+  padding: 12px 16px;
+}
+
+.match-card-final-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.match-card-final-trophy {
+  font-size: 1.375rem;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.match-card-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 14px;
+  min-width: 0;
+  transition: background var(--transition-speed);
+  position: relative;
+}
+
+.match-card-slot.is-winner { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.match-card-slot.is-loser { opacity: 0.5; }
+.match-card-slot.is-clickable { cursor: pointer; }
+.match-card-slot.is-clickable:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+.match-card-divider { height: 1px; background: var(--border-color); margin: 0 10px; }
+
+.match-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: color-mix(in srgb, var(--bg-secondary) 30%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+
+.match-card-seed { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted); width: 1rem; text-align: right; flex-shrink: 0; }
+.match-card-name { font-size: var(--text-sm); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.match-card-name.is-tbd { color: var(--text-muted); font-style: italic; }
+.match-card-name.is-winner { font-weight: 600; color: var(--text-primary); }
+.match-card-name.is-loser { color: var(--text-muted); }
+
+.match-card-score { font-size: var(--text-sm); font-family: var(--font-mono); font-weight: 700; font-variant-numeric: tabular-nums; width: 1.5rem; text-align: center; flex-shrink: 0; }
+.match-card-score.is-winner { color: var(--primary); }
+.match-card-score.is-loser { color: var(--text-muted); }
+.match-card-score.is-live { color: var(--text-primary); }
+
+.match-card-win-bar { position: absolute; right: 0; top: 0; width: 3px; height: 100%; background: var(--primary); border-radius: 0 var(--radius) var(--radius) 0; }
+.match-card-live-strip { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--primary); }
+.match-card-date { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .match-card-slot { padding: 8px 10px; gap: 6px; }
+  .match-card-final .match-card-slot { padding: 8px 10px; }
+  .match-card-footer { padding: 4px 10px; }
+  .match-card-divider { margin: 0 8px; }
+  .match-card-name { font-size: var(--text-xs); }
+  .match-card-score { font-size: var(--text-xs); }
+}
+
+/* ── Round header (line 1: ordinal, line 2: name) ── */
+.round-header {
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.round-header.round-header--left {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.round-header-count {
+  display: block;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  opacity: 0.85;
+  letter-spacing: 0.04em;
+}
+
+.round-header-label {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.round-header-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* SE / DE: horizontal row of rounds + vertical match stacks */
+.bracket-rounds-row {
+  display: flex;
+  min-width: max-content;
+  gap: var(--space-2xl);
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+}
+
+.bracket-match-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* ── Bracket section card — wraps standings/group blocks ── */
+.bracket-section {
+  padding: var(--space-md) var(--space-lg);
+}
+
+.bracket-section-title {
+  margin-bottom: var(--space-md);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .bracket-section { padding: var(--space-sm) var(--space-md); }
+  .round-header { padding: var(--space-xs) var(--space-sm); }
+  .bracket-rounds-row {
+    gap: var(--space-lg);
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+  .bracket-match-col {
+    gap: var(--space-md);
+  }
+}
+
+/* ── Bracket shell — generic wrapper for any bracket layout ── */
+.bracket-shell {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-sm);
+}
+
+@media (max-width: 640px) {
+  .bracket-shell { gap: var(--space-md); padding: 0; }
+}
+
+/* ── Match grid — responsive card grid (RR / FFA: wider match gaps) ── */
+.match-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 640px) {
+  .match-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); }
+}
+
+@media (min-width: 1024px) {
+  .match-grid.match-grid-3col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .match-grid { gap: var(--space-sm); }
+}
+
+/* ── Standings table ── */
+.standings-table { width: 100%; border-collapse: collapse; }
+.standings-th { text-align: center; padding: 8px 10px; font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.standings-th.is-left { text-align: left; }
+.standings-td { padding: 8px 10px; font-size: var(--text-sm); font-family: var(--font-mono); text-align: center; }
+.standings-td.is-left { text-align: left; font-family: var(--font-sans); }
+.standings-row { border-bottom: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent); transition: background var(--transition-speed); }
+.standings-row.is-top3 { background: color-mix(in srgb, var(--primary) 3%, transparent); }
+.standings-row.is-clickable { cursor: pointer; }
+.standings-row.is-clickable:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+
+@media (max-width: 640px) {
+  .standings-th { padding: 6px 6px; font-size: 0.6rem; }
+  .standings-td { padding: 6px 6px; font-size: var(--text-xs); }
+}
+
+/* ── View toggle — rounds/matrix etc. ── */
+.bracket-view-toggle {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  background: color-mix(in srgb, var(--bg-secondary) 30%, transparent);
+  border-radius: var(--radius);
+  width: fit-content;
+}
+
+/* ── Group card (FFA) ── */
+.group-card {
+  padding: var(--space-md) var(--space-lg);
+}
+
+.group-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.group-card-rule {
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+
+.group-card-matches-title {
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .group-card { padding: var(--space-sm) var(--space-md); }
+}
+
+/* ── Double elimination sections ── */
+.bracket-de-section {
+  margin-bottom: var(--space-xl);
+}
+
+.bracket-de-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.bracket-de-section-icon {
+  font-size: 1.375rem !important;
+  line-height: 1;
+}
+
+.bracket-de-section-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.bracket-de-section-rule {
+  flex: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+
+/* ── Bracket outer wrap — encapsulates all bracket types ── */
+.bracket-outer {
+  padding: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .bracket-outer { padding: var(--space-sm); }
+  .bracket-de-section-header {
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+  .bracket-de-section-icon {
+    font-size: 1.25rem !important;
+  }
 }
 
 /* Navigation */

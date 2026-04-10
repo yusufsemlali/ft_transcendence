@@ -3,6 +3,7 @@ import { tournaments } from "@/dal/db/schemas/tournaments";
 import { users } from "@/dal/db/schemas/users";
 import { lobby, competitors, rosters, invites } from "@/dal/db/schemas/lobby";
 import { eq, and, sql, count, inArray } from "drizzle-orm";
+import { matches as matchesTable } from "@/dal/db/schemas/matches";
 import AppError from "@/utils/error";
 import { LobbyPolicy } from "@/policies/lobby.policy";
 import { createNotification } from "@/services/notification.service";
@@ -129,6 +130,7 @@ export const getLobbyState = async (tournamentId: string, userId?: string) => {
             id: competitors.id,
             name: competitors.name,
             status: competitors.status,
+            seed: competitors.seed,
             userId: users.id,
             username: users.username,
             role: rosters.role,
@@ -141,7 +143,13 @@ export const getLobbyState = async (tournamentId: string, userId?: string) => {
     const competitorMap = new Map<string, any>();
     for (const c of compData) {
         if (!competitorMap.has(c.id)) {
-            competitorMap.set(c.id, { id: c.id, name: c.name, status: c.status, roster: [] });
+            competitorMap.set(c.id, {
+                id: c.id,
+                name: c.name,
+                status: c.status,
+                seed: c.seed,
+                roster: [],
+            });
         }
         if (c.userId) {
             competitorMap.get(c.id).roster.push({ userId: c.userId, username: c.username, role: c.role });
@@ -757,6 +765,59 @@ export const updateCompetitorInfo = async ({ tournamentId, competitorId, userId,
 
     broadcastLobbyChanged(tournamentId);
     return { message: "Team updated" };
+};
+
+/**
+ * TO: set manual bracket seed order (1 = top seed). Only while no matches exist for the tournament.
+ */
+export const setCompetitorSeedOrder = async ({
+    tournamentId,
+    order,
+}: {
+    tournamentId: string;
+    order: string[];
+}) => {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId));
+    if (!tournament) throw new AppError(404, "Tournament not found");
+
+    const [matchCountRow] = await db
+        .select({ n: count() })
+        .from(matchesTable)
+        .where(eq(matchesTable.tournamentId, tournamentId));
+    
+    if (Number(matchCountRow?.n ?? 0) > 0) {
+        throw new AppError(
+            409,
+            "Cannot change seeds while a bracket exists. Reset the bracket first.",
+        );
+    }
+
+    const readyRows = await db
+        .select({ id: competitors.id })
+        .from(competitors)
+        .where(and(eq(competitors.tournamentId, tournamentId), eq(competitors.status, "ready")));
+
+    const readySet = new Set(readyRows.map((r: { id: string }) => r.id));
+    if (order.length !== readySet.size) {
+        throw new AppError(400, "Seed order must include each ready competitor exactly once.");
+    }
+    for (const id of order) {
+        if (!readySet.has(id)) {
+            throw new AppError(400, "Invalid or non-ready competitor in seed order.");
+        }
+    }
+
+    await db.transaction(async (tx: any) => {
+        for (let i = 0; i < order.length; i++) {
+            await tx
+                .update(competitors)
+                .set({ seed: i + 1 })
+                .where(and(eq(competitors.id, order[i]), eq(competitors.tournamentId, tournamentId)));
+        }
+    });
+
+    broadcastLobbyChanged(tournamentId);
+    return { message: "Seeding order updated" };
 };
 
 

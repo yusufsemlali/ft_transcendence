@@ -154,6 +154,7 @@ export const tournamentsContract = c.router({
                     id: z.string().uuid(),
                     name: z.string(),
                     status: z.enum(['incomplete', 'ready', 'disqualified']),
+                    seed: z.number().int().nullable().optional(),
                     roster: z.array(z.object({
                         userId: z.string().uuid(),
                         username: z.string(),
@@ -366,6 +367,23 @@ export const tournamentsContract = c.router({
             404: z.object({ message: z.string() }),
         },
         summary: "Update team name (Captain, registration phase only)",
+    },
+
+    setCompetitorSeeds: {
+        method: "PUT",
+        path: "/tournaments/:id/lobby/competitor-seeds",
+        pathParams: z.object({ id: z.string().uuid() }),
+        body: z.object({
+            order: z.array(z.string().uuid()).min(1),
+        }),
+        responses: {
+            200: z.object({ message: z.string() }),
+            400: z.object({ message: z.string() }),
+            403: z.object({ message: z.string() }),
+            404: z.object({ message: z.string() }),
+            409: z.object({ message: z.string() }),
+        },
+        summary: "Set manual seed order for ready competitors (TO). Only when no matches exist.",
     },
 
 });

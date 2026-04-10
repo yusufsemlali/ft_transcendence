@@ -9,6 +9,7 @@ import {
   getEffectiveBackground,
   applyAllSettings,
   SETTINGS_UPDATED_EVENT,
+  isValidBackgroundImageUrl,
 } from "@/lib/settings";
 import api from "@/lib/api/api";
 
@@ -25,23 +26,8 @@ export function CustomBackground() {
 
   const loadBackground = useCallback(async (settingsToUse: UserSettings) => {
     const bg = await getEffectiveBackground(settingsToUse);
-
-    // Only set as img src if it's a valid URL or data URI — prevents
-    // partial strings (typed keystroke-by-keystroke) from triggering 404s
-    if (bg && (bg.startsWith("data:") || bg.startsWith("blob:"))) {
-      setBackgroundSrc(bg);
-    } else if (bg) {
-      try {
-        const url = new URL(bg);
-        if (url.protocol === "http:" || url.protocol === "https:") {
-          setBackgroundSrc(bg);
-        } else {
-          setBackgroundSrc(null);
-        }
-      } catch {
-        // Not a valid URL yet (user still typing) — don't load
-        setBackgroundSrc(null);
-      }
+    if (bg && isValidBackgroundImageUrl(bg)) {
+      setBackgroundSrc(bg.trim());
     } else {
       setBackgroundSrc(null);
     }

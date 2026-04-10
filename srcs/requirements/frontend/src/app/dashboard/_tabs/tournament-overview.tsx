@@ -22,7 +22,7 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
   });
   const [confirmLaunch, setConfirmLaunch] = useState(false);
 
-  const bannerUrl = tournament.bannerUrl || "https://www.pglesports.com/images/CS2_events/PglAstana/topBannerImages/logoPglAstana.webp";
+  const bannerUrl = tournament.bannerUrl;
   const isDraft = tournament.status === "draft";
   const isRegistration = tournament.status === "registration";
 

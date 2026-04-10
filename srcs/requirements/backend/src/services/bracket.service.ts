@@ -72,7 +72,6 @@ async function assertNoExistingMatches(tournamentId: string) {
 
 function getRoundLabel(round: number, totalRounds: number, bracketType: string): string {
     if (bracketType === "round_robin") return `Round ${round}`;
-    if (bracketType === "swiss") return `Round ${round}`;
     if (bracketType === "free_for_all") return `Round ${round}`;
 
     const remaining = totalRounds - round;
@@ -378,171 +377,6 @@ async function generateRoundRobin(tournamentId: string, comps: Competitor[]): Pr
     }
 }
 
-// ─── Swiss ───────────────────────────────────────────────
-
-async function generateSwissRound1(tournamentId: string, comps: Competitor[]): Promise<void> {
-    const crypto = await import("crypto");
-    const sorted = [...comps].sort((a, b) => (a.seed ?? Infinity) - (b.seed ?? Infinity));
-
-    const allInserts: Array<{
-        id: string;
-        tournamentId: string;
-        round: number;
-        position: number;
-        participant1Id: string | null;
-        participant2Id: string | null;
-        nextMatchId: null;
-        status: "pending";
-        matchStats: Record<string, unknown>;
-        matchConfigSchema: Record<string, unknown>;
-    }> = [];
-
-    for (let i = 0; i < sorted.length - 1; i += 2) {
-        allInserts.push({
-            id: crypto.randomUUID(),
-            tournamentId,
-            round: 1,
-            position: Math.floor(i / 2),
-            participant1Id: sorted[i].id,
-            participant2Id: sorted[i + 1]?.id ?? null,
-            nextMatchId: null,
-            status: "pending",
-            matchStats: {},
-            matchConfigSchema: {},
-        });
-    }
-
-    // If odd number, last player gets a bye (auto-win in round 1)
-    if (sorted.length % 2 !== 0) {
-        allInserts.push({
-            id: crypto.randomUUID(),
-            tournamentId,
-            round: 1,
-            position: allInserts.length,
-            participant1Id: sorted[sorted.length - 1].id,
-            participant2Id: null,
-            nextMatchId: null,
-            status: "pending",
-            matchStats: {},
-            matchConfigSchema: {},
-        });
-    }
-
-    if (allInserts.length > 0) {
-        await db.insert(matches).values(allInserts as any);
-    }
-}
-
-export async function generateNextSwissRound(tournamentId: string): Promise<number> {
-    const allMatches = await db
-        .select()
-        .from(matches)
-        .where(eq(matches.tournamentId, tournamentId));
-
-    if (allMatches.length === 0) {
-        throw new AppError(400, "No bracket exists. Generate the bracket first.");
-    }
-
-    const currentRound = Math.max(...allMatches.map((m) => m.round));
-    const currentRoundMatches = allMatches.filter((m) => m.round === currentRound);
-    const incomplete = currentRoundMatches.some((m) => m.status !== "completed" && m.status !== "cancelled");
-    if (incomplete) {
-        throw new AppError(409, `Round ${currentRound} is not yet complete.`);
-    }
-
-    const comps = await getReadyCompetitors(tournamentId);
-    const totalRecommended = Math.ceil(Math.log2(comps.length));
-    if (currentRound >= totalRecommended) {
-        throw new AppError(400, `All ${totalRecommended} Swiss rounds have been played.`);
-    }
-
-    // Build standings for pairing
-    const standings = new Map<string, { wins: number; losses: number; opponents: Set<string> }>();
-    for (const comp of comps) {
-        standings.set(comp.id, { wins: 0, losses: 0, opponents: new Set() });
-    }
-
-    for (const m of allMatches) {
-        if (m.status !== "completed") continue;
-        if (m.participant1Id && m.participant2Id) {
-            standings.get(m.participant1Id)?.opponents.add(m.participant2Id);
-            standings.get(m.participant2Id)?.opponents.add(m.participant1Id);
-        }
-        if (m.winnerId) {
-            const entry = standings.get(m.winnerId);
-            if (entry) entry.wins++;
-            const loserId = m.winnerId === m.participant1Id ? m.participant2Id : m.participant1Id;
-            if (loserId) {
-                const loserEntry = standings.get(loserId);
-                if (loserEntry) loserEntry.losses++;
-            }
-        }
-    }
-
-    // Sort by wins descending for pairing
-    const sorted = [...comps].sort((a, b) => {
-        const sa = standings.get(a.id)!;
-        const sb = standings.get(b.id)!;
-        return sb.wins - sa.wins || (a.seed ?? Infinity) - (b.seed ?? Infinity);
-    });
-
-    // Pair avoiding rematches
-    const newRound = currentRound + 1;
-    const paired = new Set<string>();
-    const pairings: [string, string | null][] = [];
-
-    for (let i = 0; i < sorted.length; i++) {
-        if (paired.has(sorted[i].id)) continue;
-        const entry = standings.get(sorted[i].id)!;
-        let found = false;
-        for (let j = i + 1; j < sorted.length; j++) {
-            if (paired.has(sorted[j].id)) continue;
-            if (!entry.opponents.has(sorted[j].id)) {
-                pairings.push([sorted[i].id, sorted[j].id]);
-                paired.add(sorted[i].id);
-                paired.add(sorted[j].id);
-                found = true;
-                break;
-            }
-        }
-        if (!found && !paired.has(sorted[i].id)) {
-            // Fallback: pair with next unpaired even if rematch
-            for (let j = i + 1; j < sorted.length; j++) {
-                if (!paired.has(sorted[j].id)) {
-                    pairings.push([sorted[i].id, sorted[j].id]);
-                    paired.add(sorted[i].id);
-                    paired.add(sorted[j].id);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                pairings.push([sorted[i].id, null]);
-                paired.add(sorted[i].id);
-            }
-        }
-    }
-
-    const crypto = await import("crypto");
-    const inserts = pairings.map(([p1, p2], pos) => ({
-        id: crypto.randomUUID(),
-        tournamentId,
-        round: newRound,
-        position: pos,
-        participant1Id: p1,
-        participant2Id: p2,
-        nextMatchId: null,
-        status: "pending" as const,
-        matchStats: {},
-        matchConfigSchema: {},
-    }));
-
-    if (inserts.length > 0) {
-        await db.insert(matches).values(inserts as any);
-    }
-
-    return newRound;
-}
 
 // ─── Free For All ────────────────────────────────────────
 
@@ -703,9 +537,6 @@ export async function generateBracket(tournamentId: string): Promise<void> {
             break;
         case "round_robin":
             await generateRoundRobin(tournamentId, comps);
-            break;
-        case "swiss":
-            await generateSwissRound1(tournamentId, comps);
             break;
         case "free_for_all":
             await generateFreeForAll(tournamentId, comps);

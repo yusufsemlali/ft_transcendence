@@ -4,7 +4,6 @@ export const BRACKET_TYPES = [
     "single_elimination",
     "double_elimination",
     "round_robin",
-    "swiss",
     "free_for_all",
 ] as const;
 
@@ -65,7 +64,6 @@ export const StandingsEntrySchema = z.object({
     draws: z.number().int(),
     points: z.number(),
     matchesPlayed: z.number().int(),
-    buchholz: z.number().optional(),
     goalsFor: z.number().int().optional(),
     goalsAgainst: z.number().int().optional(),
     goalDifference: z.number().int().optional(),
@@ -91,11 +89,21 @@ export const BracketStateSchema = z.object({
     metadata: BracketMetadataSchema,
 });
 
-export const ReportScoreSchema = z.object({
+/** Update live scores only — does not complete the match or advance the bracket. */
+export const PatchMatchScoresSchema = z.object({
+    score1: z.number().int().min(0),
+    score2: z.number().int().min(0),
+});
+
+/** Lock result, mark completed, advance bracket (elimination), etc. */
+export const FinalizeMatchSchema = z.object({
     score1: z.number().int().min(0),
     score2: z.number().int().min(0),
     winnerId: z.string().uuid().optional(),
 });
+
+/** @deprecated Use FinalizeMatchSchema — kept as alias for older imports */
+export const ReportScoreSchema = FinalizeMatchSchema;
 
 export type BracketType = z.infer<typeof BracketStateSchema>["bracketType"];
 export type BracketParticipant = z.infer<typeof BracketParticipantSchema>;
@@ -104,4 +112,7 @@ export type BracketRound = z.infer<typeof BracketRoundSchema>;
 export type StandingsEntry = z.infer<typeof StandingsEntrySchema>;
 export type BracketMetadata = z.infer<typeof BracketMetadataSchema>;
 export type BracketState = z.infer<typeof BracketStateSchema>;
-export type ReportScore = z.infer<typeof ReportScoreSchema>;
+export type PatchMatchScores = z.infer<typeof PatchMatchScoresSchema>;
+export type FinalizeMatch = z.infer<typeof FinalizeMatchSchema>;
+/** @deprecated Use FinalizeMatch */
+export type ReportScore = FinalizeMatch;

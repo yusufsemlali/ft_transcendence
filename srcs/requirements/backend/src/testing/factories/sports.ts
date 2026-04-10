@@ -11,10 +11,14 @@ const SPORT_PRESETS = [
     { name: 'Valorant', category: 'esports', scoringType: 'points_high', mode: 'team', handleType: 'riot_id', minTeam: 5, maxTeam: 5 },
     { name: 'League of Legends', category: 'esports', scoringType: 'points_high', mode: 'team', handleType: 'riot_id', minTeam: 5, maxTeam: 5 },
     { name: 'CS2', category: 'esports', scoringType: 'points_high', mode: 'team', handleType: 'steam_id', minTeam: 5, maxTeam: 5 },
+    { name: 'Dota 2', category: 'esports', scoringType: 'points_high', mode: 'team', handleType: 'steam_id', minTeam: 5, maxTeam: 5 },
+    { name: 'Overwatch 2', category: 'esports', scoringType: 'points_high', mode: 'team', handleType: 'battle_tag', minTeam: 5, maxTeam: 5 },
     { name: 'Chess', category: 'tabletop', scoringType: 'binary', mode: '1v1', handleType: 'fide_id', minTeam: 1, maxTeam: 1 },
     { name: 'FIFA', category: 'esports', scoringType: 'points_high', mode: '1v1', handleType: 'psn_id', minTeam: 1, maxTeam: 1 },
     { name: 'Smash Bros', category: 'esports', scoringType: 'stocks', mode: '1v1', handleType: 'nintendo_id', minTeam: 1, maxTeam: 1 },
     { name: 'Basketball 3v3', category: 'physical', scoringType: 'points_high', mode: 'team', handleType: null, minTeam: 3, maxTeam: 5 },
+    { name: 'Soccer', category: 'physical', scoringType: 'points_high', mode: 'team', handleType: null, minTeam: 5, maxTeam: 11 },
+    { name: 'Tennis', category: 'physical', scoringType: 'sets', mode: '1v1', handleType: null, minTeam: 1, maxTeam: 1 },
     { name: 'Ping Pong', category: 'physical', scoringType: 'sets', mode: '1v1', handleType: null, minTeam: 1, maxTeam: 1 },
 ] as const;
 

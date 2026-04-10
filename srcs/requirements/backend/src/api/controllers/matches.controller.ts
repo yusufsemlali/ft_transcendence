@@ -1,14 +1,12 @@
 import { initServer } from "@ts-rest/express";
-import { contract } from "@ft-transcendence/contracts";
+import { AdminMatchUpdateSchema, contract } from "@ft-transcendence/contracts";
 import * as MatchService from "@/services/match.service";
 import * as BracketService from "@/services/bracket.service";
 import * as TournamentService from "@/services/tournament.service";
+import { broadcastLobbyChanged } from "@/services/lobby-sse";
 import { RequestWithContext } from "@/api/types";
 import { requireOrgRole } from "@/utils/rbac";
 import AppError from "@/utils/error";
-import { db } from "@/dal/db";
-import { matches } from "@/dal/db/schemas/matches";
-import { eq } from "drizzle-orm";
 
 const s = initServer();
 
@@ -32,11 +30,10 @@ export const matchesController = s.router(contract.matches, {
         const match = await MatchService.getMatch(params.id);
         await requireTournamentAdmin(req, match.tournamentId);
 
-        const [updated] = await db
-            .update(matches)
-            .set({ ...body, ...(body.status === undefined ? {} : { status: body.status }) })
-            .where(eq(matches.id, params.id))
-            .returning();
+        const parsed = AdminMatchUpdateSchema.parse(body);
+        const updated = await MatchService.adminPatchMatch(params.id, parsed);
+
+        broadcastLobbyChanged(match.tournamentId);
 
         return {
             status: 200 as const,
@@ -58,6 +55,9 @@ export const matchesController = s.router(contract.matches, {
         await requireTournamentAdmin(req, params.tournamentId);
         await BracketService.generateBracket(params.tournamentId);
         const state = await MatchService.getBracketState(params.tournamentId);
+
+        broadcastLobbyChanged(params.tournamentId);
+
         return {
             status: 201 as const,
             body: { message: "Bracket generated successfully", data: state as any },
@@ -67,6 +67,9 @@ export const matchesController = s.router(contract.matches, {
     resetBracket: async ({ params, req }: any) => {
         await requireTournamentAdmin(req, params.tournamentId);
         await BracketService.resetBracket(params.tournamentId);
+
+        broadcastLobbyChanged(params.tournamentId);
+
         return {
             status: 200 as const,
             body: { message: "Bracket reset successfully" },
@@ -77,16 +80,32 @@ export const matchesController = s.router(contract.matches, {
         const match = await MatchService.getMatch(params.id);
         await requireTournamentAdmin(req, match.tournamentId);
 
-        const updated = await MatchService.reportScore(
+        const updated = await MatchService.patchMatchScores(params.id, body.score1, body.score2);
+
+        broadcastLobbyChanged(match.tournamentId);
+
+        return {
+            status: 200 as const,
+            body: { message: "Scores updated", data: updated as any },
+        };
+    },
+
+    finalizeMatch: async ({ params, body, req }: any) => {
+        const match = await MatchService.getMatch(params.id);
+        await requireTournamentAdmin(req, match.tournamentId);
+
+        const updated = await MatchService.finalizeMatchResult(
             params.id,
             body.score1,
             body.score2,
             body.winnerId,
         );
 
+        broadcastLobbyChanged(match.tournamentId);
+
         return {
             status: 200 as const,
-            body: { message: "Score reported", data: updated as any },
+            body: { message: "Match finalized", data: updated as any },
         };
     },
 
@@ -95,12 +114,4 @@ export const matchesController = s.router(contract.matches, {
         return { status: 200 as const, body: standings as any };
     },
 
-    advanceSwissRound: async ({ params, req }: any) => {
-        await requireTournamentAdmin(req, params.tournamentId);
-        const round = await BracketService.generateNextSwissRound(params.tournamentId);
-        return {
-            status: 201 as const,
-            body: { message: `Swiss round ${round} generated`, round },
-        };
-    },
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -9,12 +9,15 @@ import { toastApiError } from "@/lib/api-error";
 import {
   TournamentStatusActions,
   TournamentCancelDangerZone,
+  TournamentDeleteDangerZone,
 } from "../_components/tournament-status-actions";
+import { uploadFile } from "@/lib/upload";
 
-export function TournamentSettingsTab({ tournament, org, onUpdate }: {
+export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
   tournament: Tournament;
   org: Organization;
   onUpdate: (t: Tournament) => void;
+  onDelete: () => void;
 }) {
   const [form, setForm] = useState({
     name: tournament.name,
@@ -36,6 +39,8 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setForm({
@@ -57,6 +62,32 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
       matchConfigSchema: JSON.stringify(tournament.matchConfigSchema, null, 2),
     });
   }, [tournament.id, tournament.updatedAt]);
+
+  const pickBanner = () => bannerInputRef.current?.click();
+
+  const onBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5MB or less.");
+      return;
+    }
+    setBannerUploading(true);
+    try {
+      const result = await uploadFile(file);
+      setForm((f) => ({ ...f, bannerUrl: result.url }));
+      toast.success("Banner uploaded — save changes to apply.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBannerUploading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -154,7 +185,6 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
                 <SelectItem value="single_elimination">Single Elimination</SelectItem>
                 <SelectItem value="double_elimination">Double Elimination</SelectItem>
                 <SelectItem value="round_robin">Round Robin</SelectItem>
-                <SelectItem value="swiss">Swiss</SelectItem>
                 <SelectItem value="free_for_all">Free for All</SelectItem>
               </SelectContent>
             </Select>
@@ -224,10 +254,54 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
           </label>
 
           {/* Media */}
-          <label className="dashboard-field" style={{ gridColumn: "1 / -1" }}>
-            <span className="dashboard-field-label">Banner Image URL</span>
-            <input className="dashboard-input" placeholder="https://..." value={form.bannerUrl} onChange={e => setForm(f => ({ ...f, bannerUrl: e.target.value }))} />
-          </label>
+          <div className="dashboard-field" style={{ gridColumn: "1 / -1" }}>
+            <span className="dashboard-field-label">Tournament banner</span>
+            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap", marginTop: "8px" }}>
+              {form.bannerUrl ? (
+                <div
+                  style={{
+                    width: 200,
+                    height: 80,
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    border: "1px solid var(--border-subtle)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={form.bannerUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              ) : null}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: "none" }}
+                  onChange={onBannerFile}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={pickBanner}
+                  disabled={bannerUploading}
+                  style={{ alignSelf: "flex-start" }}
+                >
+                  {bannerUploading ? "Uploading…" : "Upload banner"}
+                </button>
+                {form.bannerUrl ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12, alignSelf: "flex-start" }}
+                    onClick={() => setForm((f) => ({ ...f, bannerUrl: "" }))}
+                  >
+                    Remove banner
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
 
           <div style={{ borderTop: "1px solid var(--border-subtle)", gridColumn: "1 / -1", margin: "12px 0" }} />
 
@@ -295,13 +369,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 12px" }}>
             Permanently delete this tournament and all its data. This cannot be undone.
           </p>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ color: "var(--destructive)", borderColor: "color-mix(in srgb, var(--destructive) 25%, transparent)" }}
-          >
-            Delete tournament
-          </button>
+          <TournamentDeleteDangerZone tournament={tournament} org={org} onDelete={onDelete} />
         </div>
       </div>
     </div>

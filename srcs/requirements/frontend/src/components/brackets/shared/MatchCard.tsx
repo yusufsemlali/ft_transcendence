@@ -16,6 +16,7 @@ const STATUS_BADGE: Record<string, { label: string; variant: "default" | "outlin
 export function MatchCard({
     match,
     variant = "default",
+    final = false,
     onClick,
     onParticipantClick,
     renderParticipant,
@@ -26,27 +27,24 @@ export function MatchCard({
     const p1Winner = match.winnerId != null && match.winnerId === match.participant1?.id;
     const p2Winner = match.winnerId != null && match.winnerId === match.participant2?.id;
 
-    const card = (
+    return (
         <div
             className={cn(
-                "glass-card overflow-hidden relative group transition-all",
-                isCompact ? "min-w-[200px]" : "min-w-[240px]",
-                onClick && "cursor-pointer hover:border-primary/30",
-                match.status === "ongoing" && "ring-1 ring-primary/40",
+                "match-card",
+                final && "match-card-final",
+                onClick && "cursor-pointer",
+                match.status === "ongoing" && "is-live",
                 className,
             )}
-            style={{ padding: 0 }}
             onClick={() => onClick?.(match)}
         >
-            {/* Status indicator strip */}
             {match.status === "ongoing" && (
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary animate-pulse" />
+                <div className="match-card-live-strip animate-pulse" />
             )}
 
-            {/* Participants */}
             <div className="relative">
                 {renderParticipant ? (
-                    <div className="px-3 py-2">
+                    <div className="match-card-slot">
                         {renderParticipant(match.participant1, match.id, "top")}
                     </div>
                 ) : (
@@ -60,10 +58,10 @@ export function MatchCard({
                     />
                 )}
 
-                <div className="h-px bg-border/50 mx-2" />
+                <div className="match-card-divider" />
 
                 {renderParticipant ? (
-                    <div className="px-3 py-2">
+                    <div className="match-card-slot">
                         {renderParticipant(match.participant2, match.id, "bottom")}
                     </div>
                 ) : (
@@ -78,14 +76,13 @@ export function MatchCard({
                 )}
             </div>
 
-            {/* Footer */}
             {!isCompact && (
-                <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30 border-t border-border/30">
-                    <Badge variant={badge.variant} className="text-[9px]">
+                <div className="match-card-footer">
+                    <Badge variant={badge.variant}>
                         {badge.label}
                     </Badge>
                     {match.scheduledAt && (
-                        <span className="text-[10px] text-muted-foreground font-mono">
+                        <span className="match-card-date">
                             {new Date(match.scheduledAt).toLocaleDateString(undefined, {
                                 month: "short",
                                 day: "numeric",
@@ -96,6 +93,4 @@ export function MatchCard({
             )}
         </div>
     );
-
-    return card;
 }

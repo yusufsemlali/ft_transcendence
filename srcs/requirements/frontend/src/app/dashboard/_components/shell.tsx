@@ -340,6 +340,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
                     tournament={activeTournament} 
                     org={org} 
                     onUpdate={(t) => setActiveTournament(t)} 
+                    onDelete={() => backToOrg()}
                 />
               )}
             </>

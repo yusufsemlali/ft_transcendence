@@ -65,7 +65,7 @@ export default function AdminPage() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"users" | "organizations">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "organizations" | "sports">("users");
 
   interface OrgRow {
     id: string;
@@ -86,6 +86,34 @@ export default function AdminPage() {
   const [orgsLoading, setOrgsLoading] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<OrgRow | null>(null);
   const [showDeleteOrgModal, setShowDeleteOrgModal] = useState(false);
+
+  /* ── Sports State ── */
+  interface Sport {
+    id: string;
+    name: string;
+    category: string;
+    scoringType: string;
+    mode: string;
+    requiredHandleType: string | null;
+    defaultMinTeamSize: number | null;
+    defaultMaxTeamSize: number | null;
+    defaultHasDraws: boolean;
+    tournamentConfigSchema: any;
+    matchConfigSchema: any;
+    createdAt: string;
+    updatedAt: string;
+  }
+  const [sports, setSportsList] = useState<Sport[]>([]);
+  const [sportsLoading, setSportsLoading] = useState(false);
+  const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
+  const [showSportModal, setShowSportModal] = useState(false);
+  const [showDeleteSportModal, setShowDeleteSportModal] = useState(false);
+  const [sportForm, setSportForm] = useState<Partial<Sport>>({});
+
+  const CATEGORIES = ["esports", "physical", "tabletop", "custom"];
+  const MODES = ["1v1", "team", "ffa"];
+  const SCORING = ["points_high", "time_low", "sets", "binary", "stocks"];
+  const HANDLES = ["riot_id", "steam_id", "psn_id", "xbox_id", "battlenet_id", "nintendo_id", "uplay_id", "epic_id", "fide_id", "other", "generic_id"];
 
   /* ── Modals ── */
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -132,7 +160,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (activeTab === "organizations") fetchOrgs();
+    if (activeTab === "sports") fetchSports();
   }, [activeTab, fetchOrgs]);
+
+  const fetchSports = async () => {
+    setSportsLoading(true);
+    try {
+      const res = await api.sports.getSports();
+      if (res.status === 200) setSportsList(res.body as Sport[]);
+    } catch { }
+    finally { setSportsLoading(false); }
+  };
 
   const fetchSessions = async (userId: string) => {
     setSessionsLoading(true);
@@ -209,6 +247,36 @@ export default function AdminPage() {
     setShowDeleteOrgModal(false);
   };
 
+  const handleSaveSport = async () => {
+    try {
+      const isEdit = !!sportForm.id;
+      const res = isEdit
+        ? await api.sports.update({ params: { id: sportForm.id! }, body: sportForm })
+        : await api.sports.create({ body: sportForm as any });
+
+      if (res.status === 200 || res.status === 201) {
+        setActionMessage({ type: "success", text: `Sport ${isEdit ? "updated" : "created"}` });
+        fetchSports();
+        setShowSportModal(false);
+      } else {
+        setActionMessage({ type: "error", text: (res.body as any)?.message || "Failed" });
+      }
+    } catch { setActionMessage({ type: "error", text: "Network error" }); }
+  };
+
+  const handleDeleteSport = async () => {
+    if (!selectedSport) return;
+    try {
+      const res = await api.sports.delete({ params: { id: selectedSport.id } });
+      if (res.status === 204) {
+        setSportsList(prev => prev.filter(s => s.id !== selectedSport.id));
+        setSelectedSport(null);
+        setActionMessage({ type: "success", text: "Sport deleted" });
+      }
+    } catch { setActionMessage({ type: "error", text: "Network error" }); }
+    setShowDeleteSportModal(false);
+  };
+
   const handleRevokeSession = async (sessionId: string) => {
     if (!selectedUser) return;
     try {
@@ -264,6 +332,15 @@ export default function AdminPage() {
         >
           <span className="material-symbols-outlined" style={{ fontSize: "16px", verticalAlign: "-3px", marginRight: "4px" }}>domain</span>
           Organizations
+        </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === "sports" ? "btn-primary" : "btn-secondary"}`}
+          style={{ fontSize: "12px", padding: "6px 14px" }}
+          onClick={() => { setActiveTab("sports"); setSelectedUser(null); setSelectedOrg(null); }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: "16px", verticalAlign: "-3px", marginRight: "4px" }}>sports_esports</span>
+          Sports Blueprints
         </button>
       </div>
 
@@ -610,7 +687,7 @@ export default function AdminPage() {
                 {actionMessage.text}
               </div>
             )}
-            <div style={{ display: "grid", gap: "8px", marginBottom: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
               <InfoChip label="Visibility" value={selectedOrg.visibility} />
               <InfoChip label="Created" value={new Date(selectedOrg.createdAt).toLocaleString()} />
               {selectedOrg.description && <InfoChip label="Description" value={selectedOrg.description} span={2} />}
@@ -642,6 +719,176 @@ export default function AdminPage() {
         </Modal>
       )}
       </>
+      )}
+
+      {activeTab === "sports" && (
+        <>
+          <div className="glass-card admin-toolbar" style={{ padding: "16px", marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              className="btn btn-primary"
+              style={{ fontSize: "12px", padding: "8px 16px" }}
+              onClick={() => {
+                setSportForm({
+                  name: "",
+                  category: "esports",
+                  scoringType: "points_high",
+                  mode: "1v1",
+                  defaultHasDraws: false,
+                  defaultMinTeamSize: 1,
+                  defaultMaxTeamSize: 1,
+                  requiredHandleType: null,
+                });
+                setShowSportModal(true);
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>add</span>
+              Add New Sport
+            </button>
+          </div>
+
+          <div className={`admin-layout${selectedSport ? " admin-layout--split" : ""}`}>
+            <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
+              {sportsLoading ? (
+                <div style={{ padding: "48px", textAlign: "center" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
+                </div>
+              ) : sports.length === 0 ? (
+                <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>No sports defined yet</div>
+              ) : (
+                <div className="admin-table-wrap">
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "520px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+                        <th style={{ textAlign: "left", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Sport Name</th>
+                        <th style={{ textAlign: "left", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Category</th>
+                        <th style={{ textAlign: "center", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Mode</th>
+                        <th style={{ textAlign: "center", padding: "10px 14px", color: "var(--text-muted)", fontWeight: "500", fontSize: "11px" }}>Scoring</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sports.map(s => (
+                        <tr key={s.id}
+                          onClick={() => { setSelectedSport(s); setActionMessage(null); }}
+                          style={{
+                            borderBottom: "1px solid var(--border-color)",
+                            cursor: "pointer",
+                            background: selectedSport?.id === s.id ? "color-mix(in srgb, var(--primary) 8%, transparent)" : undefined,
+                          }}
+                        >
+                          <td style={{ padding: "10px 14px", fontWeight: "600", color: "var(--text-primary)" }}>{s.name}</td>
+                          <td style={{ padding: "10px 14px", textTransform: "capitalize" }}>{s.category}</td>
+                          <td style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase" }}>{s.mode}</td>
+                          <td style={{ padding: "10px 14px", textAlign: "center" }}>{s.scoringType.replace("_", " ")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {selectedSport && (
+              <div className="glass-card animate-fade-in admin-detail-panel" style={{ padding: "20px", position: "sticky", top: "80px" }}>
+                <button type="button" onClick={() => setSelectedSport(null)} style={{ position: "absolute", top: "12px", right: "12px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>close</span>
+                </button>
+                <h3 style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "4px" }}>{selectedSport.name}</h3>
+                <p style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "16px" }}>Blueprint ID: {selectedSport.id}</p>
+
+                {actionMessage && activeTab === "sports" && (
+                  <div style={{ padding: "8px 12px", borderRadius: "6px", marginBottom: "12px", fontSize: "11px", background: "color-mix(in srgb, var(--accent-success, #22c55e) 10%, transparent)", color: "var(--accent-success, #22c55e)" }}>
+                    {actionMessage.text}
+                  </div>
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
+                  <InfoChip label="Category" value={selectedSport.category} />
+                  <InfoChip label="Mode" value={selectedSport.mode} />
+                  <InfoChip label="Scoring" value={selectedSport.scoringType} />
+                  <InfoChip label="Draws" value={selectedSport.defaultHasDraws ? "Allowed" : "No Draws"} />
+                  <InfoChip label="Handle Req" value={selectedSport.requiredHandleType || "None"} />
+                  <InfoChip label="Team Size" value={`${selectedSport.defaultMinTeamSize} - ${selectedSport.defaultMaxTeamSize}`} />
+                </div>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button className="btn btn-secondary" style={{ flex: 1, fontSize: "11px" }} onClick={() => { setSportForm(selectedSport); setShowSportModal(true); }}>
+                    Edit Blueprint
+                  </button>
+                  <button className="btn btn-secondary" style={{ color: "var(--destructive)", borderColor: "color-mix(in srgb, var(--destructive) 30%, transparent)", fontSize: "11px" }} onClick={() => setShowDeleteSportModal(true)}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {showSportModal && (
+            <Modal title={sportForm.id ? "Edit Sport Blueprint" : "Create New Sport"} onClose={() => setShowSportModal(false)} onConfirm={handleSaveSport} confirmLabel="Save Blueprint">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <label className="dashboard-field" style={{ gridColumn: "span 2" }}>
+                  <span className="dashboard-field-label">Sport Name</span>
+                  <input className="dashboard-input" value={sportForm.name} onChange={e => setSportForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Chess, League of Legends" />
+                </label>
+                
+                <label className="dashboard-field">
+                  <span className="dashboard-field-label">Category</span>
+                  <Select value={sportForm.category} onValueChange={v => setSportForm(f => ({ ...f, category: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </label>
+
+                <label className="dashboard-field">
+                  <span className="dashboard-field-label">Primary Mode</span>
+                  <Select value={sportForm.mode} onValueChange={v => setSportForm(f => ({ ...f, mode: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{MODES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                  </Select>
+                </label>
+
+                <label className="dashboard-field">
+                  <span className="dashboard-field-label">Scoring Engine</span>
+                  <Select value={sportForm.scoringType} onValueChange={v => setSportForm(f => ({ ...f, scoringType: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{SCORING.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  </Select>
+                </label>
+
+                <label className="dashboard-field">
+                  <span className="dashboard-field-label">Required Identity Handle</span>
+                  <Select value={sportForm.requiredHandleType || "none"} onValueChange={v => setSportForm(f => ({ ...f, requiredHandleType: v === "none" ? null : v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Not Required</SelectItem>
+                      {HANDLES.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <label className="dashboard-field">
+                  <span className="dashboard-field-label">Min Team Size</span>
+                  <input type="number" className="dashboard-input" value={sportForm.defaultMinTeamSize || 1} onChange={e => setSportForm(f => ({ ...f, defaultMinTeamSize: +e.target.value }))} />
+                </label>
+                <label className="dashboard-field">
+                  <span className="dashboard-field-label">Max Team Size</span>
+                  <input type="number" className="dashboard-input" value={sportForm.defaultMaxTeamSize || 1} onChange={e => setSportForm(f => ({ ...f, defaultMaxTeamSize: +e.target.value }))} />
+                </label>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", gridColumn: "span 2", padding: "8px 0" }}>
+                  <input type="checkbox" checked={sportForm.defaultHasDraws} onChange={e => setSportForm(f => ({ ...f, defaultHasDraws: e.target.checked }))} />
+                  <span style={{ fontSize: "13px" }}>Allow Draws by Default</span>
+                </div>
+              </div>
+            </Modal>
+          )}
+
+          {showDeleteSportModal && (
+            <Modal title="Delete Sport Blueprint" onClose={() => setShowDeleteSportModal(false)} onConfirm={handleDeleteSport} confirmLabel="Delete Forever" confirmColor="var(--destructive)">
+              <p style={{ fontSize: "13px" }}>Are you sure you want to delete <strong>{selectedSport?.name}</strong>?</p>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px" }}>This will NOT delete existing tournaments, but they may become orphaned or lose some functionality.</p>
+            </Modal>
+          )}
+        </>
       )}
     </div>
   );
@@ -680,9 +927,17 @@ function StatusBadge({ status }: { status: UserStatus }) {
 
 function InfoChip({ label, value, span }: { label: string; value: string; span?: number }) {
   return (
-    <div style={{ padding: "6px 10px", borderRadius: "6px", background: "color-mix(in srgb, var(--text-muted) 6%, transparent)", gridColumn: span ? `span ${span}` : undefined }}>
+    <div style={{ padding: "6px 10px", borderRadius: "6px", background: "color-mix(in srgb, var(--text-muted) 6%, transparent)", gridColumn: span ? `span ${span}` : undefined, minWidth: 0 }}>
       <div style={{ fontSize: "9px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--text-muted)", marginBottom: "2px" }}>{label}</div>
-      <div style={{ fontSize: "12px", color: "var(--text-primary)", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
+      <div style={{ 
+        fontSize: "12px", 
+        color: "var(--text-primary)", 
+        fontWeight: "500", 
+        overflow: "hidden", 
+        textOverflow: span === 2 ? "initial" : "ellipsis", 
+        whiteSpace: span === 2 ? "normal" : "nowrap",
+        overflowWrap: "anywhere"
+      }}>{value}</div>
     </div>
   );
 }

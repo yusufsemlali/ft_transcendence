@@ -5,6 +5,7 @@ import { tournaments } from "@/dal/db/schemas/tournaments";
 import { eq } from "drizzle-orm";
 import AppError from "@/utils/error";
 import type {
+    AdminMatchUpdate,
     BracketState,
     BracketParticipant,
     BracketRound,
@@ -16,7 +17,6 @@ import type {
 
 function getRoundLabel(round: number, totalRounds: number, bracketType: string): string {
     if (bracketType === "round_robin") return `Round ${round}`;
-    if (bracketType === "swiss") return `Round ${round}`;
     if (bracketType === "free_for_all") return `Group ${round}`;
 
     if (round >= 200) return "Grand Finals";
@@ -39,9 +39,36 @@ function getRoundSection(round: number): "winners" | "losers" | "grand_finals" |
     return "winners";
 }
 
-// ─── Score Reporting ─────────────────────────────────────
+// ─── Score updates (no completion) ───────────────────────
 
-export async function reportScore(
+/** Update displayed scores only — match stays pending/ongoing; no bracket advancement. */
+export async function patchMatchScores(
+    matchId: string,
+    score1: number,
+    score2: number,
+): Promise<typeof matches.$inferSelect> {
+    const [match] = await db.select().from(matches).where(eq(matches.id, matchId));
+    if (!match) throw new AppError(404, "Match not found");
+
+    if (match.status === "completed") {
+        throw new AppError(409, "Scores cannot be changed on a completed match. Use dispute flow if needed.");
+    }
+    if (match.status === "cancelled") {
+        throw new AppError(409, "Cannot update scores for a cancelled match.");
+    }
+
+    const [updated] = await db
+        .update(matches)
+        .set({ score1, score2 })
+        .where(eq(matches.id, matchId))
+        .returning();
+
+    return updated!;
+}
+
+// ─── Finalize result (complete + advance) ─────────────────
+
+export async function finalizeMatchResult(
     matchId: string,
     score1: number,
     score2: number,
@@ -54,10 +81,9 @@ export async function reportScore(
         throw new AppError(409, "Match is already completed.");
     }
     if (match.status === "cancelled") {
-        throw new AppError(409, "Cannot report scores for a cancelled match.");
+        throw new AppError(409, "Cannot finalize a cancelled match.");
     }
 
-    // Determine winner
     let resolvedWinner = winnerId ?? null;
     if (!resolvedWinner) {
         if (score1 > score2 && match.participant1Id) {
@@ -65,7 +91,6 @@ export async function reportScore(
         } else if (score2 > score1 && match.participant2Id) {
             resolvedWinner = match.participant2Id;
         }
-        // If tied and no explicit winner, leave winnerId null (draw)
     }
 
     const [updated] = await db
@@ -80,12 +105,10 @@ export async function reportScore(
         .where(eq(matches.id, matchId))
         .returning();
 
-    // Advance winner to next match if applicable
     if (resolvedWinner && updated.nextMatchId) {
         await advanceWinner(updated, resolvedWinner);
     }
 
-    // For elimination brackets, mark the loser as eliminated
     if (resolvedWinner) {
         const [tournament] = await db
             .select()
@@ -104,7 +127,7 @@ export async function reportScore(
         }
     }
 
-    return updated;
+    return updated!;
 }
 
 async function advanceWinner(match: typeof matches.$inferSelect, winnerId: string): Promise<void> {
@@ -129,6 +152,57 @@ export async function getMatch(matchId: string) {
     const [match] = await db.select().from(matches).where(eq(matches.id, matchId));
     if (!match) throw new AppError(404, "Match not found");
     return match;
+}
+
+function assertAdminStatusTransition(
+    from: (typeof matches.$inferSelect)["status"],
+    to: (typeof matches.$inferSelect)["status"],
+): void {
+    if (from === to) return;
+    if (to === "completed") {
+        throw new AppError(400, "Use POST /matches/:id/finalize to complete a match and record results.");
+    }
+    const allowed: Record<string, string[]> = {
+        pending: ["ongoing", "cancelled", "disputed"],
+        ongoing: ["pending", "cancelled", "disputed"],
+        completed: ["disputed"],
+        disputed: ["pending", "ongoing", "cancelled"],
+        cancelled: ["pending"],
+    };
+    if (!allowed[from]?.includes(to)) {
+        throw new AppError(400, `Invalid status transition (${from} → ${to}).`);
+    }
+}
+
+/** Tournament admin: reschedule or set live/offline state without recording results. */
+export async function adminPatchMatch(
+    matchId: string,
+    patch: AdminMatchUpdate,
+): Promise<typeof matches.$inferSelect> {
+    const match = await getMatch(matchId);
+
+    const updates: Partial<typeof matches.$inferSelect> = {};
+
+    if (patch.scheduledAt !== undefined) {
+        updates.scheduledAt = patch.scheduledAt;
+    }
+
+    if (patch.status !== undefined) {
+        assertAdminStatusTransition(match.status, patch.status);
+        updates.status = patch.status;
+    }
+
+    if (Object.keys(updates).length === 0) {
+        throw new AppError(400, "No fields to update");
+    }
+
+    const [updated] = await db
+        .update(matches)
+        .set(updates)
+        .where(eq(matches.id, matchId))
+        .returning();
+
+    return updated!;
 }
 
 // ─── List Tournament Matches ─────────────────────────────
@@ -327,18 +401,6 @@ function computeStandings(
         }
     }
 
-    // Buchholz tiebreaker for Swiss
-    const buchholzMap = new Map<string, number>();
-    if (bracketType === "swiss") {
-        for (const [id, s] of stats) {
-            let buchholz = 0;
-            for (const oppId of s.opponents) {
-                const opp = stats.get(oppId);
-                if (opp) buchholz += opp.points;
-            }
-            buchholzMap.set(id, buchholz);
-        }
-    }
 
     const participantMap = new Map(allCompetitors.map((c) => [c.id, c]));
 
@@ -358,7 +420,6 @@ function computeStandings(
             draws: s.draws,
             points: s.points,
             matchesPlayed: s.matchesPlayed,
-            ...(bracketType === "swiss" && { buchholz: buchholzMap.get(id) ?? 0 }),
             ...(["round_robin", "free_for_all"].includes(bracketType) && {
                 goalsFor: s.goalsFor,
                 goalsAgainst: s.goalsAgainst,
@@ -370,7 +431,6 @@ function computeStandings(
     // Sort: points desc, then tiebreakers
     entries.sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
-        if (bracketType === "swiss") return (b.buchholz ?? 0) - (a.buchholz ?? 0);
         if (b.wins !== a.wins) return b.wins - a.wins;
         const gdA = (a.goalDifference ?? 0);
         const gdB = (b.goalDifference ?? 0);

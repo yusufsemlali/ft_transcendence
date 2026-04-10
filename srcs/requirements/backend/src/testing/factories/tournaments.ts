@@ -3,7 +3,7 @@ import { tournaments } from '@/dal/db/schemas/tournaments';
 
 type TournamentInsert = typeof tournaments.$inferInsert;
 
-const BRACKET_TYPES = ['single_elimination', 'double_elimination', 'round_robin', 'swiss', 'free_for_all'] as const;
+const BRACKET_TYPES = ['single_elimination', 'double_elimination', 'round_robin', 'free_for_all'] as const;
 const STATUSES = ['draft', 'registration', 'upcoming', 'ongoing', 'completed', 'cancelled'] as const;
 const MODES = ['1v1', 'team', 'ffa'] as const;
 const SCORING_TYPES = ['points_high', 'time_low', 'sets', 'binary', 'stocks'] as const;
