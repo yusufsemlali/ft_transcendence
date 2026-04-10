@@ -74,7 +74,7 @@ io.on('connection', (socket) => {
 
 ensureChatTables()
   .then(() => {
-    httpServer.listen(PORT, () => {
+    httpServer.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`Chat server running on port ${PORT}`);
       console.log(`Test client available at http://localhost:${PORT}`);
     });

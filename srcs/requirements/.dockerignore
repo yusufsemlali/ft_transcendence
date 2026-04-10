@@ -7,3 +7,4 @@ frontend/shared
 **/.git
 **/.DS_Store
 **/build
+**/.pnpm-store
