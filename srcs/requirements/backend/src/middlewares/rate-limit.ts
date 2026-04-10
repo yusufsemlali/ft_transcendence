@@ -20,6 +20,8 @@ export const rootRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10 * REQUEST_MULTIPLIER,
   handler: customHandler,
+  // Skip rate limiting for real-time streams to prevent blocked hydration
+  skip: (req) => req.path.includes("/stream"),
 });
 
 // Upload rate limiter

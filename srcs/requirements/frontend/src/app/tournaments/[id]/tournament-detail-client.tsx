@@ -1,11 +1,13 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { BracketState, StandingsEntry } from "@ft-transcendence/contracts";
+import api from "@/lib/api/api";
+import { formatApiErrorBody } from "@/lib/api-error";
+import type { BracketState } from "@ft-transcendence/contracts";
 import { BracketView, MatchCard, StandingsTable } from "@/components/brackets";
 import { Page } from "@/components/layout/Page";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
-import api from "@/lib/api/api";
-import { formatApiErrorBody, toastApiError } from "@/lib/api-error";
-import { useAuth } from "@/lib/store/hooks";
+import { useAuth, useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import { fetchTournamentDetailThunk } from "@/lib/store/tournamentSlice";
 import { cn } from "@/lib/utils";
 
 const UUID_RE =
@@ -61,7 +62,7 @@ function StateCard({
 }) {
   return (
     <Page className="max-w-[900px]">
-      <Card className="mx-auto text-center">
+      <Card className="mx-auto text-center" style={{ padding: '60px 40px' }}>
         <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         {actionLabel && actionHref && (
@@ -77,49 +78,24 @@ function StateCard({
 export function TournamentDetailClient({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<PublicTab>("overview");
 
   const validId = UUID_RE.test(id);
 
-  const detailQuery = useQuery({
-    queryKey: ["public-tournament", id],
-    queryFn: async () => {
-      const res = await api.tournaments.getTournamentById({ params: { id } });
-      if (res.status !== 200) {
-        if (res.status !== 404) {
-          toastApiError(res.body, "Failed to load tournament");
-        }
-        throw new Error("Not found");
-      }
-      return res.body.data;
-    },
-    enabled: validId,
-  });
+  const dispatch = useAppDispatch();
+  const detailState = useAppSelector(s => s.tournament.details[id]);
+  const t = detailState?.data;
+  const bracketData = detailState?.bracket;
+  const standingsData = detailState?.standings;
 
-  const bracketQuery = useQuery<BracketState>({
-    queryKey: ["bracket-state", id],
-    queryFn: async () => {
-      const res = await api.matches.getBracketState({ params: { tournamentId: id } });
-      if (res.status !== 200) throw new Error("Failed to load bracket");
-      return res.body as BracketState;
-    },
-    enabled: validId && !!detailQuery.data && BRACKET_VISIBLE_STATUSES.has(detailQuery.data.status),
-  });
+  const fetchDetail = useCallback(() => {
+    if (!validId) return;
+    dispatch(fetchTournamentDetailThunk(id));
+  }, [dispatch, id, validId]);
 
-  const standingsQuery = useQuery<StandingsEntry[]>({
-    queryKey: ["standings", id],
-    queryFn: async () => {
-      const res = await api.matches.getStandings({ params: { tournamentId: id } });
-      if (res.status !== 200) throw new Error("Failed to load standings");
-      return res.body as StandingsEntry[];
-    },
-    enabled:
-      validId &&
-      activeTab === "standings" &&
-      !!detailQuery.data &&
-      BRACKET_VISIBLE_STATUSES.has(detailQuery.data.status),
-  });
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
 
   const joinMutation = useMutation({
     mutationFn: async () => {
@@ -135,13 +111,30 @@ export function TournamentDetailClient({ id }: { id: string }) {
           ? "You are registered. Opening lobby..."
           : "Joined the lobby!",
       );
-      queryClient.invalidateQueries({ queryKey: ["public-tournament", id] });
+      fetchDetail();
       router.push(`/tournaments/${id}/lobby`);
     },
     onError: (e: Error) => {
       toast.error(e.message);
     },
   });
+
+  /* ── Real-time Hydration (SSE) ── */
+  useEffect(() => {
+    if (!validId) return;
+
+    // We FORCE /bff to use our streaming-enabled proxy fix
+    const streamUrl = "/bff/tournaments/" + id + "/lobby/stream";
+    const eventSource = new EventSource(streamUrl, { withCredentials: true });
+
+    eventSource.addEventListener("lobby_changed", () => {
+      fetchDetail();
+    });
+
+    return () => {
+      eventSource.close();
+    };
+  }, [id, validId, fetchDetail]);
 
   if (!validId) {
     return (
@@ -154,15 +147,15 @@ export function TournamentDetailClient({ id }: { id: string }) {
     );
   }
 
-  if (detailQuery.isPending) {
+  if (detailState?.isLoading && !t) {
     return (
       <Page className="max-w-[900px]">
-        <Card className="mx-auto text-center text-muted-foreground">Loading tournament...</Card>
+        <Card className="mx-auto text-center text-muted-foreground" style={{ padding: '60px' }}>Loading tournament...</Card>
       </Page>
     );
   }
 
-  if (detailQuery.isError || !detailQuery.data) {
+  if (detailState?.error || !t) {
     return (
       <StateCard
         title="Tournament not found"
@@ -173,14 +166,13 @@ export function TournamentDetailClient({ id }: { id: string }) {
     );
   }
 
-  const t = detailQuery.data;
   const callbackUrl = `/tournaments/${id}`;
   const showBracketTabs = BRACKET_VISIBLE_STATUSES.has(t.status);
   const visibleTabs = showBracketTabs ? TABS : TABS.filter((tab) => tab.id === "overview");
 
   return (
     <Page className="tournament-shell">
-      <div>
+      <div style={{ marginBottom: '16px' }}>
         <Link
           href="/tournaments"
           className="tournament-back-link"
@@ -216,20 +208,22 @@ export function TournamentDetailClient({ id }: { id: string }) {
           <h1 className="mb-6 text-4xl font-semibold leading-tight sm:text-5xl">{t.name}</h1>
 
           <div className="tournament-meta">
-            <Badge variant="outline" className="capitalize">
-              {formatLabel(t.bracketType)}
-            </Badge>
-            <Badge variant="outline" className="capitalize">
-              {t.mode}
-            </Badge>
-            <Badge variant="outline">
-              {t.minParticipants}-{t.lobbyCapacity} participants
-            </Badge>
-            {t.prizePool && <Badge variant="success">{t.prizePool}</Badge>}
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="capitalize">
+                {formatLabel(t.bracketType)}
+              </Badge>
+              <Badge variant="outline" className="capitalize">
+                {t.mode}
+              </Badge>
+              <Badge variant="outline">
+                {t.minParticipants}-{t.lobbyCapacity} participants
+              </Badge>
+              {t.prizePool && <Badge variant="success">{t.prizePool}</Badge>}
+            </div>
 
             <div className="tournament-meta-actions">
               {user ? (
-                <>
+                <div className="flex gap-3">
                   {t.status === "registration" && (
                     <button
                       type="button"
@@ -249,7 +243,7 @@ export function TournamentDetailClient({ id }: { id: string }) {
                       Lobby
                     </Link>
                   )}
-                </>
+                </div>
               ) : (
                 <Link
                   href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
@@ -283,37 +277,40 @@ export function TournamentDetailClient({ id }: { id: string }) {
         )}
       </Card>
 
-      <div className="tournament-stack">
+      <div className="tournament-stack mt-8">
         {activeTab === "overview" && <OverviewContent tournament={t} />}
 
         {activeTab === "bracket" && (
           <div>
-            {bracketQuery.isPending && (
-              <Card className="ds-panel-card">
+            {!bracketData && detailState?.isLoading ? (
+              <Card className="ds-panel-card p-20 text-center">
                 <div className="ds-empty-state">Loading bracket...</div>
               </Card>
-            )}
-            {bracketQuery.data && <BracketView data={bracketQuery.data} />}
-            {bracketQuery.isError && (
-              <Card className="ds-panel-card">
-                <div className="ds-empty-state">Could not load bracket.</div>
+            ) : bracketData ? (
+              <BracketView data={bracketData} />
+            ) : (
+              <Card className="ds-panel-card p-20 text-center">
+                <div className="ds-empty-state">No bracket data available.</div>
               </Card>
             )}
           </div>
         )}
 
-        {activeTab === "matches" && <MatchesContent bracketData={bracketQuery.data ?? null} />}
+        {activeTab === "matches" && <MatchesContent bracketData={bracketData ?? null} />}
 
         {activeTab === "standings" && (
           <Card className="ds-panel-card">
-            {standingsQuery.isPending && (
-              <div className="ds-empty-state">Loading standings...</div>
+            {detailState?.isLoading && !standingsData && (
+              <div className="ds-empty-state p-20 text-center">Loading standings...</div>
             )}
-            {standingsQuery.data && detailQuery.data && (
+            {standingsData && t && (
               <StandingsTable
-                standings={standingsQuery.data}
-                bracketType={detailQuery.data.bracketType as any}
+                standings={standingsData}
+                bracketType={t.bracketType as any}
               />
+            )}
+            {!detailState?.isLoading && !standingsData && (
+               <div className="ds-empty-state p-20 text-center">No standings available.</div>
             )}
           </Card>
         )}
@@ -324,52 +321,52 @@ export function TournamentDetailClient({ id }: { id: string }) {
 
 function OverviewContent({ tournament: t }: { tournament: any }) {
   return (
-    <div className="ds-stack-lg">
+    <div className="ds-stack-lg flex flex-col gap-8">
       {t.description && (
-        <Card className="ds-panel-card">
-          <h3 className="ds-panel-title">About</h3>
-          <p className="ds-copy">{t.description}</p>
+        <Card className="ds-panel-card p-6">
+          <h3 className="ds-panel-title text-xl font-bold mb-4">About</h3>
+          <p className="ds-copy text-muted-foreground whitespace-pre-wrap">{t.description}</p>
         </Card>
       )}
 
-      <Card className="ds-panel-card">
-        <h3 className="ds-panel-title">Details</h3>
-        <dl className="tournament-details-grid">
+      <Card className="ds-panel-card p-6">
+        <h3 className="ds-panel-title text-xl font-bold mb-4">Details</h3>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <div className="tournament-details-item">
-            <dt className="tournament-details-label">Mode</dt>
-            <dd className="tournament-details-value capitalize">{t.mode}</dd>
+            <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Mode</dt>
+            <dd className="text-sm font-medium capitalize">{t.mode}</dd>
           </div>
           <div className="tournament-details-item">
-            <dt className="tournament-details-label">Bracket</dt>
-            <dd className="tournament-details-value capitalize">{formatLabel(t.bracketType)}</dd>
+            <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Bracket</dt>
+            <dd className="text-sm font-medium capitalize">{formatLabel(t.bracketType)}</dd>
           </div>
           <div className="tournament-details-item">
-            <dt className="tournament-details-label">Team Size</dt>
-            <dd className="tournament-details-value">
+            <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Team Size</dt>
+            <dd className="text-sm font-medium">
               {t.minTeamSize === t.maxTeamSize
                 ? t.minTeamSize
                 : `${t.minTeamSize}-${t.maxTeamSize}`}
             </dd>
           </div>
           <div className="tournament-details-item">
-            <dt className="tournament-details-label">Participants</dt>
-            <dd className="tournament-details-value">
+            <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Participants</dt>
+            <dd className="text-sm font-medium">
               {t.minParticipants}-{t.lobbyCapacity}
             </dd>
           </div>
           <div className="tournament-details-item">
-            <dt className="tournament-details-label">Prize</dt>
-            <dd className="tournament-details-value text-green-400">{t.prizePool || "-"}</dd>
+            <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Prize</dt>
+            <dd className="text-sm font-medium text-green-400">{t.prizePool || "-"}</dd>
           </div>
           {t.entryFee > 0 && (
             <div className="tournament-details-item">
-              <dt className="tournament-details-label">Entry Fee</dt>
-              <dd className="tournament-details-value">{t.entryFee}</dd>
+              <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Entry Fee</dt>
+              <dd className="text-sm font-medium">{t.entryFee}</dd>
             </div>
           )}
           <div className="tournament-details-item">
-            <dt className="tournament-details-label">Scoring</dt>
-            <dd className="tournament-details-value capitalize">
+            <dt className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Scoring</dt>
+            <dd className="text-sm font-medium capitalize">
               {t.scoringType ? formatLabel(t.scoringType) : "-"}
             </dd>
           </div>
@@ -402,18 +399,18 @@ function MatchesContent({ bracketData }: { bracketData: BracketState | null }) {
 
   if (!bracketData || bracketData.rounds.length === 0) {
     return (
-      <Card className="ds-panel-card">
+      <Card className="ds-panel-card p-20 text-center">
         <div className="ds-empty-state">No matches available yet.</div>
       </Card>
     );
   }
 
   return (
-    <div className="ds-stack-md">
-      <Card size="sm" className="ds-panel ds-panel-card-sm">
-        <div className="ds-filters-row">
+    <div className="ds-stack-md flex flex-col gap-6">
+      <Card className="ds-panel-card p-4">
+        <div className="flex flex-wrap gap-4 mb-6">
           <Select value={roundFilter} onValueChange={setRoundFilter}>
-            <SelectTrigger className="ds-select-compact">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All rounds" />
             </SelectTrigger>
             <SelectContent>
@@ -427,7 +424,7 @@ function MatchesContent({ bracketData }: { bracketData: BracketState | null }) {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="ds-select-compact">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -439,7 +436,7 @@ function MatchesContent({ bracketData }: { bracketData: BracketState | null }) {
           </Select>
         </div>
 
-        <div className="ds-grid-cards">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((match) => (
             <div key={match.id}>
               <MatchCard match={match} variant="default" />
@@ -448,7 +445,7 @@ function MatchesContent({ bracketData }: { bracketData: BracketState | null }) {
         </div>
 
         {filtered.length === 0 && (
-          <div className="ds-empty-state">No matches match your filters.</div>
+          <div className="p-12 text-center text-muted-foreground">No matches match your filters.</div>
         )}
       </Card>
     </div>

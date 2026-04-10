@@ -2,6 +2,7 @@ import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import * as TournamentService from "@/services/tournament.service";
 import * as LobbyService from "@/services/lobby.service";
+import { broadcastDiscoveryUpdate } from "@/services/discovery-sse";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 import { requireOrgRole } from "@/utils/rbac";
@@ -18,6 +19,8 @@ export const tournamentsController = s.router(contract.tournaments, {
         await requireOrgRole(userId, params.organizationId, ["owner", "admin"]);
 
         const response = await TournamentService.createTournament(params.organizationId, body);
+
+        broadcastDiscoveryUpdate();
 
         return {
             status: 201,
@@ -60,6 +63,8 @@ export const tournamentsController = s.router(contract.tournaments, {
 
         const response = await TournamentService.updateTournament(params.id, body);
 
+        broadcastDiscoveryUpdate();
+
         return {
             status: 200,
             body: {
@@ -87,6 +92,8 @@ export const tournamentsController = s.router(contract.tournaments, {
         const response = await TournamentService.deleteTournament(params.id);
 
         if (!response) throw new AppError(500, "Deletion failed");
+
+        broadcastDiscoveryUpdate();
 
         return {
             status: 200,

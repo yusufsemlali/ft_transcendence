@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
+import tournamentReducer from "./tournamentSlice";
 import type { UserInfo } from "@/lib/types/user";
 
 export function makeStore(initialUser: UserInfo | null) {
   return configureStore({
     reducer: {
       auth: authReducer,
+      tournament: tournamentReducer,
     },
     preloadedState: {
       auth: {

@@ -9,13 +9,15 @@ import { toastApiError } from "@/lib/api-error";
 import {
   TournamentStatusActions,
   TournamentCancelDangerZone,
+  TournamentDeleteDangerZone,
 } from "../_components/tournament-status-actions";
 import { uploadFile } from "@/lib/upload";
 
-export function TournamentSettingsTab({ tournament, org, onUpdate }: {
+export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
   tournament: Tournament;
   org: Organization;
   onUpdate: (t: Tournament) => void;
+  onDelete: () => void;
 }) {
   const [form, setForm] = useState({
     name: tournament.name,
@@ -367,13 +369,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate }: {
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 12px" }}>
             Permanently delete this tournament and all its data. This cannot be undone.
           </p>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ color: "var(--destructive)", borderColor: "color-mix(in srgb, var(--destructive) 25%, transparent)" }}
-          >
-            Delete tournament
-          </button>
+          <TournamentDeleteDangerZone tournament={tournament} org={org} onDelete={onDelete} />
         </div>
       </div>
     </div>

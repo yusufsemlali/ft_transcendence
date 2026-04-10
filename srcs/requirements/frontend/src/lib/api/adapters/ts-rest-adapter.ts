@@ -37,6 +37,7 @@ function buildApi(
         request.fetchOptions = {
           ...request.fetchOptions,
           credentials: "include", // Browser automatically handles cookies
+          cache: "no-store",      // Prevent browser caching of dynamic data
           signal: usePolyfill
             ? timeoutSignal(timeout)
             : AbortSignal.timeout(timeout),

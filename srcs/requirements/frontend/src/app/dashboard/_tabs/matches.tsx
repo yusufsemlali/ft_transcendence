@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api/api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import { fetchTournamentDetailThunk, reportScoreThunk, finalizeMatchThunk } from "@/lib/store/tournamentSlice";
 import { toast } from "@/components/ui/sonner";
+import { useMutation } from "@tanstack/react-query";
+import api from "@/lib/api/api";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { BracketMatch, BracketState, Tournament, Organization } from "@ft-transcendence/contracts";
+import type { BracketMatch, Tournament, Organization } from "@ft-transcendence/contracts";
 
 interface MatchesTabProps {
     tournament: Tournament;
@@ -18,63 +20,58 @@ type Filter = "all" | "live" | "pending" | "completed" | "issues";
 type Row = BracketMatch & { roundLabel: string };
 
 export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
-    const queryClient = useQueryClient();
+    const dispatch = useAppDispatch();
+    const detailState = useAppSelector(s => s.tournament.details[tournament.id]);
+    const bracketData = detailState?.bracket;
+
     const [editingMatch, setEditingMatch] = useState<string | null>(null);
     const [score1, setScore1] = useState(0);
     const [score2, setScore2] = useState(0);
     const [filter, setFilter] = useState<Filter>("all");
 
-    const bracketQuery = useQuery<BracketState>({
-        queryKey: ["bracket-state", tournament.id],
-        queryFn: async () => {
-            const res = await api.matches.getBracketState({
-                params: { tournamentId: tournament.id },
-            });
-            if (res.status !== 200) throw new Error("Failed to load bracket");
-            return res.body as BracketState;
-        },
-    });
+    const fetchDetail = useCallback(() => {
+        dispatch(fetchTournamentDetailThunk(tournament.id));
+    }, [dispatch, tournament.id]);
 
-    /** PATCH scores only — does not complete the match. */
-    const saveScoresMutation = useMutation({
-        mutationFn: async ({ matchId, s1, s2 }: { matchId: string; s1: number; s2: number }) => {
-            const res = await api.matches.reportScore({
-                params: { id: matchId },
-                body: { score1: s1, score2: s2 },
-            });
-            if (res.status !== 200) {
-                const body = res.body as { message?: string };
-                throw new Error(body?.message ?? "Failed to save scores");
-            }
-            return res.body;
-        },
-        onSuccess: () => {
+    useEffect(() => {
+        if (!detailState) {
+            fetchDetail();
+        }
+    }, [detailState, fetchDetail]);
+
+    /* ── Real-time Hydration (SSE) ── */
+    useEffect(() => {
+        // We FORCE /bff to use our streaming-enabled proxy fix
+        const streamUrl = "/bff/tournaments/" + tournament.id + "/lobby/stream";
+        const eventSource = new EventSource(streamUrl, { withCredentials: true });
+
+        eventSource.addEventListener("lobby_changed", () => {
+             fetchDetail();
+        });
+
+        return () => {
+            eventSource.close();
+        };
+    }, [tournament.id, fetchDetail]);
+
+    const handleSaveScores = async (matchId: string, s1: number, s2: number) => {
+        try {
+            await dispatch(reportScoreThunk({ matchId, tournamentId: tournament.id, s1, s2 })).unwrap();
             toast.success("Scores saved");
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
-        },
-        onError: (e: Error) => toast.error(e.message),
-    });
+        } catch (e: any) {
+            toast.error(e.message || "Failed to save scores");
+        }
+    };
 
-    /** Complete match and run bracket advancement. */
-    const finalizeMutation = useMutation({
-        mutationFn: async ({ matchId, s1, s2 }: { matchId: string; s1: number; s2: number }) => {
-            const res = await api.matches.finalizeMatch({
-                params: { id: matchId },
-                body: { score1: s1, score2: s2 },
-            });
-            if (res.status !== 200) {
-                const body = res.body as { message?: string };
-                throw new Error(body?.message ?? "Failed to finalize match");
-            }
-            return res.body;
-        },
-        onSuccess: () => {
+    const handleFinalize = async (matchId: string, s1: number, s2: number) => {
+        try {
+            await dispatch(finalizeMatchThunk({ matchId, tournamentId: tournament.id, s1, s2 })).unwrap();
             toast.success("Match finalized");
             setEditingMatch(null);
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
-        },
-        onError: (e: Error) => toast.error(e.message),
-    });
+        } catch (e: any) {
+            toast.error(e.message || "Failed to finalize match");
+        }
+    };
 
     const patchMutation = useMutation({
         mutationFn: async ({
@@ -110,18 +107,17 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                           ? "Match flagged disputed"
                           : "Match updated";
             toast.success(label);
-            queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
+            fetchDetail();
         },
         onError: (e: Error) => toast.error(e.message),
     });
 
-
     const allMatches: Row[] = useMemo(
         () =>
-            bracketQuery.data?.rounds.flatMap((r) =>
+            bracketData?.rounds.flatMap((r) =>
                 r.matches.map((m) => ({ ...m, roundLabel: r.label })),
             ) ?? [],
-        [bracketQuery.data],
+        [bracketData],
     );
 
     const liveMatches = useMemo(() => allMatches.filter((m) => m.status === "ongoing"), [allMatches]);
@@ -141,7 +137,7 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
         }
     }, [allMatches, filter]);
 
-    if (bracketQuery.isPending) {
+    if (detailState?.isLoading && !bracketData) {
         return (
             <div className="glass-card" style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
                 Loading matches…
@@ -192,8 +188,8 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                                 match={match}
                                 statusBadge={STATUS_BADGE[match.status] ?? STATUS_BADGE.pending}
                                 patchMutation={patchMutation}
-                                saveScoresMutation={saveScoresMutation}
-                                finalizeMutation={finalizeMutation}
+                                handleSaveScores={handleSaveScores}
+                                handleFinalize={handleFinalize}
                                 editingMatch={editingMatch}
                                 setEditingMatch={setEditingMatch}
                                 score1={score1}
@@ -307,14 +303,7 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                                                         type="button"
                                                         className="btn btn-primary"
                                                         style={{ fontSize: "10px", padding: "3px 8px" }}
-                                                        disabled={finalizeMutation.isPending}
-                                                        onClick={() =>
-                                                            finalizeMutation.mutate({
-                                                                matchId: match.id,
-                                                                s1: match.score1,
-                                                                s2: match.score2,
-                                                            })
-                                                        }
+                                                        onClick={() => handleFinalize(match.id, match.score1, match.score2)}
                                                     >
                                                         Finalize match
                                                     </button>
@@ -325,14 +314,7 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                                                             type="button"
                                                             className="btn btn-secondary"
                                                             style={{ fontSize: "10px", padding: "3px 8px" }}
-                                                            disabled={saveScoresMutation.isPending}
-                                                            onClick={() =>
-                                                                saveScoresMutation.mutate({
-                                                                    matchId: match.id,
-                                                                    s1: score1,
-                                                                    s2: score2,
-                                                                })
-                                                            }
+                                                            onClick={() => handleSaveScores(match.id, score1, score2)}
                                                         >
                                                             Save scores
                                                         </button>
@@ -340,14 +322,7 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                                                             type="button"
                                                             className="btn btn-primary"
                                                             style={{ fontSize: "10px", padding: "3px 8px" }}
-                                                            disabled={finalizeMutation.isPending}
-                                                            onClick={() =>
-                                                                finalizeMutation.mutate({
-                                                                    matchId: match.id,
-                                                                    s1: score1,
-                                                                    s2: score2,
-                                                                })
-                                                            }
+                                                            onClick={() => handleFinalize(match.id, score1, score2)}
                                                         >
                                                             Finalize match
                                                         </button>
@@ -462,15 +437,12 @@ type PatchFn = (args: {
     body: { status?: "pending" | "ongoing" | "cancelled" | "disputed" };
 }) => void;
 
-type SaveScoresFn = (args: { matchId: string; s1: number; s2: number }) => void;
-type FinalizeFn = (args: { matchId: string; s1: number; s2: number }) => void;
-
 function LiveMatchCard({
     match,
     statusBadge,
     patchMutation,
-    saveScoresMutation,
-    finalizeMutation,
+    handleSaveScores,
+    handleFinalize,
     editingMatch,
     setEditingMatch,
     score1,
@@ -481,8 +453,8 @@ function LiveMatchCard({
     match: Row;
     statusBadge: { label: string; variant: "default" | "outline" | "secondary" | "destructive" | "success" };
     patchMutation: { isPending: boolean; mutate: PatchFn };
-    saveScoresMutation: { isPending: boolean; mutate: SaveScoresFn };
-    finalizeMutation: { isPending: boolean; mutate: FinalizeFn };
+    handleSaveScores: (matchId: string, s1: number, s2: number) => void;
+    handleFinalize: (matchId: string, s1: number, s2: number) => void;
     editingMatch: string | null;
     setEditingMatch: (id: string | null) => void;
     score1: number;
@@ -551,14 +523,7 @@ function LiveMatchCard({
                             type="button"
                             className="btn btn-primary"
                             style={{ fontSize: "10px", padding: "4px 10px" }}
-                            disabled={finalizeMutation.isPending}
-                            onClick={() =>
-                                finalizeMutation.mutate({
-                                    matchId: match.id,
-                                    s1: match.score1,
-                                    s2: match.score2,
-                                })
-                            }
+                            onClick={() => handleFinalize(match.id, match.score1, match.score2)}
                         >
                             Finalize match
                         </button>
@@ -570,14 +535,7 @@ function LiveMatchCard({
                             type="button"
                             className="btn btn-secondary"
                             style={{ fontSize: "10px", padding: "4px 10px" }}
-                            disabled={saveScoresMutation.isPending}
-                            onClick={() =>
-                                saveScoresMutation.mutate({
-                                    matchId: match.id,
-                                    s1: score1,
-                                    s2: score2,
-                                })
-                            }
+                            onClick={() => handleSaveScores(match.id, score1, score2)}
                         >
                             Save scores
                         </button>
@@ -585,14 +543,7 @@ function LiveMatchCard({
                             type="button"
                             className="btn btn-primary"
                             style={{ fontSize: "10px", padding: "4px 10px" }}
-                            disabled={finalizeMutation.isPending}
-                            onClick={() =>
-                                finalizeMutation.mutate({
-                                    matchId: match.id,
-                                    s1: score1,
-                                    s2: score2,
-                                })
-                            }
+                            onClick={() => handleFinalize(match.id, score1, score2)}
                         >
                             Finalize match
                         </button>

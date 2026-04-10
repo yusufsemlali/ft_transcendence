@@ -556,3 +556,154 @@ export function TournamentCancelDangerZone({
     </>
   );
 }
+
+/** Permanent deletion (typed confirm). Only in Settings → Danger zone. */
+export function TournamentDeleteDangerZone({
+  tournament,
+  org,
+  onDelete,
+}: {
+  tournament: Tournament;
+  org: Organization;
+  onDelete: () => void;
+}) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [typedDelete, setTypedDelete] = useState("");
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.tournaments.deleteTournament({
+        params: { organizationId: org.id, id: tournament.id },
+      });
+      if (res.status !== 200) {
+        throw new Error(formatApiErrorBody(res.body, "Failed to delete tournament"));
+      }
+      return res.body;
+    },
+    onSuccess: () => {
+      toast.success("Tournament deleted permanently");
+      setConfirmOpen(false);
+      onDelete();
+    },
+    onError: (e: Error) => {
+      toast.error(e.message);
+    },
+  });
+
+  const runDelete = () => {
+    if (typedDelete.trim().toUpperCase() !== "DELETE") {
+      toast.error("Type DELETE to confirm.");
+      return;
+    }
+    deleteMutation.mutate();
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-secondary"
+        style={{
+          color: "var(--destructive)",
+          borderColor: "color-mix(in srgb, var(--destructive) 25%, transparent)",
+          fontSize: "12px",
+          padding: "8px 16px",
+        }}
+        disabled={deleteMutation.isPending}
+        onClick={() => setConfirmOpen(true)}
+      >
+        Delete tournament
+      </button>
+
+      {confirmOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100vw",
+              minHeight: "100dvh",
+              margin: 0,
+              zIndex: 10050,
+              background: "rgba(0,0,0,0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "24px",
+              boxSizing: "border-box",
+            }}
+            onClick={() => !deleteMutation.isPending && setConfirmOpen(false)}
+          >
+            <div
+              className="glass-card"
+              style={{
+                maxWidth: "440px",
+                width: "100%",
+                padding: "24px",
+                border: "1px solid var(--border-color)",
+                margin: "auto",
+                flexShrink: 0,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ margin: "0 0 12px", fontSize: "16px", fontWeight: 600 }}>
+                Confirm: Delete tournament
+              </h3>
+              <p
+                style={{
+                  margin: "0 0 16px",
+                  fontSize: "13px",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.5,
+                }}
+              >
+                This action is irreversible. It will permanently remove <strong>{tournament.name}</strong> and all its matches, results, and settings.
+              </p>
+              <label className="dashboard-field" style={{ marginBottom: "16px" }}>
+                <span className="dashboard-field-label">Type DELETE to confirm</span>
+                <input
+                  className="dashboard-input"
+                  value={typedDelete}
+                  onChange={(e) => setTypedDelete(e.target.value)}
+                  placeholder="DELETE"
+                  autoComplete="off"
+                />
+              </label>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    setTypedDelete("");
+                  }}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    color: "var(--destructive)",
+                    borderColor: "color-mix(in srgb, var(--destructive) 40%, transparent)",
+                  }}
+                  disabled={deleteMutation.isPending}
+                  onClick={runDelete}
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Permanently Delete"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
