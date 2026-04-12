@@ -129,12 +129,6 @@ function LoginFormContent() {
             <span className="material-symbols-outlined" style={{ fontSize: "16px", marginLeft: "8px" }}>login</span>
           </button>
         </div>
-
-        <div style={{ textAlign: "center", marginTop: "1rem" }}>
-          <button type="button" style={{ fontSize: "0.75rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-            forgot password?
-          </button>
-        </div>
       </form>
     </div>
   );
