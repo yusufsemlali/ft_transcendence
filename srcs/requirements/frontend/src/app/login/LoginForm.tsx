@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, Suspense } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
@@ -9,12 +10,11 @@ import api from "@/lib/api/api";
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/profile";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const { login, isLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -75,15 +75,17 @@ function LoginFormContent() {
                } else {
                  toast.error("Failed to initiate 42 login");
                }
-             } catch (error) {
+             } catch (_error) {
                toast.error("An unexpected error occurred");
              }
           }}
         >
-          <img 
+          <Image 
             src="https://upload.wikimedia.org/wikipedia/commons/8/8d/42_Logo.svg" 
             alt="42 Login" 
-            style={{ width: "22px", height: "22px", filter: "brightness(0) invert(1)" }}
+            width={22}
+            height={22}
+            style={{ filter: "brightness(0) invert(1)" }}
           />
           <span style={{ fontSize: "0.75rem", fontWeight: "600", letterSpacing: "1px" }}>LOGIN WITH 42</span>
         </button>

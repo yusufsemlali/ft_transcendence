@@ -3,7 +3,7 @@
 import { useRef, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { MatchCard, BracketConnector, RoundHeader } from "../shared";
-import type { BracketViewProps } from "../types";
+import type { BracketViewProps, BracketRound } from "../types";
 
 export function DoubleEliminationBracket({
     data,
@@ -22,15 +22,15 @@ export function DoubleEliminationBracket({
     }, []);
 
     const winnersRounds = useMemo(
-        () => data.rounds.filter((r) => r.section === "winners"),
+        () => data.rounds.filter((r: BracketRound) => r.section === "winners"),
         [data.rounds],
     );
     const losersRounds = useMemo(
-        () => data.rounds.filter((r) => r.section === "losers"),
+        () => data.rounds.filter((r: BracketRound) => r.section === "losers"),
         [data.rounds],
     );
     const grandFinals = useMemo(
-        () => data.rounds.filter((r) => r.section === "grand_finals"),
+        () => data.rounds.filter((r: BracketRound) => r.section === "grand_finals"),
         [data.rounds],
     );
 
@@ -119,7 +119,7 @@ export function DoubleEliminationBracket({
             <div className="min-w-max relative py-6 px-2">
                 <BracketConnector
                     containerRef={containerRef}
-                    matchElements={matchRefs.current}
+                    matchRefs={matchRefs}
                     connections={connections}
                 />
                 {renderSection(winnersRounds, "Winners Bracket", "emoji_events")}

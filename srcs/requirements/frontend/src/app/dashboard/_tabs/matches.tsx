@@ -8,7 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api/api";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { BracketMatch, Tournament, Organization } from "@ft-transcendence/contracts";
+import type { BracketRound, BracketMatch, Tournament, Organization } from "@ft-transcendence/contracts";
 
 interface MatchesTabProps {
     tournament: Tournament;
@@ -19,7 +19,7 @@ type Filter = "all" | "live" | "pending" | "completed" | "issues";
 
 type Row = BracketMatch & { roundLabel: string };
 
-export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
+export function MatchesTab({ tournament }: MatchesTabProps) {
     const dispatch = useAppDispatch();
     const detailState = useAppSelector(s => s.tournament.details[tournament.id]);
     const bracketData = detailState?.bracket;
@@ -58,8 +58,8 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
         try {
             await dispatch(reportScoreThunk({ matchId, tournamentId: tournament.id, s1, s2 })).unwrap();
             toast.success("Scores saved");
-        } catch (e: any) {
-            toast.error(e.message || "Failed to save scores");
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "Failed to save scores");
         }
     };
 
@@ -68,8 +68,8 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
             await dispatch(finalizeMatchThunk({ matchId, tournamentId: tournament.id, s1, s2 })).unwrap();
             toast.success("Match finalized");
             setEditingMatch(null);
-        } catch (e: any) {
-            toast.error(e.message || "Failed to finalize match");
+        } catch (e: unknown) {
+            toast.error(e instanceof Error ? e.message : "Failed to finalize match");
         }
     };
 
@@ -77,13 +77,10 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
         mutationFn: async ({
             matchId,
             body,
-        }: {
-            matchId: string;
-            body: { status?: "pending" | "ongoing" | "cancelled" | "disputed"; scheduledAt?: Date | null };
-        }) => {
+        }: { matchId: string; body: Record<string, unknown> }) => {
             const res = await api.matches.updateMatch({
                 params: { id: matchId },
-                body,
+                body: body,
             });
             if (res.status !== 200) {
                 const body = res.body as { message?: string };
@@ -114,8 +111,8 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
 
     const allMatches: Row[] = useMemo(
         () =>
-            bracketData?.rounds.flatMap((r) =>
-                r.matches.map((m) => ({ ...m, roundLabel: r.label })),
+            bracketData?.rounds.flatMap((r: BracketRound) =>
+                r.matches.map((m: BracketMatch) => ({ ...m, roundLabel: r.label })),
             ) ?? [],
         [bracketData],
     );
@@ -125,13 +122,13 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
     const filteredMatches = useMemo(() => {
         switch (filter) {
             case "live":
-                return allMatches.filter((m) => m.status === "ongoing");
+                return allMatches.filter((m: Row) => m.status === "ongoing");
             case "pending":
-                return allMatches.filter((m) => m.status === "pending");
+                return allMatches.filter((m: Row) => m.status === "pending");
             case "completed":
-                return allMatches.filter((m) => m.status === "completed");
+                return allMatches.filter((m: Row) => m.status === "completed");
             case "issues":
-                return allMatches.filter((m) => m.status === "disputed" || m.status === "cancelled");
+                return allMatches.filter((m: Row) => m.status === "disputed" || m.status === "cancelled");
             default:
                 return allMatches;
         }
@@ -182,7 +179,7 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                         <span className="ml-1 inline-flex h-2 w-2 animate-pulse rounded-full bg-primary" />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        {liveMatches.map((match) => (
+                        {liveMatches.map((match: Row) => (
                             <LiveMatchCard
                                 key={match.id}
                                 match={match}
@@ -236,7 +233,7 @@ export function MatchesTab({ tournament, org: _org }: MatchesTabProps) {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredMatches.map((match) => {
+                            {filteredMatches.map((match: Row) => {
                                 const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.pending;
                                 const isEditing = editingMatch === match.id;
                                 const p1Name = match.participant1?.name ?? "TBD";

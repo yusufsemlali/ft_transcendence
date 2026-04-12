@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "@/components/ui/sonner";
@@ -21,6 +22,7 @@ interface FileUploaderContextType {
   reset: () => void;
   file: File | null;
   result: UploadResult | null;
+  accept: string;
 }
 
 const FileUploaderContext = React.createContext<FileUploaderContextType | undefined>(undefined);
@@ -63,8 +65,8 @@ export function FileUploader({
       setResult(uploadResult);
       onSuccess?.(uploadResult);
       toast.success("File uploaded successfully");
-    } catch (err: any) {
-      toast.error(err.message || "Upload failed");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
       setFile(null);
     } finally {
       setUploading(false);
@@ -79,7 +81,7 @@ export function FileUploader({
   }, []);
 
   return (
-    <FileUploaderContext.Provider value={{ uploading, progress, onFileSelect, reset, file, result }}>
+    <FileUploaderContext.Provider value={{ uploading, progress, onFileSelect, reset, file, result, accept }}>
       <div className={cn("flex flex-col gap-4", className)}>
         {children}
       </div>
@@ -98,7 +100,7 @@ function useFileUploader() {
    ═══════════════════════════════════════ */
 
 export function FileUploaderContent({ className, label = "Click or drag to upload" }: { className?: string, label?: string }) {
-  const { onFileSelect, uploading } = useFileUploader();
+  const { onFileSelect, uploading, accept } = useFileUploader();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
 
@@ -128,7 +130,7 @@ export function FileUploaderContent({ className, label = "Click or drag to uploa
         className
       )}
     >
-      <input type="file" ref={inputRef} onChange={handleChange} className="hidden" />
+      <input type="file" ref={inputRef} onChange={handleChange} className="hidden" accept={accept} />
       <span className="material-symbols-outlined text-4xl text-[var(--text-muted)] mb-3">cloud_upload</span>
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
     </div>
@@ -136,7 +138,7 @@ export function FileUploaderContent({ className, label = "Click or drag to uploa
 }
 
 export function FileUploaderItem() {
-  const { file, result, uploading, reset } = useFileUploader();
+  const { file, uploading, reset } = useFileUploader();
   const [preview, setPreview] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -154,7 +156,7 @@ export function FileUploaderItem() {
     <div className="flex items-center gap-3 p-3 glass-card bg-white/2">
       <div className="w-12 h-12 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center shrink-0 border border-white/5">
         {preview ? (
-          <img src={preview} className="w-full h-full object-cover" />
+          <Image src={preview} className="w-full h-full object-cover" alt="Preview" width={48} height={48} unoptimized />
         ) : (
           <span className="material-symbols-outlined text-[var(--primary)]">description</span>
         )}

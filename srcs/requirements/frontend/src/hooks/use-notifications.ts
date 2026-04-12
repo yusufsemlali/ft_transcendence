@@ -65,10 +65,10 @@ export function useNotifications(userId: string | undefined): UseNotificationsRe
         try {
             const res = await api.notifications.markAsRead({ params: { id }, body: {} });
             if (res.status === 200) {
-                setNotifications((prev) =>
-                    prev.map((n) => (n.id === id ? { ...n, readAt: new Date() } : n))
+                setNotifications((prev: Notification[]) =>
+                    prev.map((n: Notification) => (n.id === id ? { ...n, readAt: new Date() } : n))
                 );
-                setUnreadCount((prev) => Math.max(0, prev - 1));
+                setUnreadCount((prev: number) => Math.max(0, prev - 1));
             }
         } catch {}
     }, []);
@@ -77,7 +77,7 @@ export function useNotifications(userId: string | undefined): UseNotificationsRe
         try {
             const res = await api.notifications.markAllAsRead({ body: {} });
             if (res.status === 200) {
-                setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() })));
+                setNotifications((prev: Notification[]) => prev.map((n: Notification) => ({ ...n, readAt: n.readAt ?? new Date() })));
                 setUnreadCount(0);
             }
         } catch {}
@@ -86,8 +86,10 @@ export function useNotifications(userId: string | undefined): UseNotificationsRe
     useEffect(() => {
         if (!userId) return;
 
-        fetchUnreadCount();
-        fetchNotifications();
+        queueMicrotask(() => {
+            fetchUnreadCount();
+            fetchNotifications();
+        });
 
         const es = new EventSource("/api/notifications/stream", {
             withCredentials: true,

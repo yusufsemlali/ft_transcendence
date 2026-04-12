@@ -44,7 +44,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
       if (res.status === 201) {
         toast.success("Friend request sent!");
       } else {
-        const msg = (res.body as any)?.message || "Could not send request";
+        const msg = (res.body as { message?: string })?.message || "Could not send request";
         toast.error(msg);
       }
     } catch {
@@ -85,10 +85,10 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
           <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24, maxWidth: 360, margin: "0 auto 24px" }}>
             Sign in to join rooms, see presence, and send messages in real time.
           </p>
-          <a href="/login" className="btn btn-primary" style={{ borderRadius: 20 }}>
+          <Link href="/login" className="btn btn-primary" style={{ borderRadius: 20 }}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>login</span>
             Go to login
-          </a>
+          </Link>
         </div>
       </div>
     );

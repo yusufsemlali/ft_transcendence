@@ -44,7 +44,13 @@ export async function getServerUser(): Promise<UserInfo | null> {
             };
         }
     } catch (error) {
-        if (error instanceof Error && !error.message.includes('fetch failed')) {
+        // Re-throw Next.js dynamic server usage errors so the build system 
+        // can handle the transition to dynamic rendering silently.
+        if ((error as { digest?: string })?.digest === "DYNAMIC_SERVER_USAGE") {
+            throw error;
+        }
+
+        if (error instanceof Error && !error.message.includes("fetch failed")) {
             console.log("Failed to get server user:", error);
         }
     }

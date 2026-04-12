@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useMutation } from "@tanstack/react-query";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
@@ -28,13 +29,21 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
 
   useEffect(() => {
     if (isDraft) return;
+    interface LobbyCompetitor {
+      id: string;
+      roster: { userId: string }[];
+    }
+    interface LobbyState {
+      soloPlayers: { userId: string }[];
+      competitors: LobbyCompetitor[];
+    }
     api.tournaments.getLobbyState({ params: { id: tournament.id } })
-        .then(res => {
+        .then((res) => {
             if (res.status === 200) {
-                const state = res.body as any;
-                setStats(prev => ({
+                const state = res.body as LobbyState;
+                setStats((prev: typeof stats) => ({
                     ...prev,
-                    participants: (state.soloPlayers?.length || 0) + (state.competitors?.reduce((sum: number, c: any) => sum + (c.roster?.length || 0), 0) || 0),
+                    participants: (state.soloPlayers?.length || 0) + (state.competitors?.reduce((sum: number, c: LobbyCompetitor) => sum + (c.roster?.length || 0), 0) || 0),
                     teams: state.competitors?.length || 0
                 }));
             }
@@ -45,12 +54,12 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
     mutationFn: async () => {
       const res = await api.tournaments.updateTournament({
         params: { organizationId: org.id, id: tournament.id },
-        body: { status: "registration" as any },
+        body: { status: "registration" },
       });
       if (res.status !== 200) {
         throw new Error(formatApiErrorBody(res.body, "Failed to launch lobby"));
       }
-      return (res.body as any).data as Tournament;
+      return res.body.data;
     },
     onSuccess: (updated) => {
       toast.success("Lobby launched! Registration is now open.");
@@ -68,7 +77,8 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
     <div className="animate-fade-in" style={{ width: "100%" }}>
       {/* Hero Header */}
       <div className="glass-card" style={{ 
-          height: "220px", 
+          minHeight: "220px", 
+          height: "auto",
           marginBottom: "20px", 
           position: "relative", 
           overflow: "hidden", 
@@ -82,40 +92,69 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
             left: 0,
             right: 0,
             height: "100%",
-            backgroundImage: `url(${bannerUrl})`, 
-            backgroundSize: "cover", 
-            backgroundPosition: "center",
+            background: "linear-gradient(45deg, var(--background-secondary) 0%, var(--background) 100%)",
             zIndex: 0
         }} />
+
+        {bannerUrl && bannerUrl.startsWith('http') && (
+          <div style={{ 
+              position: "absolute", 
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "100%",
+              backgroundImage: `url(${bannerUrl})`, 
+              backgroundSize: "cover", 
+              backgroundPosition: "center",
+              zIndex: 1,
+              opacity: 0.6
+          }} />
+        )}
         
         <div style={{ 
             position: "absolute", 
             inset: 0, 
-            background: "linear-gradient(to top, var(--background) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)",
-            zIndex: 1
+            background: "linear-gradient(to top, var(--background) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.2) 100%)",
+            zIndex: 2
         }} />
 
         <div style={{ 
             position: "relative", 
-            zIndex: 2, 
+            zIndex: 3, 
             height: "100%", 
             display: "flex", 
             flexDirection: "column", 
             justifyContent: "flex-end", 
-            padding: "24px 32px",
+            padding: "24px",
         }}>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", width: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            <div style={{ 
+                display: "flex", 
+                alignItems: "flex-end", 
+                justifyContent: "space-between", 
+                width: "100%",
+                flexWrap: "wrap",
+                gap: "20px"
+            }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
                     <div style={{ 
-                        width: "100px", 
-                        height: "100px", 
+                        width: "80px", 
+                        height: "80px", 
                         borderRadius: "12px", 
                         overflow: "hidden", 
                         border: "1px solid rgba(255,255,255,0.1)",
                         boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-                        flexShrink: 0
+                        flexShrink: 0,
+                        background: "var(--background-secondary)",
+                        position: "relative"
                     }}>
-                        <img src={bannerUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <Image
+                          src={bannerUrl && bannerUrl.startsWith('http') ? bannerUrl : "/next.svg"}
+                          alt={tournament.name}
+                          width={80}
+                          height={80}
+                          style={{ objectFit: "cover" }}
+                          priority
+                        />
                     </div>
                     <div>
                         <span style={{ 
@@ -129,7 +168,7 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
                         }}>
                              {tournament.bracketType.replace('_', ' ')} &bull; {tournament.mode}
                         </span>
-                        <h2 style={{ fontSize: "28px", fontWeight: 800, color: "white", margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
+                        <h2 style={{ fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 800, color: "white", margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
                             {tournament.name}
                         </h2>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "8px" }}>
@@ -152,14 +191,20 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
                 </div>
 
                 {/* Action buttons based on status */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
+                <div style={{ 
+                    display: "flex", 
+                    flexWrap: "wrap",
+                    alignItems: "center", 
+                    gap: "8px",
+                    marginTop: "12px"
+                }}>
                     {isDraft && !confirmLaunch && (
                       <button
                         className="btn btn-primary"
-                        style={{ padding: "10px 24px" }}
+                        style={{ padding: "6px 16px", fontSize: "11px" }}
                         onClick={() => setConfirmLaunch(true)}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>rocket_launch</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>rocket_launch</span>
                         Launch Lobby
                       </button>
                     )}
@@ -200,10 +245,10 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
                     {isRegistration && (
                       <button
                         className="btn btn-secondary"
-                        style={{ padding: "10px 24px" }}
+                        style={{ padding: "6px 16px", fontSize: "11px" }}
                         onClick={() => onNavigate?.("lobby")}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>groups</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>groups</span>
                         View Lobby
                       </button>
                     )}

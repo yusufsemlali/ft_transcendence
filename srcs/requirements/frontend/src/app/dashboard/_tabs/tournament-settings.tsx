@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -61,7 +62,26 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
       customSettings: JSON.stringify(tournament.customSettings, null, 2),
       matchConfigSchema: JSON.stringify(tournament.matchConfigSchema, null, 2),
     });
-  }, [tournament.id, tournament.updatedAt]);
+  }, [
+    tournament.id,
+    tournament.name,
+    tournament.description,
+    tournament.bracketType,
+    tournament.isPrivate,
+    tournament.mode,
+    tournament.minTeamSize,
+    tournament.maxTeamSize,
+    tournament.allowDraws,
+    tournament.requiredHandleType,
+    tournament.minParticipants,
+    tournament.lobbyCapacity,
+    tournament.prizePool,
+    tournament.entryFee,
+    tournament.bannerUrl,
+    tournament.customSettings,
+    tournament.matchConfigSchema,
+    tournament.updatedAt,
+  ]);
 
   const pickBanner = () => bannerInputRef.current?.click();
 
@@ -80,7 +100,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
     setBannerUploading(true);
     try {
       const result = await uploadFile(file);
-      setForm((f) => ({ ...f, bannerUrl: result.url }));
+      setForm((f: typeof form) => ({ ...f, bannerUrl: result.url }));
       toast.success("Banner uploaded — save changes to apply.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -159,7 +179,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
             <input 
               className="dashboard-input" 
               value={form.name} 
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              onChange={e => setForm((f: typeof form) => ({ ...f, name: e.target.value }))}
             />
           </label>
 
@@ -170,14 +190,14 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
               className="dashboard-input" 
               rows={3} 
               value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              onChange={e => setForm((f: typeof form) => ({ ...f, description: e.target.value }))}
             />
           </label>
 
           {/* Bracket Type */}
           <label className="dashboard-field">
             <span className="dashboard-field-label">Bracket Engine</span>
-            <Select value={form.bracketType} onValueChange={(val: any) => setForm(f => ({ ...f, bracketType: val }))}>
+            <Select value={form.bracketType} onValueChange={(val: string) => setForm((f: typeof form) => ({ ...f, bracketType: val as Tournament["bracketType"] }))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -195,7 +215,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
           {/* Mode & Privacy */}
           <label className="dashboard-field">
             <span className="dashboard-field-label">Competition Mode</span>
-            <Select value={form.mode} onValueChange={(val: any) => setForm(f => ({ ...f, mode: val }))}>
+            <Select value={form.mode} onValueChange={(val: string) => setForm((f: typeof form) => ({ ...f, mode: val as Tournament["mode"] }))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -211,7 +231,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
             <input 
               type="checkbox" 
               checked={form.isPrivate} 
-              onChange={e => setForm(f => ({ ...f, isPrivate: e.target.checked }))}
+              onChange={e => setForm((f: typeof form) => ({ ...f, isPrivate: e.target.checked }))}
               style={{ width: "18px", height: "18px", cursor: "pointer" }}
             />
             <span style={{ fontSize: "14px", fontWeight: "500", color: "var(--text-primary)" }}>Private Tournament</span>
@@ -222,11 +242,11 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
             <>
               <label className="dashboard-field">
                 <span className="dashboard-field-label">Min Team Size</span>
-                <input type="number" className="dashboard-input" value={form.minTeamSize} onChange={e => setForm(f => ({ ...f, minTeamSize: +e.target.value }))} />
+                <input type="number" className="dashboard-input" value={form.minTeamSize} onChange={e => setForm((f: typeof form) => ({ ...f, minTeamSize: +e.target.value }))} />
               </label>
               <label className="dashboard-field">
                 <span className="dashboard-field-label">Max Team Size</span>
-                <input type="number" className="dashboard-input" value={form.maxTeamSize} onChange={e => setForm(f => ({ ...f, maxTeamSize: +e.target.value }))} />
+                <input type="number" className="dashboard-input" value={form.maxTeamSize} onChange={e => setForm((f: typeof form) => ({ ...f, maxTeamSize: +e.target.value }))} />
               </label>
             </>
           )}
@@ -234,11 +254,11 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
           {/* Participants */}
           <label className="dashboard-field">
             <span className="dashboard-field-label">Min Bracket Slots</span>
-            <input type="number" className="dashboard-input" value={form.minParticipants} onChange={e => setForm(f => ({ ...f, minParticipants: +e.target.value }))} />
+            <input type="number" className="dashboard-input" value={form.minParticipants} onChange={e => setForm((f: typeof form) => ({ ...f, minParticipants: +e.target.value }))} />
           </label>
           <label className="dashboard-field">
             <span className="dashboard-field-label">Lobby Capacity</span>
-            <input type="number" min={2} max={200} className="dashboard-input" value={form.lobbyCapacity} onChange={e => setForm(f => ({ ...f, lobbyCapacity: +e.target.value }))} />
+            <input type="number" min={2} max={200} className="dashboard-input" value={form.lobbyCapacity} onChange={e => setForm((f: typeof form) => ({ ...f, lobbyCapacity: +e.target.value }))} />
           </label>
 
           <div style={{ borderTop: "1px solid var(--border-subtle)", gridColumn: "1 / -1", margin: "12px 0" }} />
@@ -246,11 +266,11 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
           {/* Economy */}
           <label className="dashboard-field">
             <span className="dashboard-field-label">Prize Pool Description</span>
-            <input className="dashboard-input" placeholder="e.g. $500 + T-Shirt" value={form.prizePool} onChange={e => setForm(f => ({ ...f, prizePool: e.target.value }))} />
+            <input className="dashboard-input" placeholder="e.g. $500 + T-Shirt" value={form.prizePool} onChange={e => setForm((f: typeof form) => ({ ...f, prizePool: e.target.value }))} />
           </label>
           <label className="dashboard-field">
             <span className="dashboard-field-label">Entry Fee (XP/Points)</span>
-            <input type="number" className="dashboard-input" value={form.entryFee} onChange={e => setForm(f => ({ ...f, entryFee: +e.target.value }))} />
+            <input type="number" className="dashboard-input" value={form.entryFee} onChange={e => setForm((f: typeof form) => ({ ...f, entryFee: +e.target.value }))} />
           </label>
 
           {/* Media */}
@@ -268,8 +288,13 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
                     flexShrink: 0,
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={form.bannerUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <Image
+                    src={form.bannerUrl}
+                    alt="Tournament Banner"
+                    width={200}
+                    height={80}
+                    style={{ objectFit: "cover" }}
+                  />
                 </div>
               ) : null}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -294,7 +319,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
                     type="button"
                     className="btn btn-ghost"
                     style={{ fontSize: 12, alignSelf: "flex-start" }}
-                    onClick={() => setForm((f) => ({ ...f, bannerUrl: "" }))}
+                    onClick={() => setForm((f: typeof form) => ({ ...f, bannerUrl: "" }))}
                   >
                     Remove banner
                   </button>
@@ -313,7 +338,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
               rows={5} 
               style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}
               value={form.matchConfigSchema}
-              onChange={e => setForm(f => ({ ...f, matchConfigSchema: e.target.value }))}
+              onChange={e => setForm((f: typeof form) => ({ ...f, matchConfigSchema: e.target.value }))}
             />
           </label>
         </div>

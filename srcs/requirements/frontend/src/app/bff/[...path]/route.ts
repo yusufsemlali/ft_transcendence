@@ -75,7 +75,7 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
             status: 200,
             headers: responseHeaders,
         });
-    } catch (error) {
+    } catch {
         // Backend is unreachable — still return 200 with error status in header
         const headers = new Headers({
             "Content-Type": "application/json",

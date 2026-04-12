@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import type { Organization } from "@ft-transcendence/contracts";
 import type { OrgRole } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
@@ -21,19 +22,19 @@ export function RefereesTab({ org }: { org: Organization }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.organizations.getOrganizationMembers({ params: { id: org.id } });
       if (res.status === 200) setMembers(res.body.data as Member[]);
     } catch { }
     finally { setLoading(false); }
-  };
+  }, [org.id]);
 
-  useEffect(() => { fetchMembers(); }, [org.id]);
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
-  const referees = members.filter(m => m.orgRole === "referee");
-  const nonReferees = members.filter(m => m.orgRole === "member");
+  const referees = members.filter((m: Member) => m.orgRole === "referee");
+  const nonReferees = members.filter((m: Member) => m.orgRole === "member");
 
   const handleToggleReferee = async (userId: string, currentRole: OrgRole) => {
     const newRole: OrgRole = currentRole === "referee" ? "member" : "referee";
@@ -43,7 +44,7 @@ export function RefereesTab({ org }: { org: Organization }) {
         body: { role: newRole },
       });
       if (res.status === 200) {
-        setMembers(prev => prev.map(m => m.id === userId ? { ...m, orgRole: newRole } : m));
+        setMembers((prev: Member[]) => prev.map((m: Member) => m.id === userId ? { ...m, orgRole: newRole } : m));
       }
     } catch { }
   };
@@ -83,7 +84,7 @@ export function RefereesTab({ org }: { org: Organization }) {
             No referees assigned yet. Promote members below.
           </div>
         ) : (
-          referees.map(m => (
+          referees.map((m: Member) => (
             <MemberRow key={m.id} member={m} actionLabel="Remove Referee" actionIcon="person_remove" actionColor="var(--destructive)" onAction={() => handleToggleReferee(m.id, m.orgRole)} />
           ))
         )}
@@ -99,7 +100,7 @@ export function RefereesTab({ org }: { org: Organization }) {
             </div>
           </div>
 
-          {nonReferees.map(m => (
+          {nonReferees.map((m: Member) => (
             <MemberRow key={m.id} member={m} actionLabel="Make Referee" actionIcon="gavel" actionColor="var(--accent-info, #3b82f6)" onAction={() => handleToggleReferee(m.id, m.orgRole)} />
           ))}
         </div>
@@ -124,7 +125,7 @@ function MemberRow({ member, actionLabel, actionIcon, actionColor, onAction }: {
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         {member.avatar ? (
-          <img src={member.avatar} alt={member.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <Image src={member.avatar} alt={member.username} width={32} height={32} style={{ objectFit: "cover" }} />
         ) : (
           <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>
         )}

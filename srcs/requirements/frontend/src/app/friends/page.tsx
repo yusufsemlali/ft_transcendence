@@ -4,14 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/store/hooks";
 import api from "@/lib/api/api";
-import { toast } from "react-hot-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 /* ── Types ── */
 type FriendshipStatus = "pending" | "accepted" | "blocked";
@@ -54,7 +53,7 @@ const TAB_META: { key: FriendshipStatus | "invites" | "all"; label: string; icon
 ];
 
 export default function FriendsPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -125,9 +124,9 @@ export default function FriendsPage() {
     try {
       const res = await api.friends.acceptFriendRequest({ params: { friendshipId } });
       if (res.status === 200) {
-        setFriends(prev => prev.map(f => f.friendshipId === friendshipId ? { ...f, status: "accepted" as const } : f));
+        setFriends((prev: Friend[]) => prev.map((f: Friend) => f.friendshipId === friendshipId ? { ...f, status: "accepted" as const } : f));
         showMsg("success", "Friend request accepted!");
-      } else { showMsg("error", (res.body as any)?.message || "Failed"); }
+      } else { showMsg("error", (res.body as { message?: string })?.message || "Failed"); }
     } catch { showMsg("error", "Network error"); }
   };
 
@@ -135,9 +134,9 @@ export default function FriendsPage() {
     try {
       const res = await api.friends.rejectFriendRequest({ params: { friendshipId } });
       if (res.status === 200) {
-        setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
+        setFriends((prev: Friend[]) => prev.filter((f: Friend) => f.friendshipId !== friendshipId));
         showMsg("success", "Friend request rejected");
-      } else { showMsg("error", (res.body as any)?.message || "Failed"); }
+      } else { showMsg("error", (res.body as { message?: string })?.message || "Failed"); }
     } catch { showMsg("error", "Network error"); }
   };
 
@@ -145,9 +144,9 @@ export default function FriendsPage() {
     try {
       const res = await api.friends.removeFriend({ params: { friendshipId } });
       if (res.status === 200) {
-        setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
+        setFriends((prev: Friend[]) => prev.filter((f: Friend) => f.friendshipId !== friendshipId));
         showMsg("success", "Friend removed");
-      } else { showMsg("error", (res.body as any)?.message || "Failed"); }
+      } else { showMsg("error", (res.body as { message?: string })?.message || "Failed"); }
     } catch { showMsg("error", "Network error"); }
   };
 
@@ -157,7 +156,7 @@ export default function FriendsPage() {
       if (res.status === 200) {
         fetchData();
         showMsg("success", "User blocked");
-      } else { showMsg("error", (res.body as any)?.message || "Failed"); }
+      } else { showMsg("error", (res.body as { message?: string })?.message || "Failed"); }
     } catch { showMsg("error", "Network error"); }
   };
 
@@ -165,9 +164,9 @@ export default function FriendsPage() {
     try {
       const res = await api.friends.unblockUser({ params: { userId } });
       if (res.status === 200) {
-        setFriends(prev => prev.filter(f => f.id !== userId));
+        setFriends((prev: Friend[]) => prev.filter((f: Friend) => f.id !== userId));
         showMsg("success", "User unblocked");
-      } else { showMsg("error", (res.body as any)?.message || "Failed"); }
+      } else { showMsg("error", (res.body as { message?: string })?.message || "Failed"); }
     } catch { showMsg("error", "Network error"); }
   };
 
@@ -179,7 +178,7 @@ export default function FriendsPage() {
         showMsg("success", "Friend request sent!");
         fetchData();
       } else {
-        showMsg("error", (res.body as any)?.message || "Failed to send request");
+        showMsg("error", (res.body as { message?: string })?.message || "Failed to send request");
       }
     } catch {
       showMsg("error", "Network error");
@@ -193,7 +192,7 @@ export default function FriendsPage() {
     try {
       const res = await api.organizations.acceptInvite({ params: { id } });
       if (res.status === 200) {
-        setOrgInvites(prev => prev.filter(inv => inv.organizationId !== id));
+        setOrgInvites((prev: OrgInvite[]) => prev.filter((inv: OrgInvite) => inv.organizationId !== id));
         showMsg("success", "Joined organization!");
       }
     } catch { showMsg("error", "Failed to join"); }
@@ -203,7 +202,7 @@ export default function FriendsPage() {
     try {
       const res = await api.organizations.declineInvite({ params: { id } });
       if (res.status === 200) {
-        setOrgInvites(prev => prev.filter(inv => inv.organizationId !== id));
+        setOrgInvites((prev: OrgInvite[]) => prev.filter((inv: OrgInvite) => inv.organizationId !== id));
         showMsg("success", "Invitation declined");
       }
     } catch { showMsg("error", "Failed to decline"); }
@@ -217,21 +216,18 @@ export default function FriendsPage() {
   };
 
   /* ── Filter ── */
-  const filtered = friends.filter(f => {
+  const filtered = friends.filter((f: Friend) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return f.username.toLowerCase().includes(q) || (f.displayName || "").toLowerCase().includes(q);
   });
 
-  const getFriendshipStatus = (userId: string) => {
-    return friends.find(f => f.id === userId)?.status ?? null;
-  };
 
   const counts = {
     all: friends.length,
-    accepted: friends.filter(f => f.status === "accepted").length,
-    pending: friends.filter(f => f.status === "pending").length,
-    blocked: friends.filter(f => f.status === "blocked").length,
+    accepted: friends.filter((f: Friend) => f.status === "accepted").length,
+    pending: friends.filter((f: Friend) => f.status === "pending").length,
+    blocked: friends.filter((f: Friend) => f.status === "blocked").length,
     invites: orgInvites.length,
   };
 
@@ -308,7 +304,7 @@ export default function FriendsPage() {
               <p style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "12px" }}>No organization invitations.</p>
             </div>
           ) : (
-            orgInvites.map(inv => (
+            orgInvites.map((inv: OrgInvite) => (
               <div key={inv.organizationId} className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px" }}>
                 <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>business</span>
@@ -334,7 +330,7 @@ export default function FriendsPage() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {filtered.map(friend => (
+          {filtered.map((friend: Friend) => (
             <FriendCard
               key={friend.friendshipId}
               friend={friend}
@@ -370,11 +366,11 @@ export default function FriendsPage() {
             <div style={{ maxHeight: "300px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
               {searching ? (
                  <div style={{ textAlign: "center", padding: "20px" }}><span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span></div>
-              ) : searchResults.map(u => (
+              ) : searchResults.map((u: PublicUser) => (
                 <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px", borderRadius: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-color)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {u.avatar ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
+                      {u.avatar ? <Image src={u.avatar} alt={u.username} width={32} height={32} style={{ objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
                     </div>
                     <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</div>
                   </div>
@@ -406,7 +402,7 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
     <div className="glass-card friend-card" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
         <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {friend.avatar ? <img src={friend.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--text-muted)" }}>person</span>}
+          {friend.avatar ? <Image src={friend.avatar} alt={friend.username} width={40} height={40} style={{ objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--text-muted)" }}>person</span>}
         </div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -425,8 +421,14 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
         <DropdownMenu>
           <DropdownMenuTrigger className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}><span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="glass w-40">
-            <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)} className="text-destructive"><span className="material-symbols-outlined mr-2">person_remove</span>Remove</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onBlock(friend.id)}><span className="material-symbols-outlined mr-2">block</span>Block</DropdownMenuItem>
+            {friend.status === "accepted" ? (
+              <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)} className="text-destructive"><span className="material-symbols-outlined mr-2">person_remove</span>Remove</DropdownMenuItem>
+            ) : null}
+            {friend.status === "blocked" ? (
+              <DropdownMenuItem onClick={() => onUnblock(friend.id)}><span className="material-symbols-outlined mr-2">undo</span>Unblock</DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => onBlock(friend.id)}><span className="material-symbols-outlined mr-2">block</span>Block</DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

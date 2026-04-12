@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import type { Tournament, BracketState, StandingsEntry } from "@ft-transcendence/contracts";
+import type { BracketState, StandingsEntry, PublicTournamentDiscovery } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
 
 export interface TournamentState {
   discovery: {
-    items: Tournament[];
+    items: PublicTournamentDiscovery[];
     total: number;
     page: number;
     pageSize: number;
@@ -14,7 +14,7 @@ export interface TournamentState {
   };
   details: {
     [tournamentId: string]: {
-      data: Tournament | null;
+      data: PublicTournamentDiscovery | null;
       bracket: BracketState | null;
       standings: StandingsEntry[] | null;
       isLoading: boolean;
@@ -40,7 +40,7 @@ const initialState: TournamentState = {
 
 export const fetchDiscoveryThunk = createAsyncThunk(
   "tournament/fetchDiscovery",
-  async (query: any) => {
+  async (query: Record<string, unknown>) => {
     const res = await api.tournaments.getTournaments({ query });
     if (res.status === 200) return res.body;
     throw new Error("Failed to fetch tournaments");
@@ -98,7 +98,7 @@ const tournamentSlice = createSlice({
   name: "tournament",
   initialState,
   reducers: {
-    updateTournamentInDiscovery(state, action: PayloadAction<Tournament>) {
+    updateTournamentInDiscovery(state, action: PayloadAction<PublicTournamentDiscovery>) {
       const index = state.discovery.items.findIndex(t => t.id === action.payload.id);
       if (index !== -1) {
         state.discovery.items[index] = action.payload;

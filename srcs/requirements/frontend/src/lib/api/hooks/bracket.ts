@@ -55,7 +55,7 @@ export function useGenerateBracket(tournamentId: string) {
                 body: {},
             });
             if (res.status !== 201) {
-                const body = res.body as any;
+                const body = res.body as { message?: string };
                 throw new Error(body?.message ?? "Failed to generate bracket");
             }
             return res.body;
@@ -78,7 +78,7 @@ export function useResetBracket(tournamentId: string) {
                 params: { tournamentId },
             });
             if (res.status !== 200) {
-                const body = res.body as any;
+                const body = res.body as { message?: string };
                 throw new Error(body?.message ?? "Failed to reset bracket");
             }
             return res.body;

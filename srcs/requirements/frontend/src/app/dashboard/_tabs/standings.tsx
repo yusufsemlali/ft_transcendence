@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api/api";
 import { StandingsTable } from "@/components/brackets";
-import type { StandingsEntry } from "@ft-transcendence/contracts";
+import type { StandingsEntry, BracketType } from "@ft-transcendence/contracts";
 import type { Tournament, Organization } from "@ft-transcendence/contracts";
 
 interface StandingsTabProps {
@@ -11,7 +11,7 @@ interface StandingsTabProps {
     org: Organization;
 }
 
-export function StandingsTab({ tournament, org }: StandingsTabProps) {
+export function StandingsTab({ tournament }: StandingsTabProps) {
     const standingsQuery = useQuery<StandingsEntry[]>({
         queryKey: ["standings", tournament.id],
         queryFn: async () => {
@@ -57,7 +57,7 @@ export function StandingsTab({ tournament, org }: StandingsTabProps) {
             </div>
             <StandingsTable
                 standings={standingsQuery.data}
-                bracketType={tournament.bracketType as any}
+                bracketType={tournament.bracketType as BracketType}
             />
         </div>
     );

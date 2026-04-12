@@ -27,7 +27,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
       logoUrl: org.logoUrl || "",
       visibility: org.visibility || "public",
     });
-  }, [org.id]);
+  }, [org.id, org.name, org.slug, org.description, org.logoUrl, org.visibility]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -93,7 +93,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
             <input
               type="text"
               value={form.name}
-              onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={e => setForm((prev: typeof form) => ({ ...prev, name: e.target.value }))}
               className="dashboard-input"
               placeholder="My Organization"
             />
@@ -104,7 +104,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
             <input
               type="text"
               value={form.slug}
-              onChange={e => setForm(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
+              onChange={e => setForm((prev: typeof form) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
               className="dashboard-input"
               placeholder="my-organization"
             />
@@ -115,7 +115,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
             <span className="dashboard-field-label">Description</span>
             <textarea
               value={form.description}
-              onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
+              onChange={e => setForm((prev: typeof form) => ({ ...prev, description: e.target.value }))}
               className="dashboard-input"
               rows={3}
               style={{ resize: "vertical" }}
@@ -128,7 +128,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
             <input
               type="url"
               value={form.logoUrl}
-              onChange={e => setForm(prev => ({ ...prev, logoUrl: e.target.value }))}
+              onChange={e => setForm((prev: typeof form) => ({ ...prev, logoUrl: e.target.value }))}
               className="dashboard-input"
               placeholder="https://example.com/logo.png"
             />
@@ -141,7 +141,7 @@ export function OrgSettingsTab({ org }: { org: Organization }) {
                 <button
                   key={v}
                   className={`btn ${form.visibility === v ? "btn-primary" : "btn-secondary"}`}
-                  onClick={() => setForm(prev => ({ ...prev, visibility: v }))}
+                  onClick={() => setForm((prev: typeof form) => ({ ...prev, visibility: v }))}
                   style={{ fontSize: "11px", padding: "6px 16px", flex: 1, textTransform: "capitalize" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>

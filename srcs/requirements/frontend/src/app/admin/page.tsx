@@ -1,37 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import api from "@/lib/api/api";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import type { User, Session, Sport } from "@ft-transcendence/contracts";
 
-/* ── Types (from contracts) ── */
-type UserRole = "user" | "admin" | "moderator" | "organizer";
-type UserStatus = "active" | "suspended" | "banned" | "muted";
+type UserRole = User["role"];
+type UserStatus = User["status"];
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  displayName: string | null;
-  avatar: string | null;
-  xp: number;
-  level: number;
-  eloRating: number;
-  isOnline: boolean;
-  createdAt: string | Date;
-}
 
-interface Session {
-  id: string;
-  browserName: string | null;
-  osName: string | null;
-  deviceType: string | null;
-  ipAddress: string | null;
-  createdAt: string | Date;
-  expiresAt: string | Date | null;
-}
+
+
 
 /* ── Constants ── */
 const ROLES: UserRole[] = ["user", "admin", "moderator", "organizer"];
@@ -87,22 +67,7 @@ export default function AdminPage() {
   const [selectedOrg, setSelectedOrg] = useState<OrgRow | null>(null);
   const [showDeleteOrgModal, setShowDeleteOrgModal] = useState(false);
 
-  /* ── Sports State ── */
-  interface Sport {
-    id: string;
-    name: string;
-    category: string;
-    scoringType: string;
-    mode: string;
-    requiredHandleType: string | null;
-    defaultMinTeamSize: number | null;
-    defaultMaxTeamSize: number | null;
-    defaultHasDraws: boolean;
-    tournamentConfigSchema: any;
-    matchConfigSchema: any;
-    createdAt: string;
-    updatedAt: string;
-  }
+
   const [sports, setSportsList] = useState<Sport[]>([]);
   const [sportsLoading, setSportsLoading] = useState(false);
   const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
@@ -126,7 +91,7 @@ export default function AdminPage() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const query: any = { page, pageSize: 20 };
+      const query: Record<string, string | number> = { page, pageSize: 20 };
       if (search) query.search = search;
       if (roleFilter) query.role = roleFilter;
       if (statusFilter) query.status = statusFilter;
@@ -158,19 +123,19 @@ export default function AdminPage() {
     finally { setOrgsLoading(false); }
   }, [orgPage, orgSearch]);
 
-  useEffect(() => {
-    if (activeTab === "organizations") fetchOrgs();
-    if (activeTab === "sports") fetchSports();
-  }, [activeTab, fetchOrgs]);
-
-  const fetchSports = async () => {
+  const fetchSports = useCallback(async () => {
     setSportsLoading(true);
     try {
       const res = await api.sports.getSports();
       if (res.status === 200) setSportsList(res.body as Sport[]);
     } catch { }
     finally { setSportsLoading(false); }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "organizations") fetchOrgs();
+    if (activeTab === "sports") fetchSports();
+  }, [activeTab, fetchOrgs, fetchSports]);
 
   const fetchSessions = async (userId: string) => {
     setSessionsLoading(true);
@@ -196,7 +161,7 @@ export default function AdminPage() {
         setSelectedUser({ ...selectedUser, role: newRole });
         setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, role: newRole } : u));
         setActionMessage({ type: "success", text: `Role updated to ${newRole}` });
-      } else { setActionMessage({ type: "error", text: (res.body as any)?.message || "Failed" }); }
+      } else { setActionMessage({ type: "error", text: (res.body as { message?: string })?.message || "Failed" }); }
     } catch { setActionMessage({ type: "error", text: "Network error" }); }
     setShowRoleModal(false);
   };
@@ -204,14 +169,14 @@ export default function AdminPage() {
   const handleUpdateStatus = async () => {
     if (!selectedUser) return;
     try {
-      const body: any = { status: newStatus };
+      const body: { status: UserStatus; reason?: string } = { status: newStatus };
       if (statusReason) body.reason = statusReason;
       const res = await api.admin.updateUserStatus({ params: { id: selectedUser.id }, body });
       if (res.status === 200) {
         setSelectedUser({ ...selectedUser, status: newStatus });
         setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, status: newStatus } : u));
         setActionMessage({ type: "success", text: `Status updated to ${newStatus}` });
-      } else { setActionMessage({ type: "error", text: (res.body as any)?.message || "Failed" }); }
+      } else { setActionMessage({ type: "error", text: (res.body as { message?: string })?.message || "Failed" }); }
     } catch { setActionMessage({ type: "error", text: "Network error" }); }
     setShowStatusModal(false);
     setStatusReason("");
@@ -225,7 +190,7 @@ export default function AdminPage() {
         setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
         setSelectedUser(null);
         setActionMessage({ type: "success", text: "User deleted" });
-      } else { setActionMessage({ type: "error", text: (res.body as any)?.message || "Failed" }); }
+      } else { setActionMessage({ type: "error", text: (res.body as { message?: string })?.message || "Failed" }); }
     } catch { setActionMessage({ type: "error", text: "Network error" }); }
     setShowDeleteModal(false);
   };
@@ -250,16 +215,22 @@ export default function AdminPage() {
   const handleSaveSport = async () => {
     try {
       const isEdit = !!sportForm.id;
+      const body = {
+        ...sportForm,
+        tournamentConfigSchema: sportForm.tournamentConfigSchema || {},
+        matchConfigSchema: sportForm.matchConfigSchema || {},
+      } as Sport;
+      
       const res = isEdit
-        ? await api.sports.update({ params: { id: sportForm.id! }, body: sportForm })
-        : await api.sports.create({ body: sportForm as any });
+        ? await api.sports.update({ params: { id: sportForm.id! }, body })
+        : await api.sports.create({ body });
 
       if (res.status === 200 || res.status === 201) {
         setActionMessage({ type: "success", text: `Sport ${isEdit ? "updated" : "created"}` });
         fetchSports();
         setShowSportModal(false);
       } else {
-        setActionMessage({ type: "error", text: (res.body as any)?.message || "Failed" });
+        setActionMessage({ type: "error", text: (res.body as { message?: string })?.message || "Failed" });
       }
     } catch { setActionMessage({ type: "error", text: "Network error" }); }
   };
@@ -269,7 +240,7 @@ export default function AdminPage() {
     try {
       const res = await api.sports.delete({ params: { id: selectedSport.id } });
       if (res.status === 204) {
-        setSportsList(prev => prev.filter(s => s.id !== selectedSport.id));
+        setSportsList((prev: Sport[]) => prev.filter((s: Sport) => s.id !== selectedSport.id));
         setSelectedSport(null);
         setActionMessage({ type: "success", text: "Sport deleted" });
       }
@@ -424,7 +395,7 @@ export default function AdminPage() {
                         <td style={{ padding: "10px 14px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div style={{ width: "30px", height: "30px", borderRadius: "50%", overflow: "hidden", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-                              {u.avatar ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "14px", color: "var(--text-muted)" }}>person</span>}
+                              {u.avatar ? <Image src={u.avatar} alt={u.username} width={30} height={30} style={{ objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "14px", color: "var(--text-muted)" }}>person</span>}
                               {u.isOnline && <div style={{ position: "absolute", bottom: 0, right: 0, width: "8px", height: "8px", borderRadius: "50%", background: "var(--accent-success, #22c55e)", border: "2px solid var(--background)" }} />}
                             </div>
                             <div>
@@ -474,7 +445,7 @@ export default function AdminPage() {
             {/* Profile */}
             <div style={{ textAlign: "center", marginBottom: "16px" }}>
               <div style={{ width: "56px", height: "56px", borderRadius: "50%", overflow: "hidden", margin: "0 auto 10px", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {selectedUser.avatar ? <img src={selectedUser.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--text-muted)" }}>person</span>}
+                {selectedUser.avatar ? <Image src={selectedUser.avatar} alt={selectedUser.username} width={56} height={56} style={{ objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--text-muted)" }}>person</span>}
               </div>
               <div style={{ fontSize: "15px", fontWeight: "700", color: "var(--text-primary)" }}>{selectedUser.displayName || selectedUser.username}</div>
               <div style={{ fontSize: "11px", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>@{selectedUser.username}</div>
@@ -737,6 +708,8 @@ export default function AdminPage() {
                   defaultMinTeamSize: 1,
                   defaultMaxTeamSize: 1,
                   requiredHandleType: null,
+                  tournamentConfigSchema: {},
+                  matchConfigSchema: {},
                 });
                 setShowSportModal(true);
               }}
@@ -753,7 +726,7 @@ export default function AdminPage() {
                   <span className="material-symbols-outlined" style={{ fontSize: "28px", color: "var(--primary)", animation: "spin 1s linear infinite" }}>progress_activity</span>
                 </div>
               ) : sports.length === 0 ? (
-                <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>No sports defined yet</div>
+                <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>No Sports defined yet.</div>
               ) : (
                 <div className="admin-table-wrap">
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "520px" }}>
@@ -832,7 +805,7 @@ export default function AdminPage() {
                 
                 <label className="dashboard-field">
                   <span className="dashboard-field-label">Category</span>
-                  <Select value={sportForm.category} onValueChange={v => setSportForm(f => ({ ...f, category: v }))}>
+                  <Select value={sportForm.category} onValueChange={v => setSportForm(f => ({ ...f, category: v as Sport["category"] }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
@@ -840,7 +813,7 @@ export default function AdminPage() {
 
                 <label className="dashboard-field">
                   <span className="dashboard-field-label">Primary Mode</span>
-                  <Select value={sportForm.mode} onValueChange={v => setSportForm(f => ({ ...f, mode: v }))}>
+                  <Select value={sportForm.mode} onValueChange={v => setSportForm(f => ({ ...f, mode: v as Sport["mode"] }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{MODES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                   </Select>
@@ -848,7 +821,7 @@ export default function AdminPage() {
 
                 <label className="dashboard-field">
                   <span className="dashboard-field-label">Scoring Engine</span>
-                  <Select value={sportForm.scoringType} onValueChange={v => setSportForm(f => ({ ...f, scoringType: v }))}>
+                  <Select value={sportForm.scoringType} onValueChange={v => setSportForm(f => ({ ...f, scoringType: v as Sport["scoringType"] }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{SCORING.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>

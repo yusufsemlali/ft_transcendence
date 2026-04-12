@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Organization } from "@ft-transcendence/contracts";
 import { ORG_ROLES } from "@ft-transcendence/contracts";
 import type { OrgRole } from "@ft-transcendence/contracts";
@@ -19,8 +19,8 @@ const ROLE_META: Record<string, { label: string; color: string; icon: string }> 
 interface InviteEntry {
   id: string;
   username: string;
-  role: OrgRole;
-  status: "pending" | "active";
+  orgRole: OrgRole;
+  status: "pending" | "active" | "declined";
   joinedAt: string | Date;
 }
 
@@ -31,20 +31,20 @@ export function InviteTab({ org }: { org: Organization }) {
   const [pendingInvites, setPendingInvites] = useState<InviteEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchPending = async () => {
+  const fetchPending = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.organizations.getOrganizationMembers({ params: { id: org.id } });
       if (res.status === 200) {
         // Filter for pending only
-        const all = res.body.data as any[];
-        setPendingInvites(all.filter(m => m.status === 'pending') as InviteEntry[]);
+        const all = res.body.data as InviteEntry[];
+        setPendingInvites(all.filter(m => m.status === 'pending'));
       }
     } catch { /* silent */ }
     finally { setLoading(false); }
-  };
+  }, [org.id]);
 
-  useEffect(() => { fetchPending(); }, [org.id]);
+  useEffect(() => { fetchPending(); }, [fetchPending]);
 
   const handleInvite = async () => {
     const trimmed = email.trim();
@@ -148,7 +148,7 @@ export function InviteTab({ org }: { org: Organization }) {
           </div>
         ) : (
           <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
-            {pendingInvites.map(entry => (
+            {pendingInvites.map((entry: InviteEntry) => (
               <div key={entry.id} style={{
                 display: "flex", alignItems: "center", gap: "14px",
                 padding: "14px 20px", borderBottom: "1px solid var(--border-color)",
@@ -163,10 +163,10 @@ export function InviteTab({ org }: { org: Organization }) {
                 <span style={{
                   fontSize: "9px", fontWeight: "700", textTransform: "uppercase",
                   padding: "2px 8px", borderRadius: "4px",
-                  background: `color-mix(in srgb, ${ROLE_META[entry.role]?.color || "var(--text-muted)"} 12%, transparent)`,
-                  color: ROLE_META[entry.role]?.color || "var(--text-muted)",
+                  background: `color-mix(in srgb, ${ROLE_META[entry.orgRole]?.color || "var(--text-muted)"} 12%, transparent)`,
+                  color: ROLE_META[entry.orgRole]?.color || "var(--text-muted)",
                 }}>
-                  {ROLE_META[entry.role]?.label || entry.role}
+                  {ROLE_META[entry.orgRole]?.label || entry.orgRole}
                 </span>
                 <button 
                   onClick={() => handleCancelInvite(entry.id)}

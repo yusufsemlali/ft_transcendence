@@ -59,7 +59,7 @@ export default function TermsPage() {
         <div>
           <h2 style={{ fontSize: "1.1rem", marginBottom: "8px" }}>6. Disclaimer</h2>
           <p style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}>
-            The service is provided "as is". We disclaim implied warranties and limit liability for indirect or consequential damages to the maximum extent permitted by law.
+            The service is provided &quot;as is&quot;. We disclaim implied warranties and limit liability for indirect or consequential damages to the maximum extent permitted by law.
           </p>
         </div>
 

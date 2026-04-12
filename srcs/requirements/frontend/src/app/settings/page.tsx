@@ -78,7 +78,7 @@ export default function SettingsPage() {
         setLocalSettings(response.body);
         applyAllSettings(response.body);
       }
-    } catch (error) {}
+    } catch (_error) {}
   };
 
   const debounceRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
@@ -103,7 +103,7 @@ export default function SettingsPage() {
         await api.settings.updateSettings({
           body: { [key]: value },
         });
-      } catch (error) {
+      } catch (_error) {
         toast.error(`Failed to save ${String(key)}`);
       } finally {
         setSaving(false);
@@ -125,7 +125,7 @@ export default function SettingsPage() {
       setSaving(true);
       try {
         await api.settings.updateSettings({ body: updates });
-      } catch (error) {
+      } catch (_error) {
         toast.error("Failed to save theme");
       } finally {
         setSaving(false);
@@ -508,11 +508,11 @@ export default function SettingsPage() {
                     }}>
                       <input
                         type="color"
-                        value={(settings.customThemeColors as any)?.[t.key] || t.fallback}
+                        value={(settings.customThemeColors as Record<string, string>)?.[t.key] || t.fallback}
                         onChange={(e) => {
-                          const newColors = { ...settings.customThemeColors } as any;
+                          const newColors = { ...(settings.customThemeColors || {}) } as Record<string, string>;
                           newColors[t.key] = e.target.value;
-                          updateSetting("customThemeColors", newColors);
+                          updateSetting("customThemeColors", newColors as UserSettings["customThemeColors"]);
                         }}
                         style={{ width: "24px", height: "24px", borderRadius: "50%", border: "2px solid var(--border-color)", background: "none", cursor: "pointer", padding: 0, flexShrink: 0, overflow: "hidden" }}
                       />
@@ -536,7 +536,7 @@ export default function SettingsPage() {
                 <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>FONT FAMILY</label>
                 <FontPicker
                   value={settings.fontFamily}
-                  onChange={(font) => updateSetting("fontFamily", font as any)}
+                  onChange={(font: string) => updateSetting("fontFamily", font as UserSettings["fontFamily"])}
                 />
               </div>
 

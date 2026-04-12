@@ -51,6 +51,7 @@ export const friendsContract = c.router({
         pathParams: z.object({
             friendshipId: z.string().uuid(),
         }),
+        body: z.object({}),
         responses: {
             200: z.object({ message: z.string() }),
             401: z.object({ message: z.string() }),
@@ -65,6 +66,7 @@ export const friendsContract = c.router({
         pathParams: z.object({
             friendshipId: z.string().uuid(),
         }),
+        body: z.object({}),
         responses: {
             200: z.object({ message: z.string() }),
             401: z.object({ message: z.string() }),
@@ -92,6 +94,7 @@ export const friendsContract = c.router({
         pathParams: z.object({
             userId: z.string().uuid(),
         }),
+        body: z.object({}),
         responses: {
             200: z.object({ message: z.string() }),
             400: z.object({ message: z.string() }),
@@ -105,6 +108,7 @@ export const friendsContract = c.router({
         pathParams: z.object({
             userId: z.string().uuid(),
         }),
+        body: z.object({}),
         responses: {
             200: z.object({ message: z.string() }),
             401: z.object({ message: z.string() }),

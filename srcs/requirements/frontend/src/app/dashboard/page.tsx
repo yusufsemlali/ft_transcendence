@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import api from "@/lib/api/api";
 import type { Organization } from "@ft-transcendence/contracts";
@@ -15,6 +15,13 @@ function DashboardContent() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const selectOrg = useCallback((org: Organization) => {
+    setSelectedOrg(org);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("org", org.id);
+    router.replace(`/dashboard?${params.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -34,14 +41,7 @@ function DashboardContent() {
       finally { setLoading(false); }
     };
     fetchOrgs();
-  }, []);
-
-  const selectOrg = (org: Organization) => {
-    setSelectedOrg(org);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("org", org.id);
-    router.replace(`/dashboard?${params.toString()}`, { scroll: false });
-  };
+  }, [urlOrgId, selectOrg]);
 
   const handleBack = () => {
     setSelectedOrg(null);
@@ -49,7 +49,7 @@ function DashboardContent() {
   };
 
   const handleOrgCreated = (org: Organization) => {
-    setOrgs(prev => [...prev, org]);
+    setOrgs((prev: Organization[]) => [...prev, org]);
     selectOrg(org);
   };
 

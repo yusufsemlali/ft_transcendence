@@ -50,7 +50,7 @@ export const loginThunk = createAsyncThunk<
 });
 
 export const registerThunk = createAsyncThunk<
-  { success: true } | { success: false; error: string; validationErrors?: any[] },
+  { success: true } | { success: false; error: string; validationErrors?: unknown[] },
   { email: string; username: string; password: string }
 >("auth/register", async ({ email, username, password }, { dispatch }) => {
   try {
@@ -65,7 +65,7 @@ export const registerThunk = createAsyncThunk<
       return { success: true as const };
     }
 
-    const body = response.body as { message?: string; errors?: any[] };
+    const body = response.body as { message?: string; errors?: unknown[] };
     return {
       success: false as const,
       error: body?.message || "Registration failed",

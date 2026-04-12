@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { MatchCard, RoundHeader, StandingsTable } from "../shared";
-import type { BracketViewProps, BracketParticipant } from "../types";
+import type { BracketViewProps, BracketParticipant, BracketRound, BracketMatch } from "../types";
 
 type ViewMode = "matrix" | "rounds";
 
@@ -18,8 +18,8 @@ export function RoundRobinBracket({
     const [viewMode, setViewMode] = useState<ViewMode>("rounds");
 
     const matrixData = useMemo(() => {
-        const participants = data.participants.filter((p) => p.status !== "disqualified");
-        const pMap = new Map(participants.map((p) => [p.id, p]));
+        const participants = data.participants.filter((p: BracketParticipant) => p.status !== "disqualified");
+        const _pMap = new Map(participants.map((p: BracketParticipant) => [p.id, p]));
 
         const matrix = new Map<string, Map<string, { score1: number; score2: number; status: string } | null>>();
         for (const p of participants) {
@@ -80,7 +80,7 @@ export function RoundRobinBracket({
 
             {viewMode === "rounds" && (
                 <div className="bracket-shell">
-                    {data.rounds.map((round) => (
+                    {data.rounds.map((round: BracketRound) => (
                         <div key={round.number}>
                             <RoundHeader
                                 roundNumber={round.number}
@@ -88,7 +88,7 @@ export function RoundRobinBracket({
                                 align="left"
                             />
                             <div className="match-grid match-grid-3col">
-                                {round.matches.map((match) => (
+                                {round.matches.map((match: BracketMatch) => (
                                     <MatchCard
                                         key={match.id}
                                         match={match}
@@ -110,7 +110,7 @@ export function RoundRobinBracket({
                         <thead>
                             <tr>
                                 <th className="standings-th is-left" />
-                                {matrixData.participants.map((p) => (
+                                {matrixData.participants.map((p: BracketParticipant) => (
                                     <th key={p.id} className="standings-th" title={p.name}>
                                         <span className="text-[10px]">{p.name.slice(0, 6)}</span>
                                     </th>
@@ -118,10 +118,10 @@ export function RoundRobinBracket({
                             </tr>
                         </thead>
                         <tbody>
-                            {matrixData.participants.map((rowP) => (
+                            {matrixData.participants.map((rowP: BracketParticipant) => (
                                 <tr key={rowP.id} className="standings-row">
                                     <td className="standings-td is-left font-medium">{rowP.name}</td>
-                                    {matrixData.participants.map((colP) => {
+                                    {matrixData.participants.map((colP: BracketParticipant) => {
                                         if (rowP.id === colP.id) {
                                             return <td key={colP.id} className="standings-td bg-muted/20">—</td>;
                                         }

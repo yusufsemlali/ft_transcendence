@@ -73,7 +73,7 @@ export function TournamentStatusActions({
     mutationFn: async (to: string) => {
       const res = await api.tournaments.updateTournament({
         params: { organizationId: org.id, id: tournament.id },
-        body: { status: to as any },
+        body: { status: to as Tournament["status"] },
       });
       if (res.status !== 200) {
         throw new Error(formatApiErrorBody(res.body, "Status update failed"));
@@ -253,13 +253,13 @@ export function TournamentStatusActions({
       )}
 
       {variant === "overview" && from !== "draft" && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", justifyContent: "flex-end" }}>
           {forward.map((to) => (
             <button
               key={to}
               type="button"
               className="btn btn-primary"
-              style={{ padding: "10px 20px", fontSize: "12px" }}
+              style={{ padding: "6px 14px", fontSize: "11px" }}
               disabled={statusMutation.isPending}
               onClick={() => setConfirm({ to })}
             >
@@ -270,7 +270,7 @@ export function TournamentStatusActions({
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ padding: "10px 20px", fontSize: "12px" }}
+              style={{ padding: "6px 14px", fontSize: "11px" }}
               disabled={statusMutation.isPending}
               onClick={() => setConfirm({ to: "draft" })}
             >

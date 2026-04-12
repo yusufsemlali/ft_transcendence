@@ -1,5 +1,6 @@
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import { SidebarItem } from "./sidebar-item";
+import Image from "next/image";
 
 type OrgSection = "overview" | "tournaments" | "admin" | "config" | "tools";
 type TournamentPage = "overview" | "lobby" | "brackets" | "matches" | "standings" | "schedule" | "settings";
@@ -64,7 +65,14 @@ export function Sidebar({ org, section, page, navigateOrg, activeTournament, tou
         <div className="dashboard-sidebar-org-context">
           <div className="dashboard-org-card-avatar" style={{ width: "28px", height: "28px", borderRadius: "6px" }}>
             {org.logoUrl ? (
-              <img src={org.logoUrl} alt={org.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "6px" }} />
+              <Image 
+                src={org.logoUrl} 
+                alt={org.name} 
+                width={28} 
+                height={28} 
+                style={{ objectFit: "cover", borderRadius: "6px" }} 
+                priority 
+              />
             ) : (
               <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--primary)" }}>workspaces</span>
             )}

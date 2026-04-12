@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Page, Section, Stack } from "@/components/layout";
+import Image from "next/image";
+import { Page } from "@/components/layout";
 
 export default function AboutPage() {
   return (
@@ -46,15 +47,11 @@ export default function AboutPage() {
           border: "1px solid var(--border-color)",
         }}
       >
-        <img
+        <Image
           src="/images/leage.jpeg"
           alt="Hero background"
+          fill
           style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "60%",
-            height: "100%",
             objectFit: "cover",
             maskImage: "linear-gradient(to left, black 70%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to left, black 70%, transparent 100%)",

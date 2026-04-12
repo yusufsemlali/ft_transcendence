@@ -14,7 +14,18 @@ interface BracketsTabProps {
     org: Organization;
 }
 
-export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
+interface LobbyCompetitor {
+    id: string;
+    name: string;
+    status: string;
+    seed?: number | null;
+}
+
+interface LobbyState {
+    competitors: LobbyCompetitor[];
+}
+
+export function BracketsTab({ tournament }: BracketsTabProps) {
     const queryClient = useQueryClient();
 
     const bracketQuery = useQuery<BracketState>({
@@ -43,27 +54,41 @@ export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
 
     useEffect(() => {
         if (!lobbyQuery.data) return;
-        const ready = lobbyQuery.data.competitors.filter((c) => c.status === "ready");
+        const state = lobbyQuery.data as LobbyState;
+        const ready = (state.competitors || []).filter((c) => c.status === "ready");
+        
         if (ready.length === 0) {
-            setSeedOrder([]);
+            queueMicrotask(() => setSeedOrder((current) => current.length === 0 ? current : []));
             return;
         }
+
         const readySet = new Set(ready.map((c) => c.id));
-        setSeedOrder((prev) => {
-            if (prev.length === 0 && ready.length > 0) {
-                const sorted = [...ready].sort((a, b) => {
-                    const sa = a.seed ?? 999999;
-                    const sb = b.seed ?? 999999;
-                    if (sa !== sb) return sa - sb;
-                    return a.name.localeCompare(b.name);
-                });
-                return sorted.map((c) => c.id);
-            }
-            const kept = prev.filter((id) => readySet.has(id));
-            for (const c of ready) {
-                if (!kept.includes(c.id)) kept.push(c.id);
-            }
-            return kept;
+        
+        queueMicrotask(() => {
+            setSeedOrder((prev: string[]) => {
+                let next: string[];
+                if (prev.length === 0) {
+                    const sorted = [...ready].sort((a, b) => {
+                        const sa = a.seed ?? 999999;
+                        const sb = b.seed ?? 999999;
+                        if (sa !== sb) return sa - sb;
+                        return a.name.localeCompare(b.name);
+                    });
+                    next = sorted.map((c) => c.id);
+                } else {
+                    const kept = prev.filter((id: string) => readySet.has(id));
+                    for (const c of ready) {
+                        if (!kept.includes(c.id)) kept.push(c.id);
+                    }
+                    next = kept;
+                }
+
+                // Only update if the order actually changed to prevent cascading renders
+                if (next.length === prev.length && next.every((id: string, i: number) => id === prev[i])) {
+                    return prev;
+                }
+                return next;
+            });
         });
     }, [lobbyQuery.data]);
 
@@ -130,7 +155,8 @@ export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
 
     const labelMap = useMemo(() => {
         const m = new Map<string, string>();
-        for (const c of lobbyQuery.data?.competitors ?? []) {
+        const state = lobbyQuery.data as LobbyState | undefined;
+        for (const c of (state?.competitors ?? [])) {
             m.set(c.id, c.name);
         }
         return m;
@@ -213,7 +239,7 @@ export function BracketsTab({ tournament, org: _org }: BracketsTabProps) {
                 ) : (
                     <CompetitorSeedBoard
                         order={seedOrder}
-                        getLabel={(id) => labelMap.get(id) ?? id.slice(0, 8)}
+                        getLabel={(id: string) => labelMap.get(id) ?? id.slice(0, 8)}
                         disabled={seedingLocked || seedMutation.isPending}
                         onOrderChange={setSeedOrder}
                     />

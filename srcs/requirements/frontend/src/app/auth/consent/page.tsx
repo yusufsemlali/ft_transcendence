@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
@@ -58,8 +59,9 @@ function ConsentPageContent() {
       await refreshUser();
       router.push("/profile");
       router.refresh();
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong during confirmation");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong during confirmation";
+      toast.error(message);
       setIsSubmitting(false);
     }
   };
@@ -68,12 +70,12 @@ function ConsentPageContent() {
     <div className="page animate-fade-in" style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
       <div className="section glass-card" style={{ padding: "var(--space-xl)", maxWidth: "500px", margin: "0 auto" }}>
         <div className="section-header" style={{ marginBottom: "var(--space-lg)" }}>
-          <img 
+          <Image 
             src="https://upload.wikimedia.org/wikipedia/commons/8/8d/42_Logo.svg" 
             alt="42 Logo" 
+            width={32}
+            height={32}
             style={{ 
-              width: "32px", 
-              height: "32px", 
               marginRight: "var(--space-sm)",
               filter: "brightness(0) invert(1)" 
             }}
@@ -88,7 +90,7 @@ function ConsentPageContent() {
           </div>
 
           <div className="section-description" style={{ marginBottom: 0 }}>
-            We've successfully linked with your 42 Intra account. To finalize your registration, we need your explicit permission to store your profile data.
+            We&apos;ve successfully linked with your 42 Intra account. To finalize your registration, we need your explicit permission to store your profile data.
           </div>
           
           <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius)", padding: "var(--space-md)" }}>

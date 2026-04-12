@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
@@ -16,7 +17,6 @@ import { RefereesTab } from "../_tabs/referees";
 import { OrgSettingsTab } from "../_tabs/org-settings";
 import { SportModesTab } from "../_tabs/sport-modes";
 import { IntegrationsTab } from "../_tabs/integrations";
-import { SettingsTab } from "../_tabs/settings";
 import { TournamentSettingsTab } from "../_tabs/tournament-settings";
 import { TournamentOverviewTab } from "../_tabs/tournament-overview";
 import { LobbyTab } from "../_tabs/lobby";
@@ -24,7 +24,6 @@ import { BracketsTab } from "../_tabs/brackets";
 import { MatchesTab } from "../_tabs/matches";
 import { StandingsTab } from "../_tabs/standings";
 import { ScheduleTab } from "../_tabs/schedule";
-import { TestUploadTab } from "../_tabs/test-upload";
 
 /* ═══════════════════════════════════════
    SECTION / PAGE DEFINITIONS
@@ -54,9 +53,7 @@ const ORG_TABS: Record<OrgSection, TabDef[]> = {
     { id: "sport-modes",  label: "Sport Modes",   icon: "sports" },
     { id: "integrations", label: "Integrations",  icon: "webhook" },
   ],
-  tools: [
-    { id: "upload-test", label: "Media Test", icon: "upload_file" },
-  ],
+  tools: [],
 };
 
 const ALL_TOURNAMENT_TABS: TabDef[] = [
@@ -108,22 +105,22 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
   // Tournament-level navigation (null = org level)
   const [activeTournament, setActiveTournament] = useState<Tournament | null>(null);
   const [tournamentPage, setTournamentPage] = useState<TournamentPage>(
-    VALID_TPAGES.includes(urlTournamentPage as TournamentPage) ? urlTournamentPage! : "overview"
+    (VALID_TPAGES as string[]).includes(urlTournamentPage || "") ? (urlTournamentPage as TournamentPage) : "overview"
   );
 
   // Sync URL → state: restore tournament from URL on mount
   useEffect(() => {
     if (urlTournamentId && !activeTournament) {
       api.tournaments.listOrgTournaments({ params: { organizationId: org.id } })
-        .then(res => {
+        .then((res: { status: number; body: unknown }) => {
           if (res.status === 200) {
-            const found = res.body.find((t: Tournament) => t.id === urlTournamentId);
+            const found = (res.body as Tournament[]).find((t: Tournament) => t.id === urlTournamentId);
             if (found) setActiveTournament(found);
           }
         })
         .catch(() => {});
     }
-  }, []);
+  }, [org.id, urlTournamentId, activeTournament]);
 
   // Sync state → URL
   const updateUrl = useCallback((s: OrgSection, p: string, tId?: string | null, tp?: string | null) => {
@@ -184,7 +181,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
 
   /* ── Which tabs/content to render ── */
   const inTournament = activeTournament !== null;
-  const tabs = inTournament ? getTournamentTabs(activeTournament.status) : (ORG_TABS[section] ?? []);
+  const tabs = inTournament ? getTournamentTabs(activeTournament.status) : (ORG_TABS[section as OrgSection] || []);
   const activePageId = inTournament ? tournamentPage : page;
 
   return (
@@ -237,7 +234,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
                     flexShrink: 0
                 }}>
                     {activeTournament.bannerUrl ? (
-                        <img src={activeTournament.bannerUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <Image src={activeTournament.bannerUrl} alt="Tournament banner" width={40} height={40} style={{ objectFit: "cover" }} priority />
                     ) : (
                         <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)" }}>emoji_events</span>
@@ -254,7 +251,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               <>
                 <div className="dashboard-org-avatar">
                   {org.logoUrl ? (
-                    <img src={org.logoUrl} alt={org.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <Image src={org.logoUrl} alt={org.name} width={40} height={40} style={{ objectFit: "cover" }} priority />
                   ) : (
                     <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)" }}>workspaces</span>
                   )}
@@ -268,10 +265,10 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               /* Section-level title */
               <>
                 <div className="dashboard-org-avatar" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)" }}>{ORG_SECTION_META[section].icon}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "var(--primary)" }}>{ORG_SECTION_META[section as OrgSection].icon}</span>
                 </div>
                 <div>
-                  <h1 className="dashboard-title">{ORG_SECTION_META[section].title}</h1>
+                  <h1 className="dashboard-title">{ORG_SECTION_META[section as OrgSection].title}</h1>
                   <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "2px" }}>{org.name}</p>
                 </div>
               </>
@@ -298,7 +295,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
         {/* ── Tab Bar (hidden if only one tab) ── */}
         {tabs.length > 1 && (
           <div className="dashboard-tabs">
-            {tabs.map(tab => (
+            {tabs.map((tab: TabDef) => (
               <button
                 key={tab.id}
                 className={`dashboard-tab ${activePageId === tab.id ? "active" : ""}`}
@@ -321,8 +318,8 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
                 <TournamentOverviewTab 
                     tournament={activeTournament} 
                     org={org}
-                    onStatusChange={(updated) => setActiveTournament(updated)}
-                    onNavigate={(p) => navigateTournament(p as TournamentPage)}
+                    onStatusChange={(updated: Tournament) => setActiveTournament(updated)}
+                    onNavigate={(p: string) => navigateTournament(p as TournamentPage)}
                 />
               )}
               {tournamentPage === "lobby" && activeTournament.status !== "draft" && (
@@ -339,7 +336,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
                 <TournamentSettingsTab 
                     tournament={activeTournament} 
                     org={org} 
-                    onUpdate={(t) => setActiveTournament(t)} 
+                    onUpdate={(t: Tournament) => setActiveTournament(t)} 
                     onDelete={() => backToOrg()}
                 />
               )}
@@ -363,7 +360,6 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
               {section === "config" && page === "sport-modes"  && <SportModesTab />}
               {section === "config" && page === "integrations" && <IntegrationsTab />}
 
-              {section === "tools" && page === "upload-test" && <TestUploadTab />}
             </>
           )}
         </div>

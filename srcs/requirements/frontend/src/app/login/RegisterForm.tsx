@@ -61,7 +61,11 @@ export default function RegisterForm() {
       const errorMsg = result.error || "Registration failed";
 
       if (result.validationErrors && result.validationErrors.length > 0) {
-        for (const err of result.validationErrors) {
+        interface ValidationError {
+          path: (string | number)[];
+          message: string;
+        }
+        for (const err of (result.validationErrors as ValidationError[])) {
           const field = err.path?.[0];
           const msg = err.message || "Invalid value";
           if (field === "username") { showFieldError(usernameRef, msg); return; }

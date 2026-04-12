@@ -24,7 +24,7 @@ function timeoutSignal(ms: number): AbortSignal {
 
 function buildApi(
   timeout: number,
-  baseUrl: string,
+  _baseUrl: string,
 ): (
   args: ApiFetcherArgs,
 ) => Promise<{ status: number; body: unknown; headers: Headers }> {

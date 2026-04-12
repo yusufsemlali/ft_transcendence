@@ -5,7 +5,7 @@
 
 const INTEGRATIONS: {
   id: string; name: string; description: string; icon: string;
-  color: string; status: "coming_soon" | "coming_soon";
+  color: string; status: "coming_soon" | "available";
 }[] = [
   {
     id: "discord",

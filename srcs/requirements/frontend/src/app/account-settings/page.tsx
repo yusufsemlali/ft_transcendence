@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, Suspense } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/store/hooks";
 import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
@@ -57,22 +58,25 @@ function AccountSettingsContent() {
             banner: userData.banner || "",
           });
         }
-      } catch (err) {
+      } catch {
         // Silently handle error
       }
     };
     fetchUser();
   }, []);
 
-  const clearValidity = (ref: React.RefObject<any>) => {
-    ref.current?.setCustomValidity("");
+  const clearValidity = (ref: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>) => {
+    if (ref.current) {
+      (ref.current as HTMLInputElement | HTMLTextAreaElement).setCustomValidity("");
+    }
   };
 
-  const showFieldError = (ref: React.RefObject<any>, message: string) => {
-    if (ref.current) {
-      ref.current.setCustomValidity(message);
+  const showFieldError = (ref: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>, message: string) => {
+    const el = ref.current;
+    if (el) {
+      (el as HTMLInputElement | HTMLTextAreaElement).setCustomValidity(message);
       requestAnimationFrame(() => {
-        ref.current?.reportValidity();
+        (el as HTMLInputElement | HTMLTextAreaElement).reportValidity();
       });
     }
   };
@@ -88,7 +92,7 @@ function AccountSettingsContent() {
         toast.success("Profile updated successfully!");
         refreshUser();
       } else {
-        const errorData = res.body as any;
+        const errorData = res.body as { message?: string };
         const message = errorData.message || "Failed to update profile";
         
         if (message.toLowerCase().includes("username")) {
@@ -99,7 +103,7 @@ function AccountSettingsContent() {
           toast.error(message);
         }
       }
-    } catch (err) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -207,7 +211,7 @@ function AccountSettingsContent() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        const errorData = res.body as any;
+        const errorData = res.body as { message?: string };
         const message = errorData.message || "Failed to update password";
         
         if (message.toLowerCase().includes("current")) {
@@ -216,7 +220,7 @@ function AccountSettingsContent() {
           toast.error(message);
         }
       }
-    } catch (err) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -241,22 +245,18 @@ function AccountSettingsContent() {
         }}
       >
         {/* Banner with Masking (matching Tournaments) */}
-        <img
+        <Image
           src={profile.banner || "/images/leage.jpeg"}
           alt="Hero background"
+          fill
           style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "60%",
-            height: "100%",
             objectFit: "cover",
             maskImage: "linear-gradient(to left, black 70%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to left, black 70%, transparent 100%)",
             opacity: 0.6,
             zIndex: 0,
           }}
-          onError={(e) => { e.currentTarget.src = "/images/leage.jpeg"; }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/images/leage.jpeg"; }}
         />
 
         <div style={{ position: "relative", zIndex: 2 }}>

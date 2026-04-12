@@ -2,12 +2,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api/api";
 import { formatApiErrorBody } from "@/lib/api-error";
-import type { BracketState } from "@ft-transcendence/contracts";
+import type { BracketMatch, BracketRound, BracketState, PublicTournamentDiscovery, BracketType } from "@ft-transcendence/contracts";
 import { BracketView, MatchCard, StandingsTable } from "@/components/brackets";
 import { Page } from "@/components/layout/Page";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +105,7 @@ export function TournamentDetailClient({ id }: { id: string }) {
       }
       return res.body;
     },
-    onSuccess: (body: any) => {
+    onSuccess: (body: { state: string }) => {
       toast.success(
         body.state === "COMPETITOR_CREATED"
           ? "You are registered. Opening lobby..."
@@ -306,7 +306,7 @@ export function TournamentDetailClient({ id }: { id: string }) {
             {standingsData && t && (
               <StandingsTable
                 standings={standingsData}
-                bracketType={t.bracketType as any}
+                bracketType={t.bracketType as BracketType}
               />
             )}
             {!detailState?.isLoading && !standingsData && (
@@ -319,7 +319,7 @@ export function TournamentDetailClient({ id }: { id: string }) {
   );
 }
 
-function OverviewContent({ tournament: t }: { tournament: any }) {
+function OverviewContent({ tournament: t }: { tournament: PublicTournamentDiscovery }) {
   return (
     <div className="ds-stack-lg flex flex-col gap-8">
       {t.description && (
@@ -382,8 +382,8 @@ function MatchesContent({ bracketData }: { bracketData: BracketState | null }) {
 
   const allMatches = useMemo(() => {
     if (!bracketData) return [];
-    return bracketData.rounds.flatMap((r) =>
-      r.matches.map((m) => ({ ...m, roundLabel: r.label, roundNumber: String(r.number) })),
+    return bracketData.rounds.flatMap((r: BracketRound) =>
+      r.matches.map((m: BracketMatch) => ({ ...m, roundLabel: r.label, roundNumber: String(r.number) })),
     );
   }, [bracketData]);
 

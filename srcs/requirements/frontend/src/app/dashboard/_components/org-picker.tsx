@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/store/hooks";
+import Image from "next/image";
 import api from "@/lib/api/api";
 import type { Organization } from "@ft-transcendence/contracts";
 import { toast } from "@/components/ui/sonner";
@@ -199,7 +200,7 @@ export function OrgPicker({ orgs, loading, onSelect, onOrgCreated }: {
   onSelect: (org: Organization) => void;
   onOrgCreated: (org: Organization) => void;
 }) {
-  const { user } = useAuth();
+  useAuth();
   const [showFlow, setShowFlow] = useState(false); // Controls the hero
   const [showForm, setShowForm] = useState(false); // Controls the swap inside hero
 
@@ -297,7 +298,7 @@ export function OrgPicker({ orgs, loading, onSelect, onOrgCreated }: {
               <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}>
                 <div className="dashboard-org-card-avatar">
                   {org.logoUrl ? (
-                    <img src={org.logoUrl} alt={org.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }} />
+                    <Image src={org.logoUrl} alt={org.name} width={40} height={40} style={{ objectFit: "cover", borderRadius: "10px" }} />
                   ) : (
                     <span className="material-symbols-outlined" style={{ fontSize: "24px", color: "var(--primary)" }}>workspaces</span>
                   )}

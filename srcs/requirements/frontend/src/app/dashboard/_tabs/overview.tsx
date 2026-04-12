@@ -1,7 +1,7 @@
 import type { Organization } from "@ft-transcendence/contracts";
 import { StatWidget } from "../_components/stat-widget";
 
-export function OverviewTab({ org }: { org: Organization }) {
+export function OverviewTab({ org: _org }: { org: Organization }) {
   return (
     <>
       {/* Stats */}

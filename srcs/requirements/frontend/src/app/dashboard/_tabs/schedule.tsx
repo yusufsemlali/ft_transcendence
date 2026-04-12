@@ -5,8 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api/api";
 import { toast } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { BracketState, BracketMatch } from "@ft-transcendence/contracts";
+import type { BracketState, BracketMatch, BracketRound } from "@ft-transcendence/contracts";
 import type { Tournament, Organization } from "@ft-transcendence/contracts";
 
 interface ScheduleTabProps {
@@ -30,7 +29,7 @@ function fromDatetimeLocalValue(v: string): Date | null {
 
 type Row = BracketMatch & { roundLabel: string };
 
-export function ScheduleTab({ tournament, org: _org }: ScheduleTabProps) {
+export function ScheduleTab({ tournament }: ScheduleTabProps) {
     const queryClient = useQueryClient();
 
     const bracketQuery = useQuery<BracketState>({
@@ -67,8 +66,8 @@ export function ScheduleTab({ tournament, org: _org }: ScheduleTabProps) {
 
     const rows: Row[] = useMemo(
         () =>
-            bracketQuery.data?.rounds.flatMap((r) =>
-                r.matches.map((m) => ({ ...m, roundLabel: r.label })),
+            bracketQuery.data?.rounds.flatMap((r: BracketRound) =>
+                r.matches.map((m: BracketMatch) => ({ ...m, roundLabel: r.label })),
             ) ?? [],
         [bracketQuery.data],
     );
@@ -134,7 +133,7 @@ export function ScheduleTab({ tournament, org: _org }: ScheduleTabProps) {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedRows.map((match) => {
+                            {sortedRows.map((match: Row) => {
                                 const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.pending;
                                 const draft = drafts[match.id] ?? toDatetimeLocalValue(match.scheduledAt ?? undefined);
                                 return (
@@ -150,7 +149,7 @@ export function ScheduleTab({ tournament, org: _org }: ScheduleTabProps) {
                                                 type="datetime-local"
                                                 value={draft}
                                                 onChange={(e) =>
-                                                    setDrafts((d) => ({ ...d, [match.id]: e.target.value }))
+                                                    setDrafts((d: Record<string, string>) => ({ ...d, [match.id]: e.target.value }))
                                                 }
                                                 className="w-full max-w-[220px] rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-xs font-mono"
                                             />
@@ -178,7 +177,7 @@ export function ScheduleTab({ tournament, org: _org }: ScheduleTabProps) {
                                                     style={{ fontSize: "10px", padding: "4px 10px" }}
                                                     disabled={updateMutation.isPending || !match.scheduledAt}
                                                     onClick={() => {
-                                                        setDrafts((d) => ({ ...d, [match.id]: "" }));
+                                                        setDrafts((d: Record<string, string>) => ({ ...d, [match.id]: "" }));
                                                         updateMutation.mutate({ matchId: match.id, scheduledAt: null });
                                                     }}
                                                 >

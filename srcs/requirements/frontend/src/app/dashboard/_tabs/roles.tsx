@@ -26,7 +26,7 @@ const ROLE_META: Record<string, { label: string; color: string; icon: string; de
   member:  { label: "Member",  color: "var(--text-muted)",               icon: "person",        description: "Can view and join tournaments." },
 };
 
-export function RolesTab({ org }: { org: Organization }) {
+export function RolesTab({ org: _org }: { org: Organization }) {
   return (
     <div>
       {/* Header */}

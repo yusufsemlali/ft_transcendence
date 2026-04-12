@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import type { Organization } from "@ft-transcendence/contracts";
 import { ORG_ROLES } from "@ft-transcendence/contracts";
 import type { OrgRole } from "@ft-transcendence/contracts";
@@ -67,10 +68,12 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
           filter: isPending ? "grayscale(1)" : "none",
         }}>
           {member.avatar ? (
-            <img
+            <Image
               src={member.avatar}
               alt={member.username}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              width={36}
+              height={36}
+              style={{ objectFit: "cover" }}
             />
           ) : (
             <div style={{
@@ -142,7 +145,7 @@ function MemberRow({ member, currentUserId, isAdmin, onRoleChange, onRemove }: {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ORG_ROLES.filter(r => r !== "owner").map(r => (
+                {ORG_ROLES.filter((r: string) => r !== "owner").map((r: string) => (
                   <SelectItem key={r} value={r}>{ROLE_META[r]?.label || r}</SelectItem>
                 ))}
               </SelectContent>
@@ -277,7 +280,7 @@ export function MembersTab({ org }: { org: Organization }) {
   const [search, setSearch] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
       const [mRes, uRes] = await Promise.all([
@@ -288,9 +291,9 @@ export function MembersTab({ org }: { org: Organization }) {
       if (uRes.status === 200) setCurrentUserId(uRes.body.id);
     } catch { /* silent */ }
     finally { setLoading(false); }
-  };
+  }, [org.id]);
 
-  useEffect(() => { fetchMembers(); }, [org.id]);
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
   const currentMember = members.find(m => m.id === currentUserId);
   const isAdmin = currentMember?.orgRole === "owner" || currentMember?.orgRole === "admin";
@@ -302,7 +305,7 @@ export function MembersTab({ org }: { org: Organization }) {
         body: { role },
       });
       if (res.status === 200) {
-        setMembers(prev => prev.map(m => m.id === userId ? { ...m, orgRole: role } : m));
+        setMembers((prev: Member[]) => prev.map((m: Member) => m.id === userId ? { ...m, orgRole: role } : m));
         toast.success("Role updated");
       }
     } catch { /* silent */ }
@@ -319,14 +322,14 @@ export function MembersTab({ org }: { org: Organization }) {
         body: {},
       });
       if (res.status === 200) {
-        setMembers(prev => prev.filter(m => m.id !== userId));
+        setMembers((prev: Member[]) => prev.filter((m: Member) => m.id !== userId));
         toast.success(isPending ? "Invitation cancelled" : "Member removed");
       }
     } catch { /* silent */ }
   };
 
   const filtered = members
-    .filter(m => {
+    .filter((m: Member) => {
       if (!search) return true;
       const q = search.toLowerCase();
       return m.username.toLowerCase().includes(q) ||
@@ -341,8 +344,8 @@ export function MembersTab({ org }: { org: Organization }) {
       return (weights[a.orgRole] ?? 4) - (weights[b.orgRole] ?? 4);
     });
 
-  const activeCount = members.filter(m => m.status === "active").length;
-  const pendingCount = members.filter(m => m.status === "pending").length;
+  const activeCount = members.filter((m: Member) => m.status === "active").length;
+  const pendingCount = members.filter((m: Member) => m.status === "pending").length;
 
   if (loading) {
     return (
@@ -361,8 +364,8 @@ export function MembersTab({ org }: { org: Organization }) {
           <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: 0 }}>
             {activeCount} active member{activeCount !== 1 ? "s" : ""}
             {pendingCount > 0 && <span> · {pendingCount} pending</span>}
-            {members.filter(m => m.isOnline).length > 0 && (
-              <span> · <span style={{ color: "#22c55e" }}>{members.filter(m => m.isOnline).length} online</span></span>
+            {members.filter((m: Member) => m.isOnline).length > 0 && (
+              <span> · <span style={{ color: "#22c55e" }}>{members.filter((m: Member) => m.isOnline).length} online</span></span>
             )}
           </p>
         </div>
@@ -418,7 +421,7 @@ export function MembersTab({ org }: { org: Organization }) {
               No members match &ldquo;{search}&rdquo;
             </div>
           ) : (
-            filtered.map(m => (
+            filtered.map((m: Member) => (
               <MemberRow
                 key={m.id}
                 member={m}

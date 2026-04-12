@@ -16,9 +16,9 @@ let fontStyleElement: HTMLStyleElement | null = null;
 /**
  * Get or create the style element for font rules
  */
-function getFontStyleElement(): HTMLStyleElement {
+function getFontStyleElement(): HTMLStyleElement | null {
     if (typeof document === "undefined") {
-        return;
+        return null;
     }
 
     if (!fontStyleElement) {
@@ -64,6 +64,7 @@ export function loadFont(fontId: string): boolean {
     }
 
     const styleElement = getFontStyleElement();
+    if (!styleElement) return false;
     const rule = generateFontFaceRule(font);
     styleElement.textContent += "\n" + rule;
 
@@ -78,6 +79,7 @@ export function preloadAllFonts(): void {
     if (typeof document === "undefined") return;
 
     const styleElement = getFontStyleElement();
+    if (!styleElement) return;
     const rules = FONT_LIST.filter((f) => !loadedFonts.has(f.id))
         .map(generateFontFaceRule)
         .join("\n");

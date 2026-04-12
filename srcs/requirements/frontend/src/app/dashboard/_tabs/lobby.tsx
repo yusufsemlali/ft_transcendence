@@ -34,7 +34,7 @@ interface SoloPlayer {
   username: string;
   avatarUrl: string | null;
   status: "solo" | "rostered" | "spectator";
-  joinedAt: string;
+  joinedAt: string | Date;
 }
 
 interface RosterMember {
@@ -55,7 +55,7 @@ interface PendingInvite {
   competitorId: string;
   competitorName: string;
   inviterUsername: string;
-  createdAt: string;
+  createdAt: string | Date;
 }
 
 interface OutgoingInviteRef {
@@ -701,7 +701,6 @@ function MyCommandCenter({
   declineMutation,
   acceptMutation,
   revokeMutation,
-  kickMutation,
   transferMutation,
   updateCompetitorMutation,
   sentInvites,
@@ -715,16 +714,15 @@ function MyCommandCenter({
   tournament: LobbyTournament;
   showCreateTeam: boolean;
   setShowCreateTeam: (v: boolean) => void;
-  joinMutation: any;
-  createCompetitorMutation: any;
-  leaveLobbyMutation: any;
-  leaveCompetitorMutation: any;
-  declineMutation: any;
-  acceptMutation: any;
-  revokeMutation: any;
-  kickMutation: any;
-  transferMutation: any;
-  updateCompetitorMutation: any;
+  joinMutation: { mutate: () => void; isPending: boolean };
+  createCompetitorMutation: { mutate: (name: string) => void; isPending: boolean };
+  leaveLobbyMutation: { mutate: () => void; isPending: boolean };
+  leaveCompetitorMutation: { mutate: () => void; isPending: boolean };
+  declineMutation: { mutate: (id: string) => void; isPending: boolean };
+  acceptMutation: { mutate: (id: string) => void; isPending: boolean };
+  revokeMutation: { mutate: (inv: PendingInvite) => void; isPending: boolean };
+  transferMutation: { mutate: (id: string) => void; isPending: boolean };
+  updateCompetitorMutation: { mutate: (name: string) => void; isPending: boolean };
   sentInvites: PendingInvite[];
   is1v1: boolean;
 }) {
@@ -1021,7 +1019,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
   const is1v1 = tournament.maxTeamSize === 1;
   const registrationOpen = tournament.status === "registration";
   const locked = !registrationOpen;
-  const queryKey = ["lobby", tournament.id];
+  const queryKey = useMemo(() => ["lobby", tournament.id], [tournament.id]);
 
   // ── SSE: notification bell (invite, etc.) still triggers refetch as fallback ──
   useEffect(() => {
@@ -1073,7 +1071,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
     queryKey,
     queryFn: async () => {
       const res = await api.tournaments.getLobbyState({ params: { id: tournament.id } });
-      if (res.status === 200) return res.body as unknown as LobbyState;
+      if (res.status === 200) return res.body as LobbyState;
       throw new Error("Failed to fetch lobby");
     },
     refetchInterval: userId ? false : 45_000,
@@ -1081,7 +1079,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
   });
 
   // ── Derive user status ──
-  const derived = useMemo(() => {
+  const { myStatus, myCompetitor, isCaptain } = (() => {
     if (!lobbyData || !userId) return { myStatus: "outside" as MyStatus, myCompetitor: null as Competitor | null, isCaptain: false };
 
     const inSolo = lobbyData.soloPlayers.find(p => p.userId === userId);
@@ -1097,9 +1095,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
     }
 
     return { myStatus: "outside" as MyStatus, myCompetitor: null as Competitor | null, isCaptain: false };
-  }, [lobbyData, userId]);
-
-  const { myStatus, myCompetitor, isCaptain } = derived;
+  })();
   const pendingInvites = lobbyData?.pendingInvites ?? [];
   const outgoingInviteTargets = useMemo(
     () => new Set((lobbyData?.outgoingInvites ?? []).map(o => o.targetUserId)),
@@ -1381,7 +1377,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
               joinMutation={joinMutation} createCompetitorMutation={createCompetitorMutation}
               leaveLobbyMutation={leaveLobbyMutation} leaveCompetitorMutation={leaveCompetitorMutation}
               declineMutation={declineMutation} acceptMutation={acceptMutation}
-              revokeMutation={revokeMutation} kickMutation={kickMutation}
+              revokeMutation={revokeMutation}
               transferMutation={transferMutation} updateCompetitorMutation={updateCompetitorMutation}
               sentInvites={[]} is1v1={is1v1}
             />
@@ -1477,7 +1473,7 @@ export function LobbyTab({ tournament, org }: { tournament: LobbyTournament; org
               joinMutation={joinMutation} createCompetitorMutation={createCompetitorMutation}
               leaveLobbyMutation={leaveLobbyMutation} leaveCompetitorMutation={leaveCompetitorMutation}
               declineMutation={declineMutation} acceptMutation={acceptMutation}
-              revokeMutation={revokeMutation} kickMutation={kickMutation}
+              revokeMutation={revokeMutation}
               transferMutation={transferMutation} updateCompetitorMutation={updateCompetitorMutation}
               sentInvites={[]} is1v1={is1v1}
             />

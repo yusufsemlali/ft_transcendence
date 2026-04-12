@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import type { UserInfo } from "@/lib/types/user";
 import {
   DropdownMenu,
@@ -36,7 +37,14 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
       >
         <div style={{ width: "24px", height: "24px", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.1)" }}>
           {user.avatar ? (
-            <img src={user.avatar} alt={user.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <Image 
+              src={user.avatar} 
+              alt={user.username} 
+              width={24} 
+              height={24} 
+              style={{ objectFit: "cover" }} 
+              priority
+            />
           ) : (
             <span style={{ fontSize: "10px", fontWeight: "700", color: "var(--primary)" }}>
               {(user.username || "U").charAt(0).toUpperCase()}

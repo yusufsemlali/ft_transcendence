@@ -11,13 +11,13 @@ interface ConnectorLine {
 
 interface BracketConnectorProps {
     containerRef: React.RefObject<HTMLElement | null>;
-    matchElements: Map<string, HTMLElement>;
+    matchRefs: React.RefObject<Map<string, HTMLElement>>;
     connections: Array<{ fromId: string; toId: string }>;
 }
 
 export function BracketConnector({
     containerRef,
-    matchElements,
+    matchRefs,
     connections,
 }: BracketConnectorProps) {
     const svgRef = useRef<SVGSVGElement>(null);
@@ -38,8 +38,8 @@ export function BracketConnector({
 
         const newLines: ConnectorLine[] = [];
         for (const { fromId, toId } of connections) {
-            const fromEl = matchElements.get(fromId);
-            const toEl = matchElements.get(toId);
+            const fromEl = matchRefs.current.get(fromId);
+            const toEl = matchRefs.current.get(toId);
             if (!fromEl || !toEl) continue;
 
             const fromRect = fromEl.getBoundingClientRect();
@@ -53,7 +53,7 @@ export function BracketConnector({
             newLines.push({ x1, y1, x2, y2 });
         }
         setLines(newLines);
-    }, [containerRef, matchElements, connections]);
+    }, [containerRef, matchRefs, connections]);
 
     useEffect(() => {
         computeLines();

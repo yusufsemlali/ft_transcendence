@@ -3,7 +3,7 @@
 import { useRef, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { MatchCard, BracketConnector, RoundHeader } from "../shared";
-import type { BracketViewProps, BracketMatch } from "../types";
+import type { BracketViewProps, BracketMatch, BracketRound } from "../types";
 
 export function SingleEliminationBracket({
     data,
@@ -22,7 +22,7 @@ export function SingleEliminationBracket({
     }, []);
 
     const rounds = useMemo(
-        () => data.rounds.filter((r) => r.section !== "losers" && r.section !== "grand_finals"),
+        () => data.rounds.filter((r: BracketRound) => r.section !== "losers" && r.section !== "grand_finals"),
         [data.rounds],
     );
 
@@ -54,15 +54,15 @@ export function SingleEliminationBracket({
             <div className="bracket-rounds-row py-6 items-stretch relative">
                 <BracketConnector
                     containerRef={containerRef}
-                    matchElements={matchRefs.current}
+                    matchRefs={matchRefs}
                     connections={connections}
                 />
 
-                {rounds.map((round) => (
+                {rounds.map((round: BracketRound) => (
                     <div key={round.number} className="flex flex-col items-center shrink-0">
                         <RoundHeader roundNumber={round.number} label={round.label} />
                         <div className="bracket-match-col justify-around flex-1">
-                            {round.matches.map((match) => (
+                            {round.matches.map((match: BracketMatch) => (
                                 <div
                                     key={match.id}
                                     ref={(el) => setMatchRef(match.id, el)}

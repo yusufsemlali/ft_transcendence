@@ -96,7 +96,6 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
 
   const joinedRoomRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
-  const roomRefreshTimerRef = useRef<number | null>(null);
   const lastRetryRef = useRef<number>(0);
   const socketRef = useRef<ChatSocket | null>(null);
 
@@ -107,9 +106,9 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
 
     const response = await api.chat.getRooms({});
     if (response.status === 200) {
-      setRooms((existing) => {
+      setRooms(() => {
         const fromApi = response.body;
-        if (fromApi.some((room) => room.id === activeRoom)) {
+        if (fromApi.some((room: Room) => room.id === activeRoom)) {
           return fromApi;
         }
         return activeRoom ? upsertRoom(fromApi, activeRoom) : fromApi;
@@ -216,9 +215,9 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     };
 
     const onMessageNew = (message: Message) => {
-      setMessages((existing) => [...existing, message]);
-      setTypingUsers((existing) =>
-        existing.filter((username) => username !== message.username),
+      setMessages((existing: Message[]) => [...existing, message]);
+      setTypingUsers((existing: string[]) =>
+        existing.filter((username: string) => username !== message.username),
       );
     };
 
@@ -243,7 +242,7 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
       userCount: number;
       messageCount: number;
     }) => {
-      setStats((existing) =>
+      setStats((existing: ChatStats | null) =>
         existing
           ? {
               ...existing,
@@ -331,8 +330,7 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     });
     void loadRoomMessages(activeRoom);
     joinCurrentRoomRef.current(activeRoom);
-    setRooms((existing) => upsertRoom(existing, activeRoom));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setRooms((existing: Room[]) => upsertRoom(existing, activeRoom));
   }, [activeRoom, connectionStatus, currentUser, loadRoomMessages]);
 
   const sendMessageAction = useCallback(async () => {

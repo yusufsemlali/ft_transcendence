@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import type { Organization, Tournament } from "@ft-transcendence/contracts";
 import type { Sport } from "@ft-transcendence/contracts";
 import api from "@/lib/api/api";
@@ -77,8 +78,8 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     sportId: "",
     name: "",
     description: "",
-    bracketType: "single_elimination" as const,
-    mode: "1v1" as "1v1" | "team" | "ffa",
+    bracketType: "single_elimination" as Tournament["bracketType"],
+    mode: "1v1" as Tournament["mode"],
     minTeamSize: 1,
     maxTeamSize: 1,
     allowDraws: false,
@@ -97,7 +98,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
   // When sport is selected, pre-fill defaults from the sport blueprint
   const handleSportChange = (sportId: string) => {
     const sport = sports.find(s => s.id === sportId);
-    setForm(prev => ({
+    setForm((prev: typeof form) => ({
       ...prev,
       sportId,
       mode: sport?.mode || prev.mode,
@@ -125,7 +126,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     setBannerUploading(true);
     try {
       const result = await uploadFile(file);
-      setForm((prev) => ({ ...prev, bannerUrl: result.url }));
+      setForm((prev: typeof form) => ({ ...prev, bannerUrl: result.url }));
       toast.success("Banner uploaded");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -178,17 +179,24 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <span className="dashboard-field-label">Sport *</span>
           <Select value={form.sportId} onValueChange={handleSportChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a sport...">
+              <SelectValue placeholder={sports.length === 0 ? "No sports available" : "Select a sport..."}>
                 {form.sportId && (() => {
-                  const s = sports.find(sp => sp.id === form.sportId);
+                  const s = sports.find((sp: Sport) => sp.id === form.sportId);
                   return s ? `${s.name} (${s.category})` : null;
                 })()}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {sports.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.name} ({s.category})</SelectItem>
-              ))}
+              {sports.length === 0 ? (
+                <div style={{ padding: "12px", textAlign: "center", color: "var(--text-muted)", fontSize: "12px" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px", display: "block", marginBottom: "4px" }}>error</span>
+                  No Sports defined yet.
+                </div>
+              ) : (
+                sports.map((s: Sport) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name} ({s.category})</SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </label>
@@ -199,7 +207,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <input
             type="text"
             value={form.name}
-            onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+            onChange={e => setForm((prev: typeof form) => ({ ...prev, name: e.target.value }))}
             placeholder="e.g. Spring Championship 2025"
             className="dashboard-input"
           />
@@ -220,8 +228,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
                   flexShrink: 0,
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.bannerUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <Image
+                    src={form.bannerUrl}
+                    alt="Tournament Banner"
+                    width={200}
+                    height={80}
+                    style={{ objectFit: "cover" }}
+                  />
               </div>
             ) : null}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -258,7 +271,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Bracket Type */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Bracket Type</span>
-          <Select value={form.bracketType} onValueChange={val => setForm(prev => ({ ...prev, bracketType: val as any }))}>
+          <Select value={form.bracketType} onValueChange={(val: string) => setForm((prev: typeof form) => ({ ...prev, bracketType: val as Tournament["bracketType"] }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -274,7 +287,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Mode */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Mode</span>
-          <Select value={form.mode} onValueChange={val => setForm(prev => ({ ...prev, mode: val as any }))}>
+          <Select value={form.mode} onValueChange={(val: string) => setForm((prev: typeof form) => ({ ...prev, mode: val as "1v1" | "team" | "ffa" }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -299,11 +312,11 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Participants */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Min Participants</span>
-          <input type="number" min={2} value={form.minParticipants} onChange={e => setForm(prev => ({ ...prev, minParticipants: +e.target.value }))} className="dashboard-input" />
+          <input type="number" min={2} value={form.minParticipants} onChange={e => setForm((prev: typeof form) => ({ ...prev, minParticipants: +e.target.value }))} className="dashboard-input" />
         </label>
         <label className="dashboard-field">
           <span className="dashboard-field-label">Lobby Capacity</span>
-          <input type="number" min={2} max={200} value={form.lobbyCapacity} onChange={e => setForm(prev => ({ ...prev, lobbyCapacity: +e.target.value }))} className="dashboard-input" />
+          <input type="number" min={2} max={200} value={form.lobbyCapacity} onChange={e => setForm((prev: typeof form) => ({ ...prev, lobbyCapacity: +e.target.value }))} className="dashboard-input" />
         </label>
 
         {/* Team Size (visible when team mode) */}
@@ -311,11 +324,11 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <>
             <label className="dashboard-field">
               <span className="dashboard-field-label">Min Team Size</span>
-              <input type="number" min={1} value={form.minTeamSize} onChange={e => setForm(prev => ({ ...prev, minTeamSize: +e.target.value }))} className="dashboard-input" />
+              <input type="number" min={1} value={form.minTeamSize} onChange={e => setForm((prev: typeof form) => ({ ...prev, minTeamSize: +e.target.value }))} className="dashboard-input" />
             </label>
             <label className="dashboard-field">
               <span className="dashboard-field-label">Max Team Size</span>
-              <input type="number" min={1} value={form.maxTeamSize} onChange={e => setForm(prev => ({ ...prev, maxTeamSize: +e.target.value }))} className="dashboard-input" />
+              <input type="number" min={1} value={form.maxTeamSize} onChange={e => setForm((prev: typeof form) => ({ ...prev, maxTeamSize: +e.target.value }))} className="dashboard-input" />
             </label>
           </>
         )}
@@ -326,7 +339,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
             type="checkbox" 
             id="isPrivate"
             checked={form.isPrivate} 
-            onChange={e => setForm(prev => ({ ...prev, isPrivate: e.target.checked }))}
+            onChange={e => setForm((prev: typeof form) => ({ ...prev, isPrivate: e.target.checked }))}
             style={{ width: "16px", height: "16px", cursor: "pointer" }}
            />
            <label htmlFor="isPrivate" style={{ fontSize: "13px", color: "var(--text-primary)", cursor: "pointer" }}>Private Tournament (Invite Only)</label>
@@ -337,7 +350,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
           <span className="dashboard-field-label">Description</span>
           <textarea
             value={form.description}
-            onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
+            onChange={e => setForm((prev: typeof form) => ({ ...prev, description: e.target.value }))}
             placeholder="Optional tournament description..."
             className="dashboard-input"
             rows={3}
@@ -368,7 +381,7 @@ export function TournamentsTab({ org, initialCreate, onSelectTournament }: {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(initialCreate ?? false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [tRes, sRes] = await Promise.all([
@@ -377,11 +390,13 @@ export function TournamentsTab({ org, initialCreate, onSelectTournament }: {
       ]);
       if (tRes.status === 200) setTournaments(tRes.body);
       if (sRes.status === 200) setSports(sRes.body);
-    } catch { }
-    finally { setLoading(false); }
-  };
+      else toast.error("Failed to load sports list");
+    } catch (err) {
+      toast.error("Failed to sync dashboard data");
+    } finally { setLoading(false); }
+  }, [org.id]);
 
-  useEffect(() => { fetchData(); }, [org.id]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading) {
     return (
@@ -430,7 +445,7 @@ export function TournamentsTab({ org, initialCreate, onSelectTournament }: {
         />
       ) : (
         <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
-          {tournaments.map((t) => (
+          {tournaments.map((t: Tournament) => (
             <TournamentRow key={t.id} t={t} onSelect={() => onSelectTournament?.(t)} />
           ))}
         </div>
