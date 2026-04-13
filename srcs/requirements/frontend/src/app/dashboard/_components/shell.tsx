@@ -205,7 +205,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
 
         {/* ── Title Bar ── */}
         <div className="dashboard-title-bar" style={{
-            backgroundImage: inTournament && activeTournament.bannerUrl ? `url(${activeTournament.bannerUrl})` : "none",
+            backgroundImage: inTournament ? `url(${activeTournament.bannerUrl && activeTournament.bannerUrl.startsWith('http') ? activeTournament.bannerUrl : "/images/placeholder_banner.png"})` : "none",
             backgroundSize: "cover",
             backgroundPosition: "center top",
             borderBottom: inTournament ? "1px solid rgba(255,255,255,0.05)" : "1px solid var(--border-color)"
@@ -346,7 +346,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
           {/* ═══ ORG LEVEL ═══ */}
           {!inTournament && (
             <>
-              {section === "overview" && <OverviewTab org={org} />}
+              {section === "overview" && <OverviewTab org={org} onNavigate={navigateOrg} />}
 
               {section === "tournaments" && page === "all"    && <TournamentsTab org={org} onSelectTournament={openTournament} />}
               {section === "tournaments" && page === "create" && <TournamentsTab org={org} onSelectTournament={openTournament} initialCreate />}

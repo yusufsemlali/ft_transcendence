@@ -52,6 +52,7 @@ export default function SettingsPage() {
   const [hasCustomBg, setHasCustomBg] = useState(false);
   const [legacyIndexedOnly, setLegacyIndexedOnly] = useState(false);
   const [bgUploading, setBgUploading] = useState(false);
+  const [bgProgress, setBgProgress] = useState(0);
   const bgFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -148,9 +149,10 @@ export default function SettingsPage() {
       return;
     }
     setBgUploading(true);
+    setBgProgress(0);
     try {
       await removeLocalBackground();
-      const result = await uploadFile(file);
+      const result = await uploadFile(file, { onProgress: setBgProgress });
       await updateSetting("customBackground", result.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -297,6 +299,17 @@ export default function SettingsPage() {
                   </button>
                 ) : null}
               </div>
+              {bgUploading && (
+                <div style={{ width: "100%", marginTop: "12px", marginBottom: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                    <span>UPLOADING BACKGROUND...</span>
+                    <span>{bgProgress}%</span>
+                  </div>
+                  <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: "var(--primary)", width: `${bgProgress}%`, transition: "width 0.2s" }} />
+                  </div>
+                </div>
+              )}
 
               <div className="button-group" style={{ width: "100%" }}>
                 {(["cover", "contain", "max"] as const).map((size) => (

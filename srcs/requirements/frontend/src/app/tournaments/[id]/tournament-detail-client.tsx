@@ -49,6 +49,7 @@ function statusBadgeVariant(status: string): "default" | "secondary" | "outline"
   return "default";
 }
 
+
 function StateCard({
   title,
   description,
@@ -185,7 +186,7 @@ export function TournamentDetailClient({ id }: { id: string }) {
       <Card className="overflow-hidden p-0">
         <div className="tournament-hero-media">
           <img
-            src={t.bannerUrl || "/images/leage.jpeg"}
+            src={t.bannerUrl || "/images/placeholder_banner.png"}
             alt={t.name}
             className="h-full w-full object-cover"
           />
@@ -281,19 +282,17 @@ export function TournamentDetailClient({ id }: { id: string }) {
         {activeTab === "overview" && <OverviewContent tournament={t} />}
 
         {activeTab === "bracket" && (
-          <div>
-            {!bracketData && detailState?.isLoading ? (
+            bracketData ? (
+              <BracketView data={bracketData} />
+            ) : detailState?.isLoading ? (
               <Card className="ds-panel-card p-20 text-center">
                 <div className="ds-empty-state">Loading bracket...</div>
               </Card>
-            ) : bracketData ? (
-              <BracketView data={bracketData} />
             ) : (
               <Card className="ds-panel-card p-20 text-center">
                 <div className="ds-empty-state">No bracket data available.</div>
               </Card>
-            )}
-          </div>
+            )
         )}
 
         {activeTab === "matches" && <MatchesContent bracketData={bracketData ?? null} />}

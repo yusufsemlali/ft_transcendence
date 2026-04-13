@@ -17,13 +17,6 @@ import type {
 
 function getRoundLabel(round: number, totalRounds: number, bracketType: string): string {
     if (bracketType === "round_robin") return `Round ${round}`;
-    if (bracketType === "free_for_all") return `Group ${round}`;
-
-    if (round >= 200) return "Grand Finals";
-    if (round >= 100) {
-        const lr = round - 100;
-        return `Losers Round ${lr}`;
-    }
 
     const remaining = totalRounds - round;
     if (remaining === 0) return "Finals";
@@ -31,12 +24,6 @@ function getRoundLabel(round: number, totalRounds: number, bracketType: string):
     if (remaining === 2) return "Quarterfinals";
     const size = Math.pow(2, remaining + 1);
     return `Round of ${size}`;
-}
-
-function getRoundSection(round: number): "winners" | "losers" | "grand_finals" | undefined {
-    if (round >= 200) return "grand_finals";
-    if (round >= 100) return "losers";
-    return "winners";
 }
 
 // ─── Score updates (no completion) ───────────────────────
@@ -105,17 +92,20 @@ export async function finalizeMatchResult(
         .where(eq(matches.id, matchId))
         .returning();
 
+    // Advance winner to next match
     if (resolvedWinner && updated.nextMatchId) {
         await advanceWinner(updated, resolvedWinner);
     }
 
-    if (resolvedWinner) {
-        const [tournament] = await db
-            .select()
-            .from(tournaments)
-            .where(eq(tournaments.id, match.tournamentId));
+    // Determine bracket type for loser handling
+    const [tournament] = await db
+        .select()
+        .from(tournaments)
+        .where(eq(tournaments.id, match.tournamentId));
 
-        if (tournament?.bracketType === "single_elimination") {
+    if (resolvedWinner && tournament) {
+        if (tournament.bracketType === "single_elimination") {
+            // In single elimination, losers get disqualified
             const loserId =
                 resolvedWinner === match.participant1Id ? match.participant2Id : match.participant1Id;
             if (loserId) {
@@ -136,7 +126,7 @@ async function advanceWinner(match: typeof matches.$inferSelect, winnerId: strin
     const [nextMatch] = await db.select().from(matches).where(eq(matches.id, match.nextMatchId));
     if (!nextMatch) return;
 
-    // Determine which slot to fill based on match position
+    // Standard slot assignment: even position → slot1, odd position → slot2
     const feedsIntoSlot1 = match.position % 2 === 0;
     const field = feedsIntoSlot1 ? "participant1Id" : "participant2Id";
 
@@ -261,7 +251,6 @@ export async function getBracketState(tournamentId: string): Promise<BracketStat
         .reduce((max, m) => Math.max(max, m.round), 0);
 
     const bracketType = tournament.bracketType;
-    const isDoubleElim = bracketType === "double_elimination";
 
     // Build rounds
     const rounds: BracketRound[] = [];
@@ -284,14 +273,11 @@ export async function getBracketState(tournamentId: string): Promise<BracketStat
             completedAt: m.completedAt ?? null,
         }));
 
-        const section = isDoubleElim ? getRoundSection(roundNum) : undefined;
-        const labelRounds = section === "losers" ? 0 : winnersRounds;
-        const label = getRoundLabel(roundNum, labelRounds, bracketType);
+        const label = getRoundLabel(roundNum, winnersRounds, bracketType);
 
         rounds.push({
             number: roundNum,
             label,
-            section,
             matches: bracketMatches,
         });
     }
@@ -309,14 +295,6 @@ export async function getBracketState(tournamentId: string): Promise<BracketStat
     const metadata = {
         totalRounds: sortedRoundNumbers.length,
         currentRound,
-        ...(isDoubleElim && {
-            winnersRounds,
-            losersRounds: allMatches.filter((m) => m.round >= 100 && m.round < 200).reduce((max, m) => Math.max(max, m.round - 100), 0),
-            hasGrandFinals: allMatches.some((m) => m.round >= 200),
-        }),
-        ...(bracketType === "free_for_all" && {
-            groups: new Set(allMatches.map((m) => m.round)).size,
-        }),
     };
 
     return {
@@ -420,7 +398,7 @@ function computeStandings(
             draws: s.draws,
             points: s.points,
             matchesPlayed: s.matchesPlayed,
-            ...(["round_robin", "free_for_all"].includes(bracketType) && {
+            ...(["round_robin"].includes(bracketType) && {
                 goalsFor: s.goalsFor,
                 goalsAgainst: s.goalsAgainst,
                 goalDifference: s.goalsFor - s.goalsAgainst,

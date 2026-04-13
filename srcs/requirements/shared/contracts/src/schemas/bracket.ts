@@ -2,9 +2,7 @@ import { z } from "zod";
 
 export const BRACKET_TYPES = [
     "single_elimination",
-    "double_elimination",
     "round_robin",
-    "free_for_all",
 ] as const;
 
 export const MATCH_STATUSES = [
@@ -21,11 +19,7 @@ export const PARTICIPANT_STATUSES = [
     "disqualified",
 ] as const;
 
-export const BRACKET_SECTIONS = [
-    "winners",
-    "losers",
-    "grand_finals",
-] as const;
+
 
 export const BracketParticipantSchema = z.object({
     id: z.string().uuid(),
@@ -52,7 +46,6 @@ export const BracketMatchSchema = z.object({
 export const BracketRoundSchema = z.object({
     number: z.number().int(),
     label: z.string(),
-    section: z.enum(BRACKET_SECTIONS).optional(),
     matches: z.array(BracketMatchSchema),
 });
 
@@ -73,9 +66,6 @@ export const StandingsEntrySchema = z.object({
 export const BracketMetadataSchema = z.object({
     totalRounds: z.number().int(),
     currentRound: z.number().int(),
-    winnersRounds: z.number().int().optional(),
-    losersRounds: z.number().int().optional(),
-    hasGrandFinals: z.boolean().optional(),
     groups: z.number().int().optional(),
 });
 

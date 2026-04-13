@@ -96,20 +96,18 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
             zIndex: 0
         }} />
 
-        {bannerUrl && bannerUrl.startsWith('http') && (
-          <div style={{ 
-              position: "absolute", 
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "100%",
-              backgroundImage: `url(${bannerUrl})`, 
-              backgroundSize: "cover", 
-              backgroundPosition: "center",
-              zIndex: 1,
-              opacity: 0.6
-          }} />
-        )}
+        <div style={{ 
+            position: "absolute", 
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "100%",
+            backgroundImage: `url(${bannerUrl && bannerUrl.startsWith('http') ? bannerUrl : "/images/placeholder_banner.png"})`, 
+            backgroundSize: "cover", 
+            backgroundPosition: "center",
+            zIndex: 1,
+            opacity: 0.6
+        }} />
         
         <div style={{ 
             position: "absolute", 
@@ -148,7 +146,7 @@ export function TournamentOverviewTab({ tournament, org, onStatusChange, onNavig
                         position: "relative"
                     }}>
                         <Image
-                          src={bannerUrl && bannerUrl.startsWith('http') ? bannerUrl : "/next.svg"}
+                          src={bannerUrl && bannerUrl.startsWith('http') ? bannerUrl : "/images/placeholder_banner.png"}
                           alt={tournament.name}
                           width={80}
                           height={80}

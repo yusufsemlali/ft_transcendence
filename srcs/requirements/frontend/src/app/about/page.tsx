@@ -48,7 +48,7 @@ export default function AboutPage() {
         }}
       >
         <Image
-          src="/images/leage.jpeg"
+          src="/images/placeholder_banner.png"
           alt="Hero background"
           fill
           style={{

@@ -13,7 +13,6 @@ const CATEGORY_META: Record<string, { icon: string; color: string }> = {
 const MODE_LABELS: Record<string, string> = {
   "1v1": "1 vs 1",
   team: "Team",
-  ffa: "Free for All",
 };
 
 const SCORING_LABELS: Record<string, string> = {

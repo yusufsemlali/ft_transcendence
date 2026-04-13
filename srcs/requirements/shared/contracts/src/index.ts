@@ -12,6 +12,7 @@ import { friendsContract } from "./endpoints/friends";
 import { matchesContract } from "./endpoints/matches";
 import { filesContract } from "./endpoints/files";
 import { notificationsContract } from "./endpoints/notifications";
+import { gdprContract } from "./endpoints/gdpr";
 import { ORG_ROLES } from "./constants/roles";
 import { 
     TOURNAMENT_PHASES, 
@@ -34,6 +35,7 @@ export const contract = c.router({
     matches: matchesContract,
     files: filesContract,
     notifications: notificationsContract,
+    gdpr: gdprContract,
 });
 
 export const COMPATIBILITY_CHECK = 1;

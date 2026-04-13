@@ -52,10 +52,19 @@ function resolveChatUrl(): string {
   }
 
   if (typeof window !== "undefined") {
+    const { protocol, hostname, port } = window.location;
+    
+    // For localhost, use HTTP to avoid WSS protocol issues
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      const httpPort = port || "80";
+      return `http://${hostname}:${httpPort}`;
+    }
+    
+    // For production, use the current origin
     return window.location.origin;
   }
 
-  return "http://localhost:4000";
+  return "http://localhost:8080"; // Updated to match the actual port
 }
 
 function resolveChatPath(): string {

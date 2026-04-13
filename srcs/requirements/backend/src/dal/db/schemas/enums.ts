@@ -15,22 +15,20 @@ export const notificationTypeEnum = pgEnum('notification_type', [
 ]);
 
 // --- Organization ---
-export const orgRoleEnum = pgEnum('org_role', ORG_ROLES as [string, ...string[]]);
+export const orgRoleEnum = pgEnum('org_role', ORG_ROLES as unknown as [string, ...string[]]);
 export const orgMemberStatusEnum = pgEnum('org_member_status', ['pending', 'active', 'declined']);
 
 // --- Tournament Lifecycle ---
 export const tournamentStatusEnum = pgEnum('tournament_status', ['draft', 'registration', 'upcoming', 'ongoing', 'completed', 'cancelled']);
 
 // --- Modes (Blueprint Archetypes) ---
-export const sportModeEnum = pgEnum('sport_mode', ['1v1', 'team', 'ffa']);
+export const sportModeEnum = pgEnum('sport_mode', ['1v1', 'team']);
 export const sportCategoryEnum = pgEnum('sport_category', ['esports', 'physical', 'tabletop', 'custom']);
 
 // --- Bracket Structure ---
 export const bracketTypeEnum = pgEnum('bracket_type', [
     'single_elimination',
-    'double_elimination',
     'round_robin',
-    'free_for_all', 
 ]);
 
 // --- Scoring ---

@@ -4,6 +4,7 @@ import { eq, sql, ilike, or, ne, and } from "drizzle-orm";
 import AppError from "@/utils/error";
 import { sanitizeUser } from "@/utils/auth";
 import { ApiResponse } from "@/utils/response";
+import { FileService } from "./file.service";
 
 export const getUserById = async (id: string) => {
     const user = await db.query.users.findFirst({
@@ -40,6 +41,10 @@ export const updateUser = async (
     try {
         const { id: _, password: __, ...updateData } = data;
 
+        const oldUser = await db.query.users.findFirst({
+            where: eq(users.id, id),
+        });
+
         const [updatedUser] = await db
             .update(users)
             .set({
@@ -51,6 +56,19 @@ export const updateUser = async (
 
         if (!updatedUser) {
             throw new AppError(404, "User found but update returned no data");
+        }
+
+        if (oldUser) {
+            if (updateData.avatar !== undefined && oldUser.avatar && updateData.avatar !== oldUser.avatar) {
+                if (oldUser.avatar.includes('/uploads/')) {
+                    await FileService.deleteSystemFileByUrl(oldUser.avatar);
+                }
+            }
+            if (updateData.banner !== undefined && oldUser.banner && updateData.banner !== oldUser.banner) {
+                if (oldUser.banner.includes('/uploads/')) {
+                    await FileService.deleteSystemFileByUrl(oldUser.banner);
+                }
+            }
         }
 
         return new ApiResponse("User updated successfully", sanitizeUser(updatedUser));

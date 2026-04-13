@@ -16,6 +16,7 @@ import { matches } from "@/dal/db/schemas/matches";
 import { generateUniqueSlug } from "@/utils/slug";
 import { TournamentPolicy } from "@/policies/tournament.policy";
 import * as LobbyService from "@/services/lobby.service";
+import { FileService } from "./file.service";
 
 export const createTournament = async (organizationId: string, data: Omit<CreateTournament, 'organizationId'>) => {
     const [sportBlueprint] = await db
@@ -163,6 +164,12 @@ export const updateTournament = async (id: string, data: any) => {
             .where(eq(tournaments.id, id))
             .returning();
 
+        if (validatedData.bannerUrl !== undefined && current.bannerUrl && validatedData.bannerUrl !== current.bannerUrl) {
+            if (current.bannerUrl.includes('/uploads/')) {
+                FileService.deleteSystemFileByUrl(current.bannerUrl).catch(console.error);
+            }
+        }
+
         // POLICY: If transitioning to 'ongoing', purge the lobby
         if (validatedData.status === 'ongoing' && current.status !== 'ongoing') {
             await LobbyService.purgeLobby(id);
@@ -191,6 +198,9 @@ export const deleteTournament = async (id: string) => {
 
     if (strategy === 'HARD_DELETE') {
         await db.delete(tournaments).where(eq(tournaments.id, id));
+        if (current.bannerUrl && current.bannerUrl.includes('/uploads/')) {
+            FileService.deleteSystemFileByUrl(current.bannerUrl).catch(console.error);
+        }
         return { actionTaken: 'HARD_DELETE', message: "Tournament permanently deleted." };
     } 
     

@@ -15,6 +15,7 @@ function DashboardContent() {
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userClearedSelection, setUserClearedSelection] = useState(false);
 
   const selectOrg = useCallback((org: Organization) => {
     setSelectedOrg(org);
@@ -30,21 +31,21 @@ function DashboardContent() {
         if (res.status === 200) {
           const data = res.body.data;
           setOrgs(data);
-          // Restore org from URL, or auto-select if only one
           if (urlOrgId) {
             const found = data.find((o: Organization) => o.id === urlOrgId);
             if (found) { setSelectedOrg(found); return; }
           }
-          if (data.length === 1) selectOrg(data[0]);
+          if (data.length === 1 && !userClearedSelection) selectOrg(data[0]);
         }
       } catch { }
       finally { setLoading(false); }
     };
     fetchOrgs();
-  }, [urlOrgId, selectOrg]);
+  }, [urlOrgId, selectOrg, userClearedSelection]);
 
   const handleBack = () => {
     setSelectedOrg(null);
+    setUserClearedSelection(true);
     router.replace("/dashboard", { scroll: false });
   };
 

@@ -227,6 +227,10 @@ html {
   scroll-behavior: smooth;
   /* Prevent horizontal overflow on mobile */
   overflow-x: hidden;
+  /* Universal font scaling for mobile */
+  @media (max-width: 768px) {
+    font-size: 13px;
+  }
 }
 
 body {
@@ -806,7 +810,8 @@ a {
   transition: all var(--transition-speed);
   overflow: hidden;
   position: relative;
-  min-width: 0;
+  min-width: 200px;
+  width: 200px;
 }
 
 .match-card:hover {
@@ -851,7 +856,7 @@ a {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 10px 14px;
+  padding: 8px 12px;
   min-width: 0;
   transition: background var(--transition-speed);
   position: relative;
@@ -868,9 +873,9 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
+  padding: 5px 12px;
   background: color-mix(in srgb, var(--bg-secondary) 30%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--border-color) 50%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
 }
 
 .match-card-seed { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted); width: 1rem; text-align: right; flex-shrink: 0; }
@@ -889,12 +894,27 @@ a {
 .match-card-date { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted); }
 
 @media (max-width: 640px) {
-  .match-card-slot { padding: 8px 10px; gap: 6px; }
-  .match-card-final .match-card-slot { padding: 8px 10px; }
-  .match-card-footer { padding: 4px 10px; }
-  .match-card-divider { margin: 0 8px; }
-  .match-card-name { font-size: var(--text-xs); }
-  .match-card-score { font-size: var(--text-xs); }
+  .match-card {
+     width: 105px;
+     min-width: 105px;
+     border-radius: 3px;
+  }
+  .match-card-slot { padding: 3px 5px; gap: 2px; }
+  .match-card-final .match-card-slot { padding: 3px 5px; }
+  .match-card-divider { margin: 0 3px; }
+  .match-card-name { font-size: 8.5px; line-height: 1.1; }
+  .match-card-score { font-size: 8.5px; width: 0.9rem; }
+  .match-card-seed { font-size: 7px; width: 0.6rem; }
+  .match-card-footer { 
+    display: flex !important; 
+    padding: 2px 5px !important;
+  }
+  .match-card-footer .badge { 
+    font-size: 6.5px !important; 
+    padding: 0 4px !important; 
+    height: 12px !important;
+  }
+  .match-card-date { font-size: 6.5px !important; }
 }
 
 /* ── Round header (line 1: ordinal, line 2: name) ── */
@@ -925,10 +945,10 @@ a {
 
 .round-header-label {
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 700;
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
@@ -945,16 +965,15 @@ a {
 /* SE / DE: horizontal row of rounds + vertical match stacks */
 .bracket-rounds-row {
   display: flex;
-  min-width: max-content;
-  gap: var(--space-2xl);
-  padding-left: var(--space-lg);
-  padding-right: var(--space-lg);
+  gap: var(--space-xl);
+  padding: 0 var(--space-md);
+  min-width: 100%;
 }
 
 .bracket-match-col {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: var(--space-lg);
 }
 
 /* ── Bracket section card — wraps standings/group blocks ── */
@@ -972,15 +991,20 @@ a {
 }
 
 @media (max-width: 640px) {
-  .bracket-section { padding: var(--space-sm) var(--space-md); }
-  .round-header { padding: var(--space-xs) var(--space-sm); }
+  .bracket-section { padding: 2px; }
+  .round-header { padding: 2px; margin-bottom: 2px; }
+  .round-header-label { font-size: 9px; line-height: 1; }
+  .round-header-count { display: block; font-size: 7px; opacity: 0.7; }
+  .round-header-meta { display: block; font-size: 7px; opacity: 0.7; margin-top: 1px; }
   .bracket-rounds-row {
-    gap: var(--space-lg);
-    padding-left: var(--space-md);
-    padding-right: var(--space-md);
+    gap: 6px;
+    padding-left: 0;
+    padding-right: 0;
+    width: auto;
+    min-width: auto;
   }
   .bracket-match-col {
-    gap: var(--space-md);
+    gap: 4px;
   }
 }
 
@@ -1110,7 +1134,7 @@ a {
 }
 
 @media (max-width: 640px) {
-  .bracket-outer { padding: var(--space-sm); }
+  .bracket-outer { padding: 0; overflow: hidden; }
   .bracket-de-section-header {
     gap: var(--space-sm);
     padding: var(--space-sm) var(--space-md);

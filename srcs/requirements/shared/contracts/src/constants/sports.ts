@@ -1,7 +1,7 @@
 /**
  * The Mode determines the primary relationship between participants. (1v1, team, or FFA)
  */
-export const SPORT_MODES = ['1v1', 'team', 'ffa'] as const;
+export const SPORT_MODES = ['1v1', 'team'] as const;
 export type SportMode = (typeof SPORT_MODES)[number];
 
 export const SPORT_CATEGORIES = ['esports', 'physical', 'tabletop', 'custom'] as const;

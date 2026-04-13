@@ -1,3 +1,5 @@
+import fs from "fs/promises";
+import path from "path";
 import { initServer } from "@ts-rest/express";
 import { contract } from "@ft-transcendence/contracts";
 import { db } from "@/dal/db";
@@ -5,12 +7,13 @@ import { users } from "@/dal/db/schemas/users";
 import { files } from "@/dal/db/schemas/files";
 import { invites } from "@/dal/db/schemas/lobby";
 import { organizations } from "@/dal/db/schemas/organizations";
+import { tournaments } from "@/dal/db/schemas/tournaments";
 import { eq, ilike, or, and, sql, desc, isNull } from "drizzle-orm";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 import { requireGlobalRole, ensureNotLastAdmin } from "@/utils/rbac";
-import { ApiResponse } from "@/utils/response";
 import { logout, logoutAll, getActiveSessions } from "@/services/auth.service";
+import { FileService } from "@/services/file.service";
 
 const s = initServer();
 
@@ -177,15 +180,23 @@ export const adminController = s.router(contract.admin, {
         // 🛡️ Safeguard 2: Prevent the "Last Admin" deadlock
         await ensureNotLastAdmin(params.id);
 
+        // Pre-fetch all files uploaded by the user to safely unlink them after CASCADE deletion
+        const userFiles = await db.select().from(files).where(eq(files.uploaderId, params.id));
+
         const [deleted] = await db.transaction(async (tx) => {
             await tx.delete(invites).where(
                 or(eq(invites.inviterId, params.id), eq(invites.targetUserId, params.id))
             );
-            await tx.delete(files).where(eq(files.uploaderId, params.id));
             return tx.delete(users).where(eq(users.id, params.id)).returning();
         });
 
         if (!deleted) throw new AppError(404, "User not found");
+
+        // Physically obliterate the user's files safely
+        for (const file of userFiles) {
+            const filePath = path.join("/app/uploads", file.savedName);
+            try { await fs.unlink(filePath); } catch (e: any) {}
+        }
 
         return {
             status: 200,
@@ -251,7 +262,7 @@ export const adminController = s.router(contract.admin, {
         const { page, pageSize, search } = query;
         const offset = (page - 1) * pageSize;
 
-        const filters = [isNull(organizations.deletedAt)];
+        const filters: any[] = [isNull(organizations.deletedAt)];
         if (search) {
             filters.push(
                 or(
@@ -296,12 +307,32 @@ export const adminController = s.router(contract.admin, {
 
         await requireGlobalRole(adminId, ["admin"]);
 
+        // Pre-fetch organization details and its tournaments' banners before they are cascade deleted
+        const oldOrg = await db.query.organizations.findFirst({
+            where: eq(organizations.id, params.id),
+        });
+
+        const orgTournaments = await db
+            .select({ bannerUrl: tournaments.bannerUrl })
+            .from(tournaments)
+            .where(eq(tournaments.organizationId, params.id));
+
         const [deleted] = await db
             .delete(organizations)
             .where(eq(organizations.id, params.id))
             .returning();
 
         if (!deleted) throw new AppError(404, "Organization not found");
+
+        // Safely cleanup physical files
+        if (oldOrg?.logoUrl) {
+            FileService.deleteSystemFileByUrl(oldOrg.logoUrl).catch(() => {});
+        }
+        for (const t of orgTournaments) {
+            if (t.bannerUrl) {
+                FileService.deleteSystemFileByUrl(t.bannerUrl).catch(() => {});
+            }
+        }
 
         return {
             status: 200,

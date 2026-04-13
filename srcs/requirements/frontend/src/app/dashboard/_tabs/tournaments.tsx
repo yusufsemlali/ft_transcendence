@@ -23,9 +23,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 
 const BRACKET_LABELS: Record<string, string> = {
   single_elimination: "Single Elim",
-  double_elimination: "Double Elim",
   round_robin:        "Round Robin",
-  free_for_all:       "FFA",
 };
 
 /* ── Tournament Row ── */
@@ -93,6 +91,8 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
   });
   const [submitting, setSubmitting] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerProgress, setBannerProgress] = useState(0);
+  const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // When sport is selected, pre-fill defaults from the sport blueprint
@@ -124,8 +124,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
       return;
     }
     setBannerUploading(true);
+    setBannerProgress(0);
     try {
-      const result = await uploadFile(file);
+      if (lastUploadedId) {
+         api.files.deleteFile({ params: { id: lastUploadedId } }).catch(() => {});
+      }
+      const result = await uploadFile(file, { onProgress: setBannerProgress });
+      setLastUploadedId(result.id);
       setForm((prev: typeof form) => ({ ...prev, bannerUrl: result.url }));
       toast.success("Banner uploaded");
     } catch (err: unknown) {
@@ -259,12 +264,29 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
                   type="button"
                   className="btn btn-ghost"
                   style={{ fontSize: 12, alignSelf: "flex-start" }}
-                  onClick={() => setForm((prev) => ({ ...prev, bannerUrl: "" }))}
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, bannerUrl: "" }));
+                    if (lastUploadedId) {
+                      api.files.deleteFile({ params: { id: lastUploadedId } }).catch(console.error);
+                      setLastUploadedId(null);
+                    }
+                  }}
                 >
                   Remove banner
                 </button>
               ) : null}
             </div>
+            {bannerUploading && (
+              <div style={{ width: "100%", marginTop: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                  <span>UPLOADING BANNER...</span>
+                  <span>{bannerProgress}%</span>
+                </div>
+                <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "var(--primary)", width: `${bannerProgress}%`, transition: "width 0.2s" }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -277,9 +299,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="single_elimination">Single Elimination</SelectItem>
-              <SelectItem value="double_elimination">Double Elimination</SelectItem>
               <SelectItem value="round_robin">Round Robin</SelectItem>
-              <SelectItem value="free_for_all">Free for All</SelectItem>
             </SelectContent>
           </Select>
         </label>
@@ -287,14 +307,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Mode */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Mode</span>
-          <Select value={form.mode} onValueChange={(val: string) => setForm((prev: typeof form) => ({ ...prev, mode: val as "1v1" | "team" | "ffa" }))}>
+          <Select value={form.mode} onValueChange={(val: string) => setForm((prev: typeof form) => ({ ...prev, mode: val as "1v1" | "team" }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1v1">1v1</SelectItem>
               <SelectItem value="team">Team</SelectItem>
-              <SelectItem value="ffa">Free for All</SelectItem>
             </SelectContent>
           </Select>
         </label>
@@ -391,7 +410,7 @@ export function TournamentsTab({ org, initialCreate, onSelectTournament }: {
       if (tRes.status === 200) setTournaments(tRes.body);
       if (sRes.status === 200) setSports(sRes.body);
       else toast.error("Failed to load sports list");
-    } catch (err) {
+    } catch {
       toast.error("Failed to sync dashboard data");
     } finally { setLoading(false); }
   }, [org.id]);

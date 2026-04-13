@@ -1,20 +1,21 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 export default function LeaderboardPage() {
   const topPlayers = [
-    { rank: 2, name: "NeonStriker", points: "15,420", avatar: "/images/val.jpeg", elo: 2450 },
-    { rank: 1, name: "PrismMaster", points: "18,910", avatar: "/images/leage.jpeg", elo: 2800 },
-    { rank: 3, name: "ShadowWalker", points: "14,200", avatar: "/images/cs2.jpeg", elo: 2310 },
+    { rank: 2, name: "NeonStriker", points: "15,420", avatar: "/images/val.jpeg", elo: 2450, id: "mock-id-2" },
+    { rank: 1, name: "PrismMaster", points: "18,910", avatar: "/images/placeholder_banner.png", elo: 2800, id: "mock-id-1" },
+    { rank: 3, name: "ShadowWalker", points: "14,200", avatar: "/images/cs2.jpeg", elo: 2310, id: "mock-id-3" },
   ];
 
   const ranks = [
-    { rank: 4, name: "Zenith", game: "League", elo: 2100, wins: 142, ratio: "68%" },
-    { rank: 5, name: "Quantum", game: "Valorant", elo: 2050, wins: 128, ratio: "64%" },
-    { rank: 6, name: "Nova", game: "CS2", elo: 1980, wins: 115, ratio: "61%" },
-    { rank: 7, name: "Apex", game: "Dota 2", elo: 1920, wins: 98, ratio: "59%" },
-    { rank: 8, name: "Vortex", game: "Overwatch", elo: 1850, wins: 85, ratio: "57%" },
+    { rank: 4, name: "Zenith", game: "League", elo: 2100, wins: 142, ratio: "68%", id: "mock-id-4" },
+    { rank: 5, name: "Quantum", game: "Valorant", elo: 2050, wins: 128, ratio: "64%", id: "mock-id-5" },
+    { rank: 6, name: "Nova", game: "CS2", elo: 1980, wins: 115, ratio: "61%", id: "mock-id-6" },
+    { rank: 7, name: "Apex", game: "Dota 2", elo: 1920, wins: 98, ratio: "59%", id: "mock-id-7" },
+    { rank: 8, name: "Vortex", game: "Overwatch", elo: 1850, wins: 85, ratio: "57%", id: "mock-id-8" },
   ];
 
   return (
@@ -91,7 +92,7 @@ export default function LeaderboardPage() {
 
               <div style={{ fontSize: "12px", color: "var(--text-muted)", letterSpacing: "2px", fontWeight: "600" }}>RANK #{player.rank}</div>
               <h2 className={player.rank === 1 ? "text-gradient" : ""} style={{ fontSize: player.rank === 1 ? "clamp(24px, 4vw, 32px)" : "clamp(18px, 3vw, 24px)", fontWeight: "700", margin: "8px 0" }}>
-                {player.name}
+                <Link href={`/profile/${player.id}`} style={{ color: "inherit", textDecoration: "none" }}>{player.name}</Link>
               </h2>
 
               <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginTop: "16px", flexWrap: "wrap" }}>
@@ -157,7 +158,7 @@ export default function LeaderboardPage() {
                 alignItems: "center",
               }}>
                 <div style={{ fontSize: "18px", fontWeight: "700", opacity: 0.5 }}>#{r.rank}</div>
-                <div style={{ fontWeight: "600", fontSize: "16px" }}>{r.name}</div>
+                <Link href={`/profile/${r.id}`} style={{ fontWeight: "600", fontSize: "16px", color: "inherit", textDecoration: "none" }}>{r.name}</Link>
                 <div style={{ fontSize: "12px", color: "var(--accent-info)", fontWeight: "600" }}>{r.game}</div>
                 <div style={{ textAlign: "right", fontFamily: "var(--font-mono)", color: "var(--accent-success)" }}>{r.elo}</div>
                 <div style={{ textAlign: "right", fontFamily: "var(--font-mono)" }}>{r.wins}</div>

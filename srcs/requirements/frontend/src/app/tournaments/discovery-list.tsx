@@ -337,7 +337,7 @@ export function DiscoveryList() {
                     }}
                   >
                     <img
-                      src={t.bannerUrl || "/images/leage.jpeg"}
+                      src={t.bannerUrl || "/images/placeholder_banner.png"}
                       alt=""
                       style={{
                         width: "100%",
