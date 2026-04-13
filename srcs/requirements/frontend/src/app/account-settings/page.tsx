@@ -32,7 +32,9 @@ function AccountSettingsContent() {
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const bannerFileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerProgress, setBannerProgress] = useState(0);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -114,6 +116,7 @@ function AccountSettingsContent() {
     file: File,
     field: "avatar" | "banner",
     setUploading: (v: boolean) => void,
+    setProgress: (v: number) => void
   ) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please choose an image file.");
@@ -124,8 +127,9 @@ function AccountSettingsContent() {
       return;
     }
     setUploading(true);
+    setProgress(0);
     try {
-      const result = await uploadFile(file);
+      const result = await uploadFile(file, { onProgress: setProgress });
       const res = await api.users.updateMe({
         body: field === "avatar" ? { avatar: result.url } : { banner: result.url },
       });
@@ -149,14 +153,14 @@ function AccountSettingsContent() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    await runImageUpload(file, "avatar", setAvatarUploading);
+    await runImageUpload(file, "avatar", setAvatarUploading, setAvatarProgress);
   };
 
   const onBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    await runImageUpload(file, "banner", setBannerUploading);
+    await runImageUpload(file, "banner", setBannerUploading, setBannerProgress);
   };
 
   const clearVisual = async (field: "avatar" | "banner") => {
@@ -440,10 +444,21 @@ function AccountSettingsContent() {
                       onClick={() => clearVisual("avatar")}
                       disabled={isLoading || avatarUploading}
                     >
-                      Reset to default
+                      Remove
                     </button>
                   ) : null}
                 </div>
+                {avatarUploading && (
+                  <div style={{ width: "100%", marginTop: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                      <span>UPLOADING AVATAR...</span>
+                      <span>{avatarProgress}%</span>
+                    </div>
+                    <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", background: "var(--primary)", width: `${avatarProgress}%`, transition: "width 0.2s" }} />
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>PROFILE BANNER</label>
@@ -475,6 +490,17 @@ function AccountSettingsContent() {
                     </button>
                   ) : null}
                 </div>
+                {bannerUploading && (
+                  <div style={{ width: "100%", marginTop: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                      <span>UPLOADING BANNER...</span>
+                      <span>{bannerProgress}%</span>
+                    </div>
+                    <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", background: "var(--primary)", width: `${bannerProgress}%`, transition: "width 0.2s" }} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>

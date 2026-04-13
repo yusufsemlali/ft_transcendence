@@ -9,7 +9,6 @@ import { eq, ilike, or, and, sql, desc, isNull } from "drizzle-orm";
 import { RequestWithContext } from "@/api/types";
 import AppError from "@/utils/error";
 import { requireGlobalRole, ensureNotLastAdmin } from "@/utils/rbac";
-import { ApiResponse } from "@/utils/response";
 import { logout, logoutAll, getActiveSessions } from "@/services/auth.service";
 
 const s = initServer();

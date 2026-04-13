@@ -41,6 +41,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
 
   const [submitting, setSubmitting] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -99,9 +100,13 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
     }
     setBannerUploading(true);
     try {
+      if (lastUploadedId) {
+         api.files.deleteFile({ params: { id: lastUploadedId } }).catch(() => {});
+      }
       const result = await uploadFile(file);
+      setLastUploadedId(result.id);
       setForm((f: typeof form) => ({ ...f, bannerUrl: result.url }));
-      toast.success("Banner uploaded — save changes to apply.");
+      toast.success("Banner photo uploaded — save changes to apply.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -148,6 +153,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
 
       if (res.status === 200) {
         toast.success("Changes saved successfully");
+        setLastUploadedId(null);
         onUpdate(res.body.data);
       } else {
         toastApiError(res.body, "Failed to update tournament");
@@ -316,7 +322,13 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
                     type="button"
                     className="btn btn-ghost"
                     style={{ fontSize: 12, alignSelf: "flex-start" }}
-                    onClick={() => setForm((f: typeof form) => ({ ...f, bannerUrl: "" }))}
+                    onClick={() => {
+                      setForm((f: typeof form) => ({ ...f, bannerUrl: "" }));
+                      if (lastUploadedId) {
+                        api.files.deleteFile({ params: { id: lastUploadedId } }).catch(console.error);
+                        setLastUploadedId(null);
+                      }
+                    }}
                   >
                     Remove banner
                   </button>

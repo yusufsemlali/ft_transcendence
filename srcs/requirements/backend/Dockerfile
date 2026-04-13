@@ -17,4 +17,5 @@ COPY backend/ .
 
 EXPOSE 3000
 
-CMD sh -c "pnpm drizzle-kit push && pnpm run build && pnpm run start"
+CMD sh -c "pnpm drizzle-kit push && pnpm run dev"
+# CMD sh -c "pnpm drizzle-kit push && pnpm run build && pnpm run start"

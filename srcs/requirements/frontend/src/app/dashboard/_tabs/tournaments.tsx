@@ -91,6 +91,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
   });
   const [submitting, setSubmitting] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // When sport is selected, pre-fill defaults from the sport blueprint
@@ -123,7 +124,11 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
     }
     setBannerUploading(true);
     try {
+      if (lastUploadedId) {
+         api.files.deleteFile({ params: { id: lastUploadedId } }).catch(() => {});
+      }
       const result = await uploadFile(file);
+      setLastUploadedId(result.id);
       setForm((prev: typeof form) => ({ ...prev, bannerUrl: result.url }));
       toast.success("Banner uploaded");
     } catch (err: unknown) {
@@ -257,7 +262,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
                   type="button"
                   className="btn btn-ghost"
                   style={{ fontSize: 12, alignSelf: "flex-start" }}
-                  onClick={() => setForm((prev) => ({ ...prev, bannerUrl: "" }))}
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, bannerUrl: "" }));
+                    if (lastUploadedId) {
+                      api.files.deleteFile({ params: { id: lastUploadedId } }).catch(console.error);
+                      setLastUploadedId(null);
+                    }
+                  }}
                 >
                   Remove banner
                 </button>
