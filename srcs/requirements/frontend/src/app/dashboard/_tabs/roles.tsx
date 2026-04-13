@@ -5,25 +5,24 @@ import { ORG_ROLES } from "@ft-transcendence/contracts";
 
 /* ── Permission matrix ── */
 const PERMISSIONS: { label: string; icon: string; roles: Record<string, boolean> }[] = [
-  { label: "View tournaments",         icon: "visibility",       roles: { owner: true, admin: true, referee: true, member: true } },
-  { label: "Join tournaments",         icon: "how_to_reg",       roles: { owner: true, admin: true, referee: true, member: true } },
-  { label: "Create tournaments",       icon: "add_circle",       roles: { owner: true, admin: true, referee: false, member: false } },
-  { label: "Edit tournaments",         icon: "edit",             roles: { owner: true, admin: true, referee: false, member: false } },
-  { label: "Delete tournaments",       icon: "delete",           roles: { owner: true, admin: false, referee: false, member: false } },
-  { label: "Manage members",           icon: "group",            roles: { owner: true, admin: true, referee: false, member: false } },
-  { label: "Assign roles",             icon: "shield_person",    roles: { owner: true, admin: true, referee: false, member: false } },
-  { label: "Officiate matches",        icon: "gavel",            roles: { owner: true, admin: true, referee: true, member: false } },
-  { label: "Submit scores",            icon: "scoreboard",       roles: { owner: true, admin: true, referee: true, member: false } },
-  { label: "Edit org settings",        icon: "settings",         roles: { owner: true, admin: true, referee: false, member: false } },
-  { label: "Delete organization",      icon: "dangerous",        roles: { owner: true, admin: false, referee: false, member: false } },
-  { label: "View audit log",           icon: "history",          roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "View organization profile", icon: "visibility",       roles: { owner: true, admin: true, referee: true, member: true } },
+  { label: "View member list",          icon: "group",            roles: { owner: true, admin: true, referee: true, member: true } },
+  { label: "Create tournaments",        icon: "add_circle",       roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Edit tournaments",          icon: "edit",             roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Delete tournaments",        icon: "delete",           roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Invite new members",        icon: "person_add",       roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Remove members",            icon: "person_remove",    roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Assign member roles",       icon: "shield_person",    roles: { owner: true, admin: false, referee: false, member: false } },
+  { label: "Manage matches/scores",     icon: "scoreboard",       roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Edit organization info",    icon: "settings",         roles: { owner: true, admin: true, referee: false, member: false } },
+  { label: "Delete organization",       icon: "dangerous",        roles: { owner: true, admin: false, referee: false, member: false } },
 ];
 
 const ROLE_META: Record<string, { label: string; color: string; icon: string; description: string }> = {
-  owner:   { label: "Owner",   color: "var(--accent-warning, #f59e0b)", icon: "crown",         description: "Full control. Can delete the organization." },
-  admin:   { label: "Admin",   color: "var(--primary)",                  icon: "shield_person", description: "Can manage members, tournaments, and settings." },
-  referee: { label: "Referee", color: "var(--accent-info, #3b82f6)",     icon: "gavel",         description: "Can officiate matches and submit scores." },
-  member:  { label: "Member",  color: "var(--text-muted)",               icon: "person",        description: "Can view and join tournaments." },
+  owner:   { label: "Owner",   color: "var(--accent-warning, #f59e0b)", icon: "crown",         description: "Ultimate control. Only the owner can delete the organization or change member roles." },
+  admin:   { label: "Admin",   color: "var(--primary)",                  icon: "shield_person", description: "Operational control. Can manage tournaments, matches, and invite members." },
+  referee: { label: "Referee", color: "var(--accent-info, #3b82f6)",     icon: "gavel",         description: "Organization official. Can view private organization data and member lists." },
+  member:  { label: "Member",  color: "var(--text-muted)",               icon: "person",        description: "Standard participant. Can view organization and tournament data." },
 };
 
 export function RolesTab({ org: _org }: { org: Organization }) {

@@ -346,7 +346,7 @@ export function Shell({ org, onBack }: { org: Organization; onBack: () => void }
           {/* ═══ ORG LEVEL ═══ */}
           {!inTournament && (
             <>
-              {section === "overview" && <OverviewTab org={org} />}
+              {section === "overview" && <OverviewTab org={org} onNavigate={navigateOrg} />}
 
               {section === "tournaments" && page === "all"    && <TournamentsTab org={org} onSelectTournament={openTournament} />}
               {section === "tournaments" && page === "create" && <TournamentsTab org={org} onSelectTournament={openTournament} initialCreate />}

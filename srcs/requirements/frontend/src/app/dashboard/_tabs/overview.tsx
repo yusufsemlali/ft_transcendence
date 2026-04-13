@@ -1,7 +1,7 @@
 import type { Organization } from "@ft-transcendence/contracts";
 import { StatWidget } from "../_components/stat-widget";
 
-export function OverviewTab({ org: _org }: { org: Organization }) {
+export function OverviewTab({ org: _org, onNavigate }: { org: Organization, onNavigate: (s: any, p: string) => void }) {
   return (
     <>
       {/* Stats */}
@@ -24,19 +24,19 @@ export function OverviewTab({ org: _org }: { org: Organization }) {
           </div>
           <div className="dashboard-widget-body">
             <div className="dashboard-quick-actions">
-              <button className="dashboard-quick-action-btn">
+              <button className="dashboard-quick-action-btn" onClick={() => onNavigate("tournaments", "create")}>
                 <span className="material-symbols-outlined">emoji_events</span>
                 <span>New Tournament</span>
               </button>
-              <button className="dashboard-quick-action-btn">
+              <button className="dashboard-quick-action-btn" onClick={() => onNavigate("admin", "invite")}>
                 <span className="material-symbols-outlined">person_add</span>
                 <span>Invite Member</span>
               </button>
-              <button className="dashboard-quick-action-btn">
+              <button className="dashboard-quick-action-btn" onClick={() => onNavigate("tournaments", "all")}>
                 <span className="material-symbols-outlined">account_tree</span>
-                <span>New Bracket</span>
+                <span>All Tournaments</span>
               </button>
-              <button className="dashboard-quick-action-btn">
+              <button className="dashboard-quick-action-btn" onClick={() => onNavigate("config", "org-settings")}>
                 <span className="material-symbols-outlined">tune</span>
                 <span>Configure</span>
               </button>
