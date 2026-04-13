@@ -207,7 +207,6 @@ export default function Home() {
         <Link href="/privacy" className="footer-link">privacy</Link>
         <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="footer-link">github</a>
         <Link href="/settings" className="footer-link">settings</Link>
-        <Link href="/profile" className="footer-link">profile</Link>
       </footer>
     </div>
   );

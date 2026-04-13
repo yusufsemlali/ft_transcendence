@@ -22,7 +22,6 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
   const showAdminLink = user.role === "admin" || user.role === "moderator";
 
   const items: { href: string; icon: string; label: string; adminOnly?: boolean }[] = [
-    { href: "/profile", icon: "person", label: "Profile" },
     { href: "/friends", icon: "group", label: "Friends" },
     { href: "/account-settings", icon: "manage_accounts", label: "Account settings" },
     { href: "/admin", icon: "admin_panel_settings", label: "Admin panel", adminOnly: true },
@@ -37,12 +36,12 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
       >
         <div style={{ width: "24px", height: "24px", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.1)" }}>
           {user.avatar ? (
-            <Image 
-              src={user.avatar} 
-              alt={user.username} 
-              width={24} 
-              height={24} 
-              style={{ objectFit: "cover" }} 
+            <Image
+              src={user.avatar}
+              alt={user.username}
+              width={24}
+              height={24}
+              style={{ objectFit: "cover" }}
               priority
             />
           ) : (

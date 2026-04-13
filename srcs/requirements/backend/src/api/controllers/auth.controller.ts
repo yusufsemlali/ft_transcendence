@@ -136,7 +136,7 @@ export const authController = s.router(contract.auth, {
       if (err instanceof AppError) throw err;
       throw new AppError(401, "Logout all failed");
     });
-    
+
     clearAuthCookies(res);
 
     return {
@@ -181,9 +181,9 @@ export const authController = s.router(contract.auth, {
     if (result.type === "login") {
       setRefreshTokenCookie(res, result.data.refreshToken);
       setAccessTokenCookie(res, result.data.accessToken);
-      
+
       // Force the browser redirect via strict HTTP headers
-      res.setHeader("Location", `${process.env.FRONTEND_URL || "https://localhost:8080"}/profile?oauth_success=true`);
+      res.setHeader("Location", `${process.env.FRONTEND_URL || "https://localhost:8080"}/?oauth_success=true`);
       return { status: 302, body: "" as any };
     }
 

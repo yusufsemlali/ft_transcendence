@@ -26,8 +26,8 @@ function ConsentPageContent() {
           <div className="section-description">
             The authentication session is missing or has expired. Please try logging in again.
           </div>
-          <button 
-            onClick={() => router.push("/login")} 
+          <button
+            onClick={() => router.push("/login")}
             className="btn btn-primary"
             style={{ width: "100%", justifyContent: "center" }}
           >
@@ -57,7 +57,7 @@ function ConsentPageContent() {
       toast.success("Welcome aboard, " + username + "!");
       localStorage.setItem("isLoggedIn", "true");
       await refreshUser();
-      router.push("/profile");
+      router.push("/");
       router.refresh();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong during confirmation";
@@ -70,14 +70,14 @@ function ConsentPageContent() {
     <div className="page animate-fade-in" style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "80vh" }}>
       <div className="section glass-card" style={{ padding: "var(--space-xl)", maxWidth: "500px", margin: "0 auto" }}>
         <div className="section-header" style={{ marginBottom: "var(--space-lg)" }}>
-          <Image 
-            src="https://upload.wikimedia.org/wikipedia/commons/8/8d/42_Logo.svg" 
-            alt="42 Logo" 
+          <Image
+            src="https://upload.wikimedia.org/wikipedia/commons/8/8d/42_Logo.svg"
+            alt="42 Logo"
             width={32}
             height={32}
-            style={{ 
+            style={{
               marginRight: "var(--space-sm)",
-              filter: "brightness(0) invert(1)" 
+              filter: "brightness(0) invert(1)"
             }}
           />
           <span className="section-title">data permission</span>
@@ -92,7 +92,7 @@ function ConsentPageContent() {
           <div className="section-description" style={{ marginBottom: 0 }}>
             We&apos;ve successfully linked with your 42 Intra account. To finalize your registration, we need your explicit permission to store your profile data.
           </div>
-          
+
           <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius)", padding: "var(--space-md)" }}>
              <div className="section-note" style={{ textTransform: "uppercase", fontWeight: "bold", marginBottom: "var(--space-xs)", color: "var(--primary)" }}>
                 WHAT WE WILL STORE:
@@ -117,7 +117,7 @@ function ConsentPageContent() {
             >
               {isSubmitting ? "FINALIZING..." : "CONFIRM & REGISTER"}
             </button>
-            
+
             <button
               onClick={() => router.push("/login")}
               disabled={isSubmitting}
