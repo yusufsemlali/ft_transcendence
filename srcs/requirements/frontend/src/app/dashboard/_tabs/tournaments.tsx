@@ -91,6 +91,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
   });
   const [submitting, setSubmitting] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerProgress, setBannerProgress] = useState(0);
   const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,11 +124,12 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
       return;
     }
     setBannerUploading(true);
+    setBannerProgress(0);
     try {
       if (lastUploadedId) {
          api.files.deleteFile({ params: { id: lastUploadedId } }).catch(() => {});
       }
-      const result = await uploadFile(file);
+      const result = await uploadFile(file, { onProgress: setBannerProgress });
       setLastUploadedId(result.id);
       setForm((prev: typeof form) => ({ ...prev, bannerUrl: result.url }));
       toast.success("Banner uploaded");
@@ -274,6 +276,17 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
                 </button>
               ) : null}
             </div>
+            {bannerUploading && (
+              <div style={{ width: "100%", marginTop: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                  <span>UPLOADING BANNER...</span>
+                  <span>{bannerProgress}%</span>
+                </div>
+                <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "var(--primary)", width: `${bannerProgress}%`, transition: "width 0.2s" }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

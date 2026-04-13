@@ -56,6 +56,7 @@ export default function UserProfilePage() {
         const relRes = await api.friends.getFriendship({ params: { userId: id } });
         if (relRes.status === 200) setFriendship(relRes.body);
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const msg = (res.body as any)?.message || "Failed to send request";
         toast.error(msg);
       }

@@ -1,7 +1,7 @@
 import type { Organization } from "@ft-transcendence/contracts";
 import { StatWidget } from "../_components/stat-widget";
 
-export function OverviewTab({ org: _org, onNavigate }: { org: Organization, onNavigate: (s: any, p: string) => void }) {
+export function OverviewTab({ org: _org, onNavigate }: { org: Organization, onNavigate: (s: "overview" | "tournaments" | "admin" | "config" | "tools", p: string) => void }) {
   return (
     <>
       {/* Stats */}

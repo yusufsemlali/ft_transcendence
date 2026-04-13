@@ -13,6 +13,7 @@ import { friendsController } from "./controllers/friends.controller";
 import { matchesController } from "./controllers/matches.controller";
 import { filesController } from "./controllers/files.controller";
 import { notificationsController } from "./controllers/notifications.controller";
+import { gdprController } from "./controllers/gdpr.controller";
 import { Router, Express, Request, Response, NextFunction } from "express";
 import { authenticateTsRestRequest } from "@/middlewares/auth";
 import { uploadRateLimiter } from "@/middlewares/rate-limit";
@@ -45,6 +46,7 @@ export const addApiRoutes = (app: Express) => {
         matches: matchesController,
         files: filesController,
         notifications: notificationsController,
+        gdpr: gdprController,
     }, apiRouter, {
         jsonQuery: true,
         globalMiddleware: [
