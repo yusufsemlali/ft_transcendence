@@ -98,6 +98,8 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
   const typingTimeoutRef = useRef<number | null>(null);
   const lastRetryRef = useRef<number>(0);
   const socketRef = useRef<ChatSocket | null>(null);
+  const connectionAttemptRef = useRef<number>(0);
+  const isConnectingRef = useRef<boolean>(false);
 
   const loadRooms = useCallback(async () => {
     if (!currentUser) {
@@ -171,15 +173,36 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
       setMessages([]);
       setError(null);
       socketRef.current = null;
+      isConnectingRef.current = false;
+      connectionAttemptRef.current = 0;
       return;
     }
 
+    // Prevent multiple connection attempts for the same user
+    const currentAttempt = ++connectionAttemptRef.current;
+    
+    // If we already have a connected socket for this user, don't reconnect
+    if (socketRef.current && socketRef.current.connected && isConnectingRef.current === false) {
+      setConnectionStatus("connected");
+      joinCurrentRoomRef.current(joinedRoomRef.current ?? activeRoom);
+      return;
+    }
+
+    // Mark that we're starting a connection attempt
+    isConnectingRef.current = true;
+    
     const nextSocket = createChatSocket();
     setSocket(nextSocket);
     socketRef.current = nextSocket;
     setConnectionStatus("connecting");
 
     const onConnect = () => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
+      
+      isConnectingRef.current = false;
       setConnectionStatus("connected");
       setAvailability("ready");
       setError(null);
@@ -187,6 +210,12 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     };
 
     const onConnectError = (eventError?: { message?: string; description?: unknown }) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
+      
+      isConnectingRef.current = false;
       setConnectionStatus("error");
       const message = eventError?.message || "";
       const isUnauthorized = message.toLowerCase().includes("unauthorized");
@@ -210,11 +239,19 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     };
 
     const onMessageHistory = (history: Message[]) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setMessages(history);
       setIsLoadingHistory(false);
     };
 
     const onMessageNew = (message: Message) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setMessages((existing: Message[]) => [...existing, message]);
       setTypingUsers((existing: string[]) =>
         existing.filter((username: string) => username !== message.username),
@@ -222,10 +259,18 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     };
 
     const onUsersList = (nextUsers: ChatUser[]) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setUsers(nextUsers);
     };
 
     const onUserTyping = (payload: { username: string; isTyping: boolean }) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setTypingUsers((existing) => {
         if (payload.isTyping) {
           return existing.includes(payload.username)
@@ -242,6 +287,10 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
       userCount: number;
       messageCount: number;
     }) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setStats((existing: ChatStats | null) =>
         existing
           ? {
@@ -253,10 +302,18 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     };
 
     const onServerStats = (payload: ChatStats) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setStats(payload);
     };
 
     const onError = (message: string) => {
+      // Only proceed if this is still the latest connection attempt
+      if (currentAttempt !== connectionAttemptRef.current) {
+        return;
+      }
       setError(message);
       if (message.toLowerCase().includes("unauthorized")) {
         setAvailability(currentUser ? "session_expired" : "login_required");
@@ -277,13 +334,34 @@ export function useChatStore(currentUser: ChatUser | null, initialRoom?: string)
     nextSocket.on("server:stats", onServerStats);
     nextSocket.on("error", onError);
 
+    // Start the connection
     nextSocket.connect();
 
     return () => {
-      nextSocket.removeAllListeners();
-      nextSocket.disconnect();
-      setSocket(null);
-      socketRef.current = null;
+      // Only disconnect if this is still the latest connection attempt
+      if (currentAttempt === connectionAttemptRef.current) {
+        // Remove all listeners first to prevent memory leaks
+        nextSocket.removeAllListeners();
+        
+        // Only disconnect if the socket exists and is not already disconnected
+        if (nextSocket) {
+          if (nextSocket.connected) {
+            nextSocket.disconnect();
+          } else if (isConnectingRef.current) {
+            // If we're still connecting, wait a bit for the handshake to complete
+            // This prevents the "closed before established" warning
+            setTimeout(() => {
+              if (nextSocket && !nextSocket.connected) {
+                nextSocket.disconnect();
+              }
+            }, 100);
+          }
+        }
+        
+        setSocket(null);
+        socketRef.current = null;
+        isConnectingRef.current = false;
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
