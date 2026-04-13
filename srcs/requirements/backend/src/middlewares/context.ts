@@ -1,7 +1,7 @@
 import { NextFunction, Response, Request } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { getCachedConfiguration } from "../init/configuration";
-import { DecodedToken, ExpressRequestWithContext } from "../api/types";
+import { ExpressRequestWithContext } from "../api/types";
 
 async function contextMiddleware(
   req: Request,

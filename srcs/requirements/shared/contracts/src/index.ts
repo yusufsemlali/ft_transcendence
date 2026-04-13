@@ -14,6 +14,7 @@ import { filesContract } from "./endpoints/files";
 import { notificationsContract } from "./endpoints/notifications";
 import { gdprContract } from "./endpoints/gdpr";
 import { ORG_ROLES } from "./constants/roles";
+
 import { 
     TOURNAMENT_PHASES, 
     TOURNAMENT_STRUCTURAL_FIELDS
