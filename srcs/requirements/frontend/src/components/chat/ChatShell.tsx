@@ -160,7 +160,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
       )}
 
       {/* Grid layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr) 220px", gap: 16, minHeight: "70vh" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr) 220px", gap: 16, height: "70vh", minHeight: 0 }}>
 
         {/* ── Left sidebar — Rooms ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -246,7 +246,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
         </div>
 
         {/* ── Center — Messages ── */}
-        <div className="glass-card" style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="glass-card" style={{ display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
           {/* Room header */}
           <div style={{
             padding: "14px 20px", borderBottom: "1px solid var(--border-color)",
@@ -273,7 +273,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
               const t = e.currentTarget;
               setShowJumpToLatest(t.scrollHeight - t.scrollTop - t.clientHeight > 120);
             }}
-            style={{ flex: 1, overflowY: "auto", padding: "16px 20px", position: "relative" }}
+            style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 20px", position: "relative", overscrollBehavior: "contain" }}
           >
             {store.isLoadingHistory && (
               <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", padding: 24 }}>Loading room history…</div>
@@ -350,6 +350,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
             >
               <textarea
                 ref={composerRef}
+                rows={1}
                 value={store.draft}
                 onChange={(e) => store.setDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -359,6 +360,7 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
                 disabled={store.connectionStatus !== "connected"}
                 style={{
                   flex: 1, resize: "none", minHeight: 40, maxHeight: 120,
+                  overflowY: "auto", lineHeight: 1.4,
                   background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
                   borderRadius: "var(--radius)", padding: "10px 14px",
                   color: "var(--text-primary)", fontSize: 13, fontFamily: "var(--font-sans)",
@@ -459,6 +461,8 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
           div[style*="grid-template-columns: 260px"],
           div[style*="grid-template-columns: 220px"] {
             grid-template-columns: 1fr !important;
+            grid-template-rows: auto minmax(0, 1fr) !important;
+            height: 78vh !important;
           }
         }
       `}</style>
