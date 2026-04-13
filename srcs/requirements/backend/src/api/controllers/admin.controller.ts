@@ -251,7 +251,7 @@ export const adminController = s.router(contract.admin, {
         const { page, pageSize, search } = query;
         const offset = (page - 1) * pageSize;
 
-        const filters = [isNull(organizations.deletedAt)];
+        const filters: any[] = [isNull(organizations.deletedAt)];
         if (search) {
             filters.push(
                 or(

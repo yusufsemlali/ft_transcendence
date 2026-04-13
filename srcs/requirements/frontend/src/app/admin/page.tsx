@@ -76,7 +76,7 @@ export default function AdminPage() {
   const [sportForm, setSportForm] = useState<Partial<Sport>>({});
 
   const CATEGORIES = ["esports", "physical", "tabletop", "custom"];
-  const MODES = ["1v1", "team", "ffa"];
+  const MODES = ["1v1", "team"];
   const SCORING = ["points_high", "time_low", "sets", "binary", "stocks"];
   const HANDLES = ["riot_id", "steam_id", "psn_id", "xbox_id", "battlenet_id", "nintendo_id", "uplay_id", "epic_id", "fide_id", "other", "generic_id"];
 

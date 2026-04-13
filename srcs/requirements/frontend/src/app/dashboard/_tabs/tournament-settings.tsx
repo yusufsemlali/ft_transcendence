@@ -203,9 +203,7 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="single_elimination">Single Elimination</SelectItem>
-                <SelectItem value="double_elimination">Double Elimination</SelectItem>
                 <SelectItem value="round_robin">Round Robin</SelectItem>
-                <SelectItem value="free_for_all">Free for All</SelectItem>
               </SelectContent>
             </Select>
           </label>
@@ -222,7 +220,6 @@ export function TournamentSettingsTab({ tournament, org, onUpdate, onDelete }: {
               <SelectContent>
                 <SelectItem value="1v1">1v1 Solo</SelectItem>
                 <SelectItem value="team">Team / Squad</SelectItem>
-                <SelectItem value="ffa">Free for All</SelectItem>
               </SelectContent>
             </Select>
           </label>

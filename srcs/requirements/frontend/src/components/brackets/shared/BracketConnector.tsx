@@ -84,7 +84,7 @@ export function BracketConnector({
                         d={`M ${line.x1} ${line.y1} C ${midX} ${line.y1}, ${midX} ${line.y2}, ${line.x2} ${line.y2}`}
                         fill="none"
                         stroke="var(--border-color)"
-                        strokeWidth={1.5}
+                        strokeWidth={1}
                         strokeOpacity={0.6}
                     />
                 );

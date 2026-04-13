@@ -5,7 +5,7 @@ import React from "react";
 export default function LeaderboardPage() {
   const topPlayers = [
     { rank: 2, name: "NeonStriker", points: "15,420", avatar: "/images/val.jpeg", elo: 2450 },
-    { rank: 1, name: "PrismMaster", points: "18,910", avatar: "/images/leage.jpeg", elo: 2800 },
+    { rank: 1, name: "PrismMaster", points: "18,910", avatar: "/images/placeholder_banner.png", elo: 2800 },
     { rank: 3, name: "ShadowWalker", points: "14,200", avatar: "/images/cs2.jpeg", elo: 2310 },
   ];
 

@@ -5,7 +5,7 @@ type SportInsert = typeof sports.$inferInsert;
 
 const CATEGORIES = ['esports', 'physical', 'tabletop', 'custom'] as const;
 const SCORING_TYPES = ['points_high', 'time_low', 'sets', 'binary', 'stocks'] as const;
-const MODES = ['1v1', 'team', 'ffa'] as const;
+const MODES = ['1v1', 'team'] as const;
 
 const SPORT_PRESETS = [
     { name: 'Valorant', category: 'esports', scoringType: 'points_high', mode: 'team', handleType: 'riot_id', minTeam: 5, maxTeam: 5 },

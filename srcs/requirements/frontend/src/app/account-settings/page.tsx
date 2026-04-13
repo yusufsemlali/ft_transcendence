@@ -246,7 +246,7 @@ function AccountSettingsContent() {
       >
         {/* Banner with Masking (matching Tournaments) */}
         <Image
-          src={profile.banner || "/images/leage.jpeg"}
+          src={profile.banner || "/images/placeholder_banner.png"}
           alt="Hero background"
           fill
           style={{
@@ -256,7 +256,7 @@ function AccountSettingsContent() {
             opacity: 0.6,
             zIndex: 0,
           }}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/images/leage.jpeg"; }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/images/placeholder_banner.png"; }}
         />
 
         <div style={{ position: "relative", zIndex: 2 }}>

@@ -120,12 +120,13 @@ export function ScheduleTab({ tournament }: ScheduleTabProps) {
                 </div>
             </div>
 
-            <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
+            {/* Desktop View: Traditional Table */}
+            <div className="glass-card hide-mobile" style={{ padding: 0, overflow: "hidden" }}>
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] text-sm">
+                    <table className="w-full min-w-[800px] text-sm">
                         <thead>
                             <tr className="border-b border-border/50">
-                                <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Round</th>
+                                <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-32">Round</th>
                                 <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Matchup</th>
                                 <th className="text-left py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-56">Start time</th>
                                 <th className="text-center py-3 px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-24">Status</th>
@@ -140,9 +141,11 @@ export function ScheduleTab({ tournament }: ScheduleTabProps) {
                                     <tr key={match.id} className="border-b border-border/20 hover:bg-accent/15 transition-colors">
                                         <td className="py-2.5 px-4 text-xs text-muted-foreground whitespace-nowrap">{match.roundLabel}</td>
                                         <td className="py-2.5 px-4 text-xs">
-                                            <span className="font-medium">{match.participant1?.name ?? "TBD"}</span>
-                                            <span className="text-muted-foreground mx-1.5">vs</span>
-                                            <span className="font-medium">{match.participant2?.name ?? "TBD"}</span>
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="font-semibold text-primary">{match.participant1?.name ?? "TBD"}</span>
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold px-1.5 py-0.5 rounded bg-muted/30">vs</span>
+                                                <span className="font-semibold text-primary">{match.participant2?.name ?? "TBD"}</span>
+                                            </div>
                                         </td>
                                         <td className="py-2 px-4">
                                             <input
@@ -151,18 +154,17 @@ export function ScheduleTab({ tournament }: ScheduleTabProps) {
                                                 onChange={(e) =>
                                                     setDrafts((d: Record<string, string>) => ({ ...d, [match.id]: e.target.value }))
                                                 }
-                                                className="w-full max-w-[220px] rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-xs font-mono"
+                                                className="w-full max-w-[210px] rounded-md border border-border/60 bg-background/60 px-2 py-1.5 text-xs font-mono focus:ring-1 focus:ring-primary/50 outline-none"
                                             />
                                         </td>
                                         <td className="py-2.5 px-4 text-center">
                                             <Badge variant={badge.variant}>{badge.label}</Badge>
                                         </td>
                                         <td className="py-2.5 px-4 text-right">
-                                            <div className="flex justify-end gap-1.5 flex-wrap">
+                                            <div className="flex justify-end gap-1.5">
                                                 <button
                                                     type="button"
-                                                    className="btn btn-primary"
-                                                    style={{ fontSize: "10px", padding: "4px 10px" }}
+                                                    className="btn btn-primary btn-size-sm"
                                                     disabled={updateMutation.isPending}
                                                     onClick={() => {
                                                         const next = fromDatetimeLocalValue(draft);
@@ -173,8 +175,7 @@ export function ScheduleTab({ tournament }: ScheduleTabProps) {
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="btn btn-secondary"
-                                                    style={{ fontSize: "10px", padding: "4px 10px" }}
+                                                    className="btn btn-secondary btn-size-sm"
                                                     disabled={updateMutation.isPending || !match.scheduledAt}
                                                     onClick={() => {
                                                         setDrafts((d: Record<string, string>) => ({ ...d, [match.id]: "" }));
@@ -190,6 +191,76 @@ export function ScheduleTab({ tournament }: ScheduleTabProps) {
                             })}
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            {/* Mobile View: Card-based list */}
+            <div className="show-mobile">
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {sortedRows.map((match: Row) => {
+                        const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.pending;
+                        const draft = drafts[match.id] ?? toDatetimeLocalValue(match.scheduledAt ?? undefined);
+                        return (
+                            <div key={match.id} className="glass-card" style={{ padding: "16px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+                                    <div>
+                                        <div style={{ fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "1px" }}>{match.roundLabel}</div>
+                                    </div>
+                                    <Badge variant={badge.variant} className="text-[9px] px-1.5 py-px">{badge.label}</Badge>
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px", padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--primary)" }} />
+                                        <div style={{ fontSize: "13px", fontWeight: "600" }}>{match.participant1?.name ?? "TBD"}</div>
+                                    </div>
+                                    <div style={{ fontSize: "9px", color: "var(--text-muted)", fontWeight: "bold", paddingLeft: "12px" }}>VS</div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--primary)" }} />
+                                        <div style={{ fontSize: "13px", fontWeight: "600" }}>{match.participant2?.name ?? "TBD"}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                        <span style={{ fontSize: "10px", fontWeight: "bold", color: "var(--text-muted)" }}>SET START TIME</span>
+                                        <input
+                                            type="datetime-local"
+                                            value={draft}
+                                            onChange={(e) => setDrafts((d: Record<string, string>) => ({ ...d, [match.id]: e.target.value }))}
+                                            className="w-full rounded-md border border-border/60 bg-background/60 px-3 py-2 text-sm font-mono outline-none focus:border-primary/50"
+                                        />
+                                    </label>
+                                    <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            style={{ flex: 1, justifyContent: "center", fontSize: "11px", height: "36px" }}
+                                            disabled={updateMutation.isPending}
+                                            onClick={() => {
+                                                const next = fromDatetimeLocalValue(draft);
+                                                updateMutation.mutate({ matchId: match.id, scheduledAt: next });
+                                            }}
+                                        >
+                                            Apply
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            style={{ flex: 1, justifyContent: "center", fontSize: "11px", height: "36px" }}
+                                            disabled={updateMutation.isPending || !match.scheduledAt}
+                                            onClick={() => {
+                                                setDrafts((d: Record<string, string>) => ({ ...d, [match.id]: "" }));
+                                                updateMutation.mutate({ matchId: match.id, scheduledAt: null });
+                                            }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

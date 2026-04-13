@@ -1,6 +1,6 @@
 ﻿COMPOSE = docker compose --env-file srcs/.env -f srcs/docker-compose.yml
 
-all: db-push
+all:
 	$(COMPOSE) up --build -d
 	
 

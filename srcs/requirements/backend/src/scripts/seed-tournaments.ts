@@ -13,7 +13,7 @@ const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
 async function seed() {
     console.log("🌱 Generating 1000 tournaments...");
-    const payload = [];
+    const payload: (typeof tournaments.$inferInsert)[] = [];
 
     for (let i = 0; i < 1000; i++) {
         const name = `${getRandom(adjectives)} ${getRandom(games)} ${getRandom(nouns)} ${i}`;

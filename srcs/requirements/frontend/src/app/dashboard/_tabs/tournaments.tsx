@@ -23,9 +23,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 
 const BRACKET_LABELS: Record<string, string> = {
   single_elimination: "Single Elim",
-  double_elimination: "Double Elim",
   round_robin:        "Round Robin",
-  free_for_all:       "FFA",
 };
 
 /* ── Tournament Row ── */
@@ -277,9 +275,7 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="single_elimination">Single Elimination</SelectItem>
-              <SelectItem value="double_elimination">Double Elimination</SelectItem>
               <SelectItem value="round_robin">Round Robin</SelectItem>
-              <SelectItem value="free_for_all">Free for All</SelectItem>
             </SelectContent>
           </Select>
         </label>
@@ -287,14 +283,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
         {/* Mode */}
         <label className="dashboard-field">
           <span className="dashboard-field-label">Mode</span>
-          <Select value={form.mode} onValueChange={(val: string) => setForm((prev: typeof form) => ({ ...prev, mode: val as "1v1" | "team" | "ffa" }))}>
+          <Select value={form.mode} onValueChange={(val: string) => setForm((prev: typeof form) => ({ ...prev, mode: val as "1v1" | "team" }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1v1">1v1</SelectItem>
               <SelectItem value="team">Team</SelectItem>
-              <SelectItem value="ffa">Free for All</SelectItem>
             </SelectContent>
           </Select>
         </label>
@@ -391,7 +386,7 @@ export function TournamentsTab({ org, initialCreate, onSelectTournament }: {
       if (tRes.status === 200) setTournaments(tRes.body);
       if (sRes.status === 200) setSports(sRes.body);
       else toast.error("Failed to load sports list");
-    } catch (err) {
+    } catch {
       toast.error("Failed to sync dashboard data");
     } finally { setLoading(false); }
   }, [org.id]);

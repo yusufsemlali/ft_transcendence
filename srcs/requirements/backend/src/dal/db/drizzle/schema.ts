@@ -2,7 +2,7 @@ import { pgTable, pgSchema, foreignKey, uuid, text, timestamp, unique, boolean, 
 import { sql } from "drizzle-orm"
 
 export const auth = pgSchema("auth");
-export const bracketType = pgEnum("bracket_type", ['single_elimination', 'double_elimination', 'round_robin', 'swiss', 'free_for_all'])
+export const bracketType = pgEnum("bracket_type", ['single_elimination', 'round_robin'])
 export const entrantStatus = pgEnum("entrant_status", ['incomplete', 'ready', 'disqualified'])
 export const friendshipStatus = pgEnum("friendship_status", ['pending', 'accepted', 'blocked'])
 export const lobbyStatus = pgEnum("lobby_status", ['solo', 'invited', 'rostered'])
@@ -12,7 +12,7 @@ export const orgRole = pgEnum("org_role", ['owner', 'admin', 'referee', 'member'
 export const rosterRole = pgEnum("roster_role", ['captain', 'player', 'substitute'])
 export const scoringType = pgEnum("scoring_type", ['points_high', 'time_low', 'sets', 'binary', 'stocks'])
 export const sportCategory = pgEnum("sport_category", ['esports', 'physical', 'tabletop'])
-export const sportMode = pgEnum("sport_mode", ['1v1', 'team', 'ffa'])
+export const sportMode = pgEnum("sport_mode", ['1v1', 'team'])
 export const tournamentStatus = pgEnum("tournament_status", ['draft', 'registration', 'upcoming', 'ongoing', 'completed', 'cancelled'])
 export const userRole = pgEnum("user_role", ['user', 'admin', 'moderator', 'organizer'])
 export const userStatus = pgEnum("user_status", ['active', 'suspended', 'banned', 'muted'])

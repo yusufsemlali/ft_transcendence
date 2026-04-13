@@ -10,8 +10,8 @@ export function StandingsTable({
     className,
     compact = false,
 }: StandingsTableProps) {
-    const showGoals = bracketType === "round_robin" || bracketType === "free_for_all";
-    const showDraws = bracketType === "round_robin" || bracketType === "free_for_all";
+    const showGoals = bracketType === "round_robin";
+    const showDraws = bracketType === "round_robin";
 
     if (standings.length === 0) {
         return (

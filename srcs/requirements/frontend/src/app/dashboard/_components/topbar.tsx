@@ -12,10 +12,6 @@ export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
         <button className="dashboard-topbar-btn show-mobile" onClick={onMenuClick} style={{ display: "none" }}>
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>menu</span>
         </button>
-        <div className="dashboard-search">
-          <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>search</span>
-          <input type="text" placeholder="Search tournaments, members..." className="dashboard-search-input" />
-        </div>
       </div>
 
       {/* Right: action icons + user */}

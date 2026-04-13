@@ -16,7 +16,7 @@ export default function Home() {
     {
       label: "Phase 02",
       title: "Configure Brackets",
-      description: "Deploy automated single or double elimination logic. Support for 16, 64, or 256+ participant clusters.",
+      description: "Deploy automated round robin or elimination logic. Support for 16, 64, or 256+ participant clusters.",
       icon: "account_tree",
     },
     {
