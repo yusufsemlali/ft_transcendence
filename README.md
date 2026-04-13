@@ -51,19 +51,19 @@ AI was used to facilitate learning and overcome specific software engineering ro
 - Troubleshooting CSS/Tailwind responsiveness issues within the tournament dashboard layout.
 
 ## Team Information
-- **Youssef (ysemlali)** - PO, PM, Tech Lead
-  - *Responsibilities:* Entire backend engineering and architecture, project organization, coordinating merges, system architecture overview, technology stack selection, and overseeing real-time capabilities/tournament logic.
-- **Mohamed (mbouras)** - Developer
-  - *Responsibilities:* Implementing the frontend friends UI logic, frontend authentication paths, and frontend components of the admin dashboard.
-- **Ali (adouiyeh)** - Developer
-  - *Responsibilities:* Implementation of the frontend chat interfaces, message delivery UI, typing indicators, and user-to-user messaging components.
+- **Youssef (ysemlali)** - Tech Lead / Architect
+  - *Responsibilities:* Lead backend engineering and architecture, system design, technology stack selection, and overseeing real-time capabilities/tournament logic.
+- **Mohamed (mbouras)** - Product Owner (PO)
+  - *Responsibilities:* Defining product vision for frontend features, validating UI/UX requirements for friends and admin systems, and ensuring the project meets user interactive needs.
+- **Ali (adouiyeh)** - Project Manager (PM) / Scrum Master
+  - *Responsibilities:* Facilitating team coordination, tracking progress on chat and messaging deliverables, managing team meetings, and removing blockers during integration.
 - **Achraf (alakhdar)** - Developer
-  - *Responsibilities:* Implementing the tournament lobby joining endpoints/backend logic alongside the corresponding frontend UI, developing mandatory privacy and terms pages, and resolving minor frontend components.
+  - *Responsibilities:* Implementing tournament lobby joining logic, developing mandatory privacy and terms pages, and refining frontend components for compliance.
 
 ## Project Management
-- **Organization:** The team organized tasks via Jira for Kanban tracking and issue management, dividing responsibilities vertically. Youssef managed the entire backend architecture exclusively, while the remaining team members specialized on robust frontend component integrations.
-- **Meetings:** Conducted daily syncs on Discord to align on merge conflicts (especially regarding the `main` and `chat` branches) and unblock dependencies.
-- **Version Control:** Managed features through Git branches, conducting peer reviews before executing major merges into the `main` trunk.
+- **Organization:** The team organized tasks via Jira for Kanban tracking and issue management. Mohamed (PO) prioritized the backlog, while Ali (PM) tracked the sprint progress. Responsibilities were divided vertically: Youssef (Tech Lead) focused on core architecture, while the rest of the team specialized in robust frontend service integrations.
+- **Meetings:** Conducted daily syncs on Discord, facilitated by Ali, to align on merge conflicts (especially regarding the `main` and `chat` branches) and unblock dependencies.
+- **Version Control:** Managed features through Git branches. Youssef performed final technical reviews on critical code changes before execution into the `main` trunk.
 
 ## Technical Stack
 - **Frontend Framework:** Next.js (React) - Chosen for its powerful App Router, allowing a robust mixture of server and client components, along with rapid initial loading and great developer experience.
