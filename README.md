@@ -39,6 +39,7 @@ The primary goal of this project is to build a full-stack, single-page applicati
 ## Resources
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Express.js Documentation](https://expressjs.com/)
+- [ts-rest Documentation](https://ts-rest.com/)
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [Server-Sent Events (SSE)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
 - [Redux Toolkit](https://redux-toolkit.js.org/)
@@ -69,6 +70,7 @@ AI was used to facilitate learning and overcome specific software engineering ro
 - **Frontend Styling:** Tailwind CSS for rapid styling and highly responsive UI creation.
 - **Frontend State:** Redux Toolkit to maintain complex states like nested tournament brackets and global user sessions.
 - **Backend Framework:** Node.js with Express - Chosen for its massive ecosystem and lightweight footprint, allowing rapid creation of REST APIs and SSE endpoints.
+- **API Architecture:** `ts-rest` (Contract-First) - Implemented to strictly define routing endpoints in a shared TypeScript library. This guarantees end-to-end type safety between the frontend requests and backend resolvers, while automatically generating OpenAPI documentation.
 - **Database:** PostgreSQL managed via Drizzle ORM - Chosen because PostgreSQL provides rock-solid relational data integrity, while Drizzle gives us supreme TypeScript type safety across the database layer.
 - **Real-Time Delivery:** Server-Sent Events (SSE) - Utilized for unidirectional server-to-client real-time updates (like game starts or tournament progression) which is a lighter alternative to WebSockets for pure notifications.
 

@@ -106,7 +106,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <button onClick={() => router.push("/settings")} className="btn btn-secondary" style={{ width: "100%" }}>
+            <button onClick={() => router.push("/account-settings")} className="btn btn-secondary" style={{ width: "100%" }}>
               <span className="material-symbols-outlined mr-2">settings</span>
               Account Settings
             </button>
