@@ -9,6 +9,8 @@ import { BracketView } from "@/components/brackets";
 import type { BracketState } from "@ft-transcendence/contracts";
 import type { Tournament, Organization } from "@ft-transcendence/contracts";
 import { CompetitorSeedBoard } from "../_components/competitor-seed-board";
+import { useAppDispatch } from "@/lib/store/hooks";
+import { fetchTournamentDetailThunk } from "@/lib/store/tournamentSlice";
 
 interface BracketsTabProps {
     tournament: Tournament;
@@ -28,6 +30,7 @@ interface LobbyState {
 
 export function BracketsTab({ tournament }: BracketsTabProps) {
     const queryClient = useQueryClient();
+    const dispatch = useAppDispatch();
 
     const bracketQuery = useQuery<BracketState>({
         queryKey: ["bracket-state", tournament.id],
@@ -128,6 +131,8 @@ export function BracketsTab({ tournament }: BracketsTabProps) {
         onSuccess: () => {
             toast.success("Bracket generated successfully");
             queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
+            queryClient.invalidateQueries({ queryKey: ["standings", tournament.id] });
+            dispatch(fetchTournamentDetailThunk(tournament.id));
         },
         onError: (e: Error) => toast.error(e.message),
     });
@@ -146,6 +151,8 @@ export function BracketsTab({ tournament }: BracketsTabProps) {
         onSuccess: () => {
             toast.success("Bracket reset");
             queryClient.invalidateQueries({ queryKey: ["bracket-state", tournament.id] });
+            queryClient.invalidateQueries({ queryKey: ["standings", tournament.id] });
+            dispatch(fetchTournamentDetailThunk(tournament.id));
         },
         onError: (e: Error) => toast.error(e.message),
     });
