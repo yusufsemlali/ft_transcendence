@@ -22,12 +22,6 @@ export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
         <Link href="/tournaments" className="dashboard-topbar-btn" title="Tournaments">
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>sports_esports</span>
         </Link>
-        <button className="dashboard-topbar-btn" title="Notifications">
-          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>notifications</span>
-        </button>
-        <button className="dashboard-topbar-btn" title="Help">
-          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>help_outline</span>
-        </button>
         <Link href="/settings" className="dashboard-topbar-btn" title="Settings">
           <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>settings</span>
         </Link>
