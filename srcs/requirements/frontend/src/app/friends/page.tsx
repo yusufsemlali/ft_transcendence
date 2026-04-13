@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
+import Link from "next/link";
 
 /* ── Types ── */
 type FriendshipStatus = "pending" | "accepted" | "blocked";
@@ -372,9 +373,28 @@ export default function FriendsPage() {
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {u.avatar ? <Image src={u.avatar} alt={u.username} width={32} height={32} style={{ objectFit: "cover" }} /> : <span className="material-symbols-outlined" style={{ fontSize: "16px", color: "var(--text-muted)" }}>person</span>}
                     </div>
-                    <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</div>
+                    <Link href={`/profile/${u.id}`} style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, color: "inherit", textDecoration: "none" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>{u.displayName || u.username}</span>
+                    </Link>
                   </div>
-                  <button onClick={() => handleSendRequest(u.id)} disabled={sendingTo === u.id} className="btn btn-primary" style={{ padding: "4px 12px", fontSize: "11px" }}>{sendingTo === u.id ? "..." : "Add"}</button>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <Link 
+                      href={`/profile/${u.id}`} 
+                      className="btn btn-secondary" 
+                      style={{ padding: "4px 10px", fontSize: "11px" }}
+                      onClick={() => setShowAddModal(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button 
+                      onClick={() => handleSendRequest(u.id)} 
+                      disabled={sendingTo === u.id} 
+                      className="btn btn-primary" 
+                      style={{ padding: "4px 12px", fontSize: "11px" }}
+                    >
+                      {sendingTo === u.id ? "..." : "Add"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -396,6 +416,7 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
   onChat: () => void;
   currentUserId?: string;
 }) {
+  const router = useRouter();
   const isOutgoing = friend.status === "pending" && friend.senderId === currentUserId;
 
   return (
@@ -418,9 +439,16 @@ function FriendCard({ friend, onAccept, onReject, onRemove, onBlock, onUnblock, 
           </>
         )}
         {friend.status === "pending" && isOutgoing && <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: "600" }}>REQUESTED</span>}
+        <Link href={`/profile/${friend.id}`} className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility</span>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="btn btn-secondary" style={{ padding: "6px", minWidth: "32px" }}><span className="material-symbols-outlined" style={{ fontSize: "18px" }}>more_vert</span></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="glass w-40">
+            <DropdownMenuItem onClick={() => router.push(`/profile/${friend.id}`)}>
+              <span className="material-symbols-outlined mr-2">person</span>
+              View Profile
+            </DropdownMenuItem>
             {friend.status === "accepted" ? (
               <DropdownMenuItem onClick={() => onRemove(friend.friendshipId)} className="text-destructive"><span className="material-symbols-outlined mr-2">person_remove</span>Remove</DropdownMenuItem>
             ) : null}

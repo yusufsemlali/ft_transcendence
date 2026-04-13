@@ -3,6 +3,7 @@ import { userSettings } from "@/dal/db/schemas/settings";
 import { eq } from "drizzle-orm";
 import { UserSettings, defaultSettings, PartialUserSettings } from "@ft-transcendence/contracts";
 import { ApiResponse } from "@/utils/response";
+import { FileService } from "./file.service";
 
 export const getSettings = async (userId: string): Promise<ApiResponse<UserSettings>> => {
     const [existing] = await db
@@ -26,7 +27,17 @@ export const updateSettings = async (
     userId: string,
     updates: PartialUserSettings
 ): Promise<ApiResponse<UserSettings>> => {
-    await getSettings(userId);
+    const oldSettingsObj = await getSettings(userId);
+    const oldSettings = oldSettingsObj.data;
+
+    if (updates.customBackground !== undefined && oldSettings) {
+        if (oldSettings.customBackground && updates.customBackground !== oldSettings.customBackground) {
+            if (oldSettings.customBackground.includes('/uploads/')) {
+                console.log("[SETTINGS] Purging old background:", oldSettings.customBackground);
+                await FileService.deleteSystemFileByUrl(oldSettings.customBackground);
+            }
+        }
+    }
 
     const dbUpdates: Record<string, unknown> = {};
 
@@ -63,6 +74,15 @@ export const updateSettings = async (
 };
 
 export const resetSettings = async (userId: string): Promise<ApiResponse<UserSettings>> => {
+    const oldSettingsObj = await getSettings(userId);
+    const oldSettings = oldSettingsObj.data;
+
+    if (oldSettings && oldSettings.customBackground) {
+        if (oldSettings.customBackground.includes('/uploads/')) {
+            console.log("[SETTINGS] Purging background on reset:", oldSettings.customBackground);
+            await FileService.deleteSystemFileByUrl(oldSettings.customBackground);
+        }
+    }
     const [updated] = await db
         .update(userSettings)
         .set({

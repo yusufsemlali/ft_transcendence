@@ -6,12 +6,14 @@ import { toast } from "@/components/ui/sonner";
 import api from "@/lib/api/api";
 import { uploadFile } from "@/lib/upload";
 import { UpdateUser, User } from "@ft-transcendence/contracts";
+import { useRouter } from "next/navigation";
 
 const DEFAULT_AVATAR_URL =
   "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 function AccountSettingsContent() {
-  const { refreshUser } = useAuth();
+  const { refreshUser, logout } = useAuth();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<UpdateUser>({
     username: "",
@@ -32,7 +34,9 @@ function AccountSettingsContent() {
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const bannerFileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerProgress, setBannerProgress] = useState(0);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -41,6 +45,12 @@ function AccountSettingsContent() {
   const currentPasswordRef = useRef<HTMLInputElement>(null);
   const newPasswordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
+
+  // GDPR state
+  const [gdprExporting, setGdprExporting] = useState(false);
+  const [gdprDeleting, setGdprDeleting] = useState(false);
+  const [gdprConfirmText, setGdprConfirmText] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -114,6 +124,7 @@ function AccountSettingsContent() {
     file: File,
     field: "avatar" | "banner",
     setUploading: (v: boolean) => void,
+    setProgress: (v: number) => void
   ) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please choose an image file.");
@@ -124,8 +135,9 @@ function AccountSettingsContent() {
       return;
     }
     setUploading(true);
+    setProgress(0);
     try {
-      const result = await uploadFile(file);
+      const result = await uploadFile(file, { onProgress: setProgress });
       const res = await api.users.updateMe({
         body: field === "avatar" ? { avatar: result.url } : { banner: result.url },
       });
@@ -149,14 +161,14 @@ function AccountSettingsContent() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    await runImageUpload(file, "avatar", setAvatarUploading);
+    await runImageUpload(file, "avatar", setAvatarUploading, setAvatarProgress);
   };
 
   const onBannerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    await runImageUpload(file, "banner", setBannerUploading);
+    await runImageUpload(file, "banner", setBannerUploading, setBannerProgress);
   };
 
   const clearVisual = async (field: "avatar" | "banner") => {
@@ -440,10 +452,21 @@ function AccountSettingsContent() {
                       onClick={() => clearVisual("avatar")}
                       disabled={isLoading || avatarUploading}
                     >
-                      Reset to default
+                      Remove
                     </button>
                   ) : null}
                 </div>
+                {avatarUploading && (
+                  <div style={{ width: "100%", marginTop: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                      <span>UPLOADING AVATAR...</span>
+                      <span>{avatarProgress}%</span>
+                    </div>
+                    <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", background: "var(--primary)", width: `${avatarProgress}%`, transition: "width 0.2s" }} />
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", marginBottom: "8px", display: "block" }}>PROFILE BANNER</label>
@@ -475,6 +498,17 @@ function AccountSettingsContent() {
                     </button>
                   ) : null}
                 </div>
+                {bannerUploading && (
+                  <div style={{ width: "100%", marginTop: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                      <span>UPLOADING BANNER...</span>
+                      <span>{bannerProgress}%</span>
+                    </div>
+                    <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", background: "var(--primary)", width: `${bannerProgress}%`, transition: "width 0.2s" }} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -535,6 +569,128 @@ function AccountSettingsContent() {
                 </button>
               </div>
             </form>
+          </section>
+
+          {/* ─── GDPR: Data & Privacy ─── */}
+          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--border-color)" }}>
+            <div className="section-header" style={{ marginBottom: "16px" }}>
+              <span className="material-symbols-outlined" style={{ color: "var(--primary)" }}>download</span>
+              <span className="section-title">EXPORT YOUR DATA</span>
+            </div>
+            <p className="section-description" style={{ marginBottom: "20px" }}>
+              Download a copy of all personal data we store about you — profile, settings, friends, organizations, files, and notifications.
+            </p>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <button
+                disabled={gdprExporting}
+                className="btn btn-secondary"
+                style={{ flex: 1, minWidth: "160px", justifyContent: "center" }}
+                onClick={async () => {
+                  setGdprExporting(true);
+                  try {
+                    const res = await api.gdpr.exportMyData();
+                    if (res.status === 200) {
+                      const blob = new Blob([JSON.stringify(res.body, null, 2)], { type: "application/json" });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `gdpr-export-${Date.now()}.json`;
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                      toast.success("Data exported as JSON");
+                    }
+                  } catch { toast.error("Export failed"); }
+                  finally { setGdprExporting(false); }
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "16px", marginRight: "8px" }}>data_object</span>
+                {gdprExporting ? "Exporting…" : "Export JSON"}
+              </button>
+              <button
+                disabled={gdprExporting}
+                className="btn btn-secondary"
+                style={{ flex: 1, minWidth: "160px", justifyContent: "center" }}
+                onClick={async () => {
+                  setGdprExporting(true);
+                  try {
+                    const res = await api.gdpr.exportMyDataCsv();
+                    if (res.status === 200) {
+                      const blob = new Blob([res.body as string], { type: "text/csv" });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `gdpr-export-${Date.now()}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                      toast.success("Data exported as CSV");
+                    }
+                  } catch { toast.error("Export failed"); }
+                  finally { setGdprExporting(false); }
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "16px", marginRight: "8px" }}>table_chart</span>
+                {gdprExporting ? "Exporting…" : "Export CSV"}
+              </button>
+            </div>
+          </section>
+
+          {/* ─── GDPR: Danger Zone ─── */}
+          <section className="glass-card" style={{ padding: "32px", border: "1px solid var(--destructive-foreground, #f44336)", background: "rgba(244,67,54,0.03)" }}>
+            <div className="section-header" style={{ marginBottom: "16px" }}>
+              <span className="material-symbols-outlined" style={{ color: "var(--destructive-foreground, #f44336)" }}>warning</span>
+              <span className="section-title" style={{ color: "var(--destructive-foreground, #f44336)" }}>DANGER ZONE</span>
+            </div>
+            <p className="section-description" style={{ marginBottom: "16px" }}>
+              Permanently delete your account and all associated data. This is <strong>irreversible</strong>.
+            </p>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="btn"
+                style={{ background: "transparent", border: "1px solid var(--destructive-foreground, #f44336)", color: "var(--destructive-foreground, #f44336)", cursor: "pointer" }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "16px", marginRight: "8px" }}>delete_forever</span>
+                Delete my account
+              </button>
+            ) : (
+              <div style={{ padding: "20px", borderRadius: "var(--radius)", border: "1px solid var(--destructive-foreground, #f44336)", background: "rgba(244,67,54,0.05)" }}>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "12px" }}>
+                  Type <strong style={{ color: "var(--destructive-foreground, #f44336)" }}>DELETE MY ACCOUNT</strong> to confirm:
+                </p>
+                <input
+                  type="text"
+                  value={gdprConfirmText}
+                  onChange={(e) => setGdprConfirmText(e.target.value)}
+                  placeholder="DELETE MY ACCOUNT"
+                  className="input"
+                  style={{ width: "100%", marginBottom: "12px" }}
+                />
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <button
+                    disabled={gdprConfirmText !== "DELETE MY ACCOUNT" || gdprDeleting}
+                    className="btn"
+                    style={{
+                      background: gdprConfirmText === "DELETE MY ACCOUNT" ? "var(--destructive-foreground, #f44336)" : "rgba(244,67,54,0.2)",
+                      color: "white", border: "none",
+                      cursor: gdprConfirmText === "DELETE MY ACCOUNT" ? "pointer" : "not-allowed",
+                      opacity: gdprConfirmText === "DELETE MY ACCOUNT" ? 1 : 0.5,
+                    }}
+                    onClick={async () => {
+                      setGdprDeleting(true);
+                      try {
+                        const res = await api.gdpr.requestDataDeletion({ body: { confirmation: "DELETE MY ACCOUNT" } });
+                        if (res.status === 200) {
+                          toast.success("Account deleted. Redirecting…");
+                          setTimeout(() => { logout(); router.push("/login"); }, 2000);
+                        }
+                      } catch { toast.error("Deletion failed"); }
+                      finally { setGdprDeleting(false); }
+                    }}
+                  >
+                    {gdprDeleting ? "Deleting…" : "Permanently delete everything"}
+                  </button>
+                  <button onClick={() => { setShowDeleteConfirm(false); setGdprConfirmText(""); }} className="btn btn-ghost">Cancel</button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </div>

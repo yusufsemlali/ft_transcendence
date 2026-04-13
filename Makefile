@@ -1,4 +1,4 @@
-﻿COMPOSE = docker compose --env-file srcs/.env -f srcs/docker-compose.yml
+COMPOSE = docker compose --env-file srcs/.env -f srcs/docker-compose.yml
 
 all:
 	$(COMPOSE) up --build -d
@@ -36,16 +36,19 @@ status:
 	$(COMPOSE) ps
 
 db:
-	docker exec -it ft_database psql -U $(shell grep DB_USER srcs/.env | cut -d '=' -f 2) -d $(shell grep DB_NAME srcs/.env | cut -d '=' -f 2)
-
-db-generate:
-	docker exec -it ft_backend pnpm drizzle-kit generate
+	@Q="$(filter-out $@,$(MAKECMDGOALS))" && \
+	U=$$(grep "^DB_USER=" srcs/.env | cut -d= -f2) && \
+	D=$$(grep "^DB_NAME=" srcs/.env | cut -d= -f2) && \
+	if [ -z "$$Q" ]; then \
+		docker exec -it ft_database psql -U $$U -d $$D; \
+	else \
+		docker exec -it ft_database psql -U $$U -d $$D -c "$$Q"; \
+	fi
 
 db-push:
 	docker exec -it ft_backend pnpm drizzle-kit push
 
-db-migrate:
-	docker exec -it ft_backend pnpm drizzle-kit migrate
+
 
 db-reset:
 	$(COMPOSE) rm -fvs database
@@ -82,3 +85,13 @@ seed-args:
 
 .PHONY: seed seed-args
 
+git-stats:
+	@git shortlog -sn --all
+
+git-log:
+	@git --no-pager log --oneline --graph --decorate 
+
+
+
+
+.PHONY: git-stats git-log

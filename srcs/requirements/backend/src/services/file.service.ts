@@ -70,12 +70,44 @@ export class FileService {
             await fs.unlink(filePath);
         } catch (error: any) {
             console.error(`[FileService] Failed to unlink file from disk: ${filePath}`, error);
-            // We ignore ENOENT (already deleted on disk) to keep DB and disk eventually consistent
             if (error.code !== 'ENOENT') {
                 throw new AppError(500, "Failed to remove file from storage system");
             }
         }
 
         return { success: true };
+    }
+
+    static async deleteFileByUrl(uploaderId: string, fileUrl: string) {
+        if (!fileUrl) return;
+        const savedName = fileUrl.split('/').pop();
+        if (!savedName) return;
+
+        const [file] = await db.select().from(files).where(
+            and(eq(files.savedName, savedName), eq(files.uploaderId, uploaderId))
+        );
+
+        if (file) {
+            await this.deleteFileRecord(uploaderId, file.id);
+        }
+    }
+
+    static async deleteSystemFileByUrl(fileUrl: string) {
+        if (!fileUrl) return;
+        const savedName = fileUrl.split('/').pop();
+        if (!savedName) return;
+
+        const [file] = await db.select().from(files).where(eq(files.savedName, savedName));
+        if (file) {
+            await db.delete(files).where(eq(files.id, file.id));
+            const filePath = path.join('/app/uploads', file.savedName);
+            try {
+                await fs.unlink(filePath);
+            } catch (e: any) {
+                if (e.code !== 'ENOENT') {
+                    console.error(`[FileService] Failed to delete system file: ${filePath}`, e);
+                }
+            }
+        }
     }
 }

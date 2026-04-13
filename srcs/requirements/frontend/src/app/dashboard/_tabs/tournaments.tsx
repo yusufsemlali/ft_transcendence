@@ -91,6 +91,8 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
   });
   const [submitting, setSubmitting] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerProgress, setBannerProgress] = useState(0);
+  const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // When sport is selected, pre-fill defaults from the sport blueprint
@@ -122,8 +124,13 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
       return;
     }
     setBannerUploading(true);
+    setBannerProgress(0);
     try {
-      const result = await uploadFile(file);
+      if (lastUploadedId) {
+         api.files.deleteFile({ params: { id: lastUploadedId } }).catch(() => {});
+      }
+      const result = await uploadFile(file, { onProgress: setBannerProgress });
+      setLastUploadedId(result.id);
       setForm((prev: typeof form) => ({ ...prev, bannerUrl: result.url }));
       toast.success("Banner uploaded");
     } catch (err: unknown) {
@@ -257,12 +264,29 @@ function CreateForm({ org, sports, onCreated, onCancel }: {
                   type="button"
                   className="btn btn-ghost"
                   style={{ fontSize: 12, alignSelf: "flex-start" }}
-                  onClick={() => setForm((prev) => ({ ...prev, bannerUrl: "" }))}
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, bannerUrl: "" }));
+                    if (lastUploadedId) {
+                      api.files.deleteFile({ params: { id: lastUploadedId } }).catch(console.error);
+                      setLastUploadedId(null);
+                    }
+                  }}
                 >
                   Remove banner
                 </button>
               ) : null}
             </div>
+            {bannerUploading && (
+              <div style={{ width: "100%", marginTop: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginBottom: "4px", fontWeight: "bold" }}>
+                  <span>UPLOADING BANNER...</span>
+                  <span>{bannerProgress}%</span>
+                </div>
+                <div style={{ height: "4px", width: "100%", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ height: "100%", background: "var(--primary)", width: `${bannerProgress}%`, transition: "width 0.2s" }} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -6,6 +6,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast } from "@/components/ui/sonner";
 import { uploadFile, type UploadResult } from "@/lib/upload";
+import api from "@/lib/api/api";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -74,11 +75,14 @@ export function FileUploader({
   }, [maxSizeMB, onSuccess]);
 
   const reset = React.useCallback(() => {
+    if (result?.id) {
+      api.files.deleteFile({ params: { id: result.id } }).catch(console.error);
+    }
     setFile(null);
     setResult(null);
     setProgress(0);
     setUploading(false);
-  }, []);
+  }, [result]);
 
   return (
     <FileUploaderContext.Provider value={{ uploading, progress, onFileSelect, reset, file, result, accept }}>
