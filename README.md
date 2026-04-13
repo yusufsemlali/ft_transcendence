@@ -58,7 +58,7 @@ AI was used to facilitate learning and overcome specific software engineering ro
 - **Ali (adouiyeh)** - Developer
   - *Responsibilities:* Implementation of the frontend chat interfaces, message delivery UI, typing indicators, and user-to-user messaging components.
 - **Achraf (alakhdar)** - Developer
-  - *Responsibilities:* Implementing the frontend tournament lobby joining UI, developing mandatory privacy and terms pages, and resolving minor frontend components.
+  - *Responsibilities:* Implementing the tournament lobby joining endpoints/backend logic alongside the corresponding frontend UI, developing mandatory privacy and terms pages, and resolving minor frontend components.
 
 ## Project Management
 - **Organization:** The team organized tasks via Jira for Kanban tracking and issue management, dividing responsibilities vertically. Youssef managed the entire backend architecture exclusively, while the remaining team members specialized on robust frontend component integrations.
@@ -90,7 +90,7 @@ The database uses a completely relational structure designed in PostgreSQL:
 - **Complete Privacy & ToS Provision:** Standardized legally required reading materials are injected correctly into the frontend flow. (*Implemented by alakhdar*).
 
 ## Modules
-**Total Claims:** 14 Points
+**Total Claims:** 14 Mandatory Points + 5 Max Bonus Points!
 
 1. **(Major - 2pts) Use a framework for both the frontend and backend:** Implemented via Next.js on the client and Express.js on the backend. Justified to enforce modularity and routing hierarchy.
 2. **(Major - 2pts) Real-time features:** Implemented utilizing Server-Sent Events (SSE) for both tournament hydrations and lobby synchronization.
@@ -101,8 +101,19 @@ The database uses a completely relational structure designed in PostgreSQL:
 7. **(Minor - 1pt) File upload and management system:** Supports secure profile avatar uploads directly configured and processed through backend static asset systems via Multer.
 8. **(Minor - 1pt) Use an ORM for the database:** Implemented `drizzle-orm` for robust type-safe schema modeling against our Postgres cluster.
 
+### Bonus Modules (Unclaimed overflow demonstrating extra effort)
+*(Note: Per the rubric, a maximum of 5 bonus points can be actively scored, but all modules below are fully implemented).*
+
+9. **(Bonus Major +2pts) Backend as microservices:** Engineered the core REST logic and the Socket-based Chat logic as two entirely decoupled Node/Express services operating asynchronously behind a unified NGINX ingress.
+10. **(Bonus Major +2pts) An organization system:** Full implementation of user groups supporting invites, member acceptances/rejections, and granular permission scaling up to owner-level administrative rights. 
+11. **(Bonus Minor +1pt) Implement remote authentication with OAuth 2.0:** Securely integrated the 42 Intra API for single sign-on (SSO), carefully enforcing consent tracking and token refresh routines.
+12. **(Bonus Minor +1pt) GDPR compliance features:** Developed a comprehensive utility allowing users to seamlessly export a CSV readout of all their personal metrics and perform permanent cascading data erasures. 
+13. **(Bonus Minor +1pt) A complete notification system:** Maintained a persistent secondary schema dedicated to capturing and distributing alerts for incoming invites, game statuses, and friend requests.
+14. **(Bonus Minor +1pt) Custom-made design system:** Created well over 10 distinctly bespoke UI components (Alerts, Badges, Cards, Sonner, Skeleton, etc) engineered dynamically with Tailwind glassmorphism overrides.
+15. **(Bonus Minor +1pt) Server-Side Rendering (SSR):** Leveraged Next.js App Router functionality ensuring robust pre-rendering capabilities and search engine indexability across public application paths.
+
 ## Individual Contributions
 - **Youssef (ysemlali):** Engineered and constructed the entirety of the backend service architecture, including all REST APIs, Drizzle ORM schemas, and server-side logic across all domains. Designed the real-time Server-Sent Events capabilities, provisioned Docker infra, and implemented complex Redux patterns for drag-and-drop matchmaking.
 - **Mohamed (mbouras):** Focused purely on the frontend application, handling extensive elements of the user interfacing, heavily programming the frontend Friends flow (send, accept, block UI). Spearheaded the frontend administration panels for managing users and roles within Next.js layouts.
 - **Ali (adouiyeh):** Constructed the frontend messaging interfaces. Bootstrapped the chat UI skeleton, tying frontend dispatches to the SSE streams, and ensuring the user-to-user application components rendered messages smoothly.
-- **Achraf (alakhdar):** Developed the frontend core tournament lobby joining UI to handle user participations. Contributed to refining UI flaws and delivered the static application routes for the Terms of Service and Privacy Policy to ensure rigid compliance.
+- **Achraf (alakhdar):** Engineered the backend logic and API endpoints for tournament lobby joining, alongside building out the core frontend UI to handle user participations. Contributed to refining UI flaws and delivered the static application routes for the Terms of Service and Privacy Policy to ensure rigid compliance.
