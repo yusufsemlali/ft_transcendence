@@ -305,7 +305,9 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
                           fontSize: 10, fontWeight: 600, letterSpacing: "0.5px", opacity: 0.7,
                           textTransform: "uppercase",
                         }}>
-                          <span>{msg.username}</span>
+                          <Link href={`/profile/${msg.userId}`} style={{ color: "inherit", textDecoration: "none" }}>
+                            {msg.username}
+                          </Link>
                           <span style={{ fontWeight: 400 }}>{formatMessageTime(msg.timestamp)}</span>
                         </div>
                       )}
@@ -410,10 +412,10 @@ export function ChatShell({ initialRoom }: ChatShellProps) {
                     padding: "6px 8px", borderRadius: "var(--radius)",
                     background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
                   }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                    <Link href={`/profile/${u.id}`} style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, color: "inherit", textDecoration: "none" }}>
                       <span className="material-symbols-outlined" style={{ fontSize: 16, color: "var(--text-muted)" }}>person</span>
                       <span style={{ fontSize: 12, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.username}</span>
-                    </div>
+                    </Link>
                     <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
                       {!isMe && (
                         <button
