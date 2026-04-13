@@ -52,7 +52,7 @@ function resolveChatUrl(): string {
   }
 
   if (typeof window !== "undefined") {
-    const { protocol, hostname, port } = window.location;
+    const { hostname, port } = window.location;
     
     // For localhost, use HTTP to avoid WSS protocol issues
     if (hostname === "localhost" || hostname === "127.0.0.1") {
